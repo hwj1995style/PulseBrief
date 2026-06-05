@@ -2,4 +2,4 @@
 
 The formal React admin application will live here.
 
-The current `apps/web` implementation is a PWA prototype and should remain available as product-flow reference during the migration.
+The legacy user-facing PWA prototype has been removed from the main workspace. The admin app will be created as an independent React + Vite + TypeScript project when the admin phase starts.

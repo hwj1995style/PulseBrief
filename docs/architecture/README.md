@@ -7,4 +7,4 @@ Flutter mobile app -> Spring Boot API -> MySQL
 React admin app ----^
 ```
 
-The existing React/Vite PWA remains a reference prototype until the Flutter app reaches feature parity.
+The legacy React/Vite user PWA and Node mock API have been removed from the main workspace. Product implementation now proceeds through `mobile/`, `backend/`, `admin/`, and `deploy/`.

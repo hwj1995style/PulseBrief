@@ -2,7 +2,7 @@
 
 PulseBrief 是一个面向全球热点、财经市场、科技趋势和投行公开观点的每日资讯简报产品，核心能力包括全球热点聚合、AI 摘要、分类订阅、每日简报和语音播报。
 
-项目已从早期 React/Vite PWA MVP 切换为正式工程路线：
+项目已切换为正式工程路线：
 
 ```text
 Flutter 用户端 APP
@@ -11,22 +11,21 @@ Flutter 用户端 APP
 + React 后台管理端
 ```
 
-当前 `apps/web` 和 `services/mock-api` 仍保留为产品流程参考原型，正式 V1 将按 `mobile/`、`backend/`、`admin/`、`deploy/` 分阶段落地。
+原先的 React/Vite PWA MVP 和 Node mock API 已不再保留。正式 V1 将按 `mobile/`、`backend/`、`admin/`、`deploy/` 分阶段落地。
 
 ## 当前状态
 
 已完成：
 
 1. 原始产品设计文档。
-2. React/Vite PWA MVP，用于验证首页、分类、详情、简报、收藏和播报入口。
-3. Node mock API，用于模拟核心接口数据。
-4. 工程落地设计与测试方案。
-5. 完整技术路线落地设计：Flutter + Spring Boot + MySQL + React Admin。
-6. GitHub 仓库初始化与同步。
-7. JDK 17 和 Flutter SDK 本地可用。
-8. Spring Boot 3 后端骨架和 `/api/health` 测试。
-9. Flutter 移动端 Android/iOS 工程骨架。
-10. Docker Compose MySQL 开发配置。
+2. 工程落地设计与测试方案。
+3. 完整技术路线落地设计：Flutter + Spring Boot + MySQL + React Admin。
+4. React/Vite PWA MVP 从主线移除，旧实现仅通过 Git 历史保留。
+5. GitHub 仓库初始化与同步。
+6. JDK 17 和 Flutter SDK 本地可用。
+7. Spring Boot 3 后端骨架和 `/api/health` 测试。
+8. Flutter 移动端 Android/iOS 工程骨架。
+9. Docker Compose MySQL 开发配置。
 
 下一阶段：
 
@@ -80,8 +79,6 @@ scripts/              JDK/Flutter 环境脚本和开发启动脚本
 docs/sql/             MySQL schema、种子数据和迁移说明
 docs/api/             API 契约文档
 docs/architecture/    架构图、环境说明和阶段计划
-apps/web/             现有 PWA MVP，保留为参考原型
-services/mock-api/    现有 mock API，后续由 backend 替换
 ```
 
 ## 环境说明
@@ -101,7 +98,6 @@ D:\Dev\jdk\jdk-17
 D:\Dev\flutter
 ```
 
-后续会新增脚本：
 已新增脚本：
 
 ```powershell
@@ -139,35 +135,6 @@ Flutter 测试：
 .\scripts\use-flutter.ps1
 cd mobile
 flutter test
-```
-
-## 现有 MVP 运行
-
-当前 PWA 原型仍可运行，用于查看已验证的产品流程。
-
-安装依赖：
-
-```bash
-npm install
-```
-
-启动前端：
-
-```bash
-npm run dev
-```
-
-启动 mock API：
-
-```bash
-npm run api
-```
-
-验证：
-
-```bash
-npm test
-npm run build
 ```
 
 ## 正式 V1 分阶段计划
@@ -222,6 +189,7 @@ npm run build
 2. [工程落地设计](./docs/工程落地设计.md)
 3. [测试方案](./docs/测试方案.md)
 4. [完整技术路线落地设计](./docs/完整技术路线落地设计.md)
+5. [React/Vite PWA MVP 移除设计](./docs/工程裁剪与PWA移除设计.md)
 
 ## 合规边界
 
