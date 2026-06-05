@@ -190,6 +190,7 @@ flutter test
 3. [测试方案](./docs/测试方案.md)
 4. [完整技术路线落地设计](./docs/完整技术路线落地设计.md)
 5. [React/Vite PWA MVP 移除设计](./docs/工程裁剪与PWA移除设计.md)
+6. [Flutter UI 设计方向稿](./docs/UI设计方向稿.md)
 
 ## 合规边界
 
