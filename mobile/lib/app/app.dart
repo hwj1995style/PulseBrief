@@ -11,6 +11,7 @@ import 'package:pulsebrief/features/subscription/pages/subscription_page.dart';
 import 'package:pulsebrief/mock/mock_articles.dart';
 import 'package:pulsebrief/shared/models/article.dart';
 import 'package:pulsebrief/shared/theme/app_theme.dart';
+import 'package:pulsebrief/shared/widgets/mobile_viewport.dart';
 import 'package:pulsebrief/shared/widgets/pulse_bottom_nav.dart';
 
 class PulseBriefApp extends StatelessWidget {
@@ -24,6 +25,9 @@ class PulseBriefApp extends StatelessWidget {
       theme: AppTheme.light(),
       initialRoute: PulseRoutes.login,
       onGenerateRoute: _onGenerateRoute,
+      builder: (context, child) {
+        return MobileViewport(child: child ?? const SizedBox.shrink());
+      },
     );
   }
 
