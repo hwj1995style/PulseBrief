@@ -26,12 +26,14 @@ Flutter 用户端 APP
 7. Spring Boot 3 后端骨架和 `/api/health` 测试。
 8. Flutter 移动端 Android/iOS 工程骨架。
 9. Docker Compose MySQL 开发配置。
+10. Flutter 高保真移动端 UI 首版： 首页、分类、订阅、资讯详情、每日简报、语音播放器、我的。
+11. 移动端主题 tokens、通用组件、mock 数据和统一路由。
 
 下一阶段：
 
 1. 启动 MySQL 并验证 Flyway migration。
 2. 实现分类、文章、简报核心 API。
-3. 将 Flutter 默认 starter 替换为 PulseBrief 首页、分类、详情和简报页面。
+3. 将 Flutter mock 数据替换为 Spring Boot API 数据源。
 4. 新建正式 React Admin 工程。
 
 ## 正式技术路线
@@ -156,10 +158,11 @@ flutter test
 
 第三阶段：Flutter 核心体验。
 
-1. 登录和兴趣选择。
-2. 首页、分类、资讯详情、简报、我的。
-3. 底部迷你播放器。
+1. 首页、分类、资讯详情、简报、我的。已完成 UI 首版。
+2. 订阅页、语音播放器页。已完成 UI 首版。
+3. 底部导航、底部迷你播放器、收藏、播放和订阅状态。已完成 mock 交互。
 4. 客户端 TTS。
+5. 登录和兴趣选择。
 
 第四阶段：后台管理。
 
@@ -191,6 +194,7 @@ flutter test
 4. [完整技术路线落地设计](./docs/完整技术路线落地设计.md)
 5. [React/Vite PWA MVP 移除设计](./docs/工程裁剪与PWA移除设计.md)
 6. [Flutter UI 设计方向稿](./docs/UI设计方向稿.md)
+7. [Flutter 高保真 UI 实现设计](./docs/Flutter高保真UI实现设计.md)
 
 ## 合规边界
 

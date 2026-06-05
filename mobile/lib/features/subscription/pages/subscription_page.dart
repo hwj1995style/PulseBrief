@@ -1,0 +1,389 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:pulsebrief/app/routes.dart';
+import 'package:pulsebrief/core/constants/app_assets.dart';
+import 'package:pulsebrief/mock/mock_subscriptions.dart';
+import 'package:pulsebrief/shared/models/subscription_topic.dart';
+import 'package:pulsebrief/shared/theme/app_colors.dart';
+import 'package:pulsebrief/shared/theme/app_radius.dart';
+import 'package:pulsebrief/shared/theme/app_spacing.dart';
+import 'package:pulsebrief/shared/theme/app_text_styles.dart';
+import 'package:pulsebrief/shared/widgets/app_header.dart';
+import 'package:pulsebrief/shared/widgets/category_chip.dart';
+import 'package:pulsebrief/shared/widgets/pulse_bottom_nav.dart';
+import 'package:pulsebrief/shared/widgets/pulse_card.dart';
+
+class SubscriptionPage extends StatefulWidget {
+  const SubscriptionPage({super.key});
+
+  @override
+  State<SubscriptionPage> createState() => _SubscriptionPageState();
+}
+
+class _SubscriptionPageState extends State<SubscriptionPage> {
+  late List<SubscriptionTopic> _topics;
+  late List<SubscriptionTopic> _channels;
+  final Map<String, bool> _pushPrefs = {
+    '每日早报推送': true,
+    '晚间复盘推送': true,
+    '突发热点推送': false,
+    '投行观点推送': false,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _topics = List<SubscriptionTopic>.from(mockSubscriptionTopics);
+    _channels = List<SubscriptionTopic>.from(focusChannels);
+  }
+
+  int get _selectedCount => _topics.where((topic) => topic.selected).length;
+
+  void _toggleTopic(int index) {
+    setState(() {
+      final topic = _topics[index];
+      _topics[index] = topic.copyWith(selected: !topic.selected);
+    });
+  }
+
+  void _toggleChannel(int index) {
+    setState(() {
+      final channel = _channels[index];
+      _channels[index] = channel.copyWith(selected: !channel.selected);
+    });
+  }
+
+  void _save() {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('订阅已保存')));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.paddingOf(context).bottom;
+
+    return Scaffold(
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _save,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                ),
+                child: const Text('保存订阅'),
+              ),
+            ),
+          ),
+          Text('你可以随时在我的页面中调整订阅', style: AppTextStyles.meta),
+          PulseBottomNav(
+            currentIndex: 3,
+            onTap: (index) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                PulseRoutes.main,
+                (route) => false,
+                arguments: index,
+              );
+            },
+          ),
+        ],
+      ),
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: AppHeader(
+                title: '我的订阅',
+                subtitle: '选择你关注的全球热点与市场动态',
+                centerTitle: true,
+                leading: const BackSquareButton(),
+                actions: [
+                  TextButton(onPressed: _save, child: const Text('保存')),
+                ],
+              ),
+            ),
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 24 + bottom),
+              sliver: SliverList.list(
+                children: [
+                  _OverviewCard(selectedCount: _selectedCount),
+                  const SizedBox(height: AppSpacing.lg),
+                  PulseCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('推荐订阅', style: AppTextStyles.sectionTitle),
+                        const SizedBox(height: AppSpacing.md),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final itemWidth =
+                                (constraints.maxWidth - AppSpacing.md * 2) / 3;
+                            return Wrap(
+                              spacing: AppSpacing.md,
+                              runSpacing: AppSpacing.md,
+                              children: List.generate(_topics.length, (index) {
+                                final topic = _topics[index];
+                                return SizedBox(
+                                  width: itemWidth,
+                                  child: CategoryChip(
+                                    label: topic.name,
+                                    state: topic.selected
+                                        ? CategoryChipState.selected
+                                        : CategoryChipState.normal,
+                                    trailing: topic.selected
+                                        ? const Icon(
+                                            Icons.check,
+                                            color: Colors.white,
+                                            size: 16,
+                                          )
+                                        : null,
+                                    onTap: () => _toggleTopic(index),
+                                  ),
+                                );
+                              }),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  PulseCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('重点频道', style: AppTextStyles.sectionTitle),
+                        const SizedBox(height: AppSpacing.md),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _channels.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                childAspectRatio: 1,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                              ),
+                          itemBuilder: (context, index) {
+                            final channel = _channels[index];
+                            return _ChannelCard(
+                              topic: channel,
+                              onChanged: (_) => _toggleChannel(index),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  PulseCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('推送偏好', style: AppTextStyles.sectionTitle),
+                        const SizedBox(height: AppSpacing.md),
+                        ..._pushPrefs.entries.map(
+                          (entry) => _PreferenceRow(
+                            label: entry.key,
+                            value: entry.value,
+                            onChanged: (value) =>
+                                setState(() => _pushPrefs[entry.key] = value),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OverviewCard extends StatelessWidget {
+  const _OverviewCard({required this.selectedCount});
+
+  final int selectedCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return PulseCard(
+      borderColor: AppColors.borderBlue,
+      backgroundColor: AppColors.surfaceTint,
+      child: Stack(
+        children: [
+          Positioned(
+            right: 0,
+            top: -16,
+            bottom: -16,
+            child: Opacity(
+              opacity: 0.72,
+              child: Image.asset(AppAssets.artSubscriptionGlobe, width: 180),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('已订阅 $selectedCount 个主题', style: AppTextStyles.title),
+              const SizedBox(height: 10),
+              Text('系统将根据你的订阅生成首页内容和每日简报', style: AppTextStyles.body),
+              const SizedBox(height: 18),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: const [
+                  CategoryChip(
+                    label: '全球热点',
+                    state: CategoryChipState.selected,
+                  ),
+                  CategoryChip(
+                    label: '财经市场',
+                    state: CategoryChipState.selected,
+                  ),
+                  CategoryChip(
+                    label: 'AI 前沿',
+                    state: CategoryChipState.selected,
+                  ),
+                  CategoryChip(
+                    label: '投行观点',
+                    state: CategoryChipState.selected,
+                  ),
+                  CategoryChip(
+                    label: '科技趋势',
+                    state: CategoryChipState.selected,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.72),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Text(
+                  '今日已为你筛选 42 条重点资讯',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChannelCard extends StatelessWidget {
+  const _ChannelCard({required this.topic, required this.onChanged});
+
+  final SubscriptionTopic topic;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                topic.name.contains('AI')
+                    ? Icons.smart_toy_outlined
+                    : topic.name.contains('财经')
+                    ? CupertinoIcons.clock
+                    : Icons.account_balance_rounded,
+                color: AppColors.primary,
+              ),
+              const Spacer(),
+              Transform.scale(
+                scale: 0.82,
+                alignment: Alignment.centerRight,
+                child: CupertinoSwitch(
+                  value: topic.selected,
+                  activeTrackColor: AppColors.primary,
+                  onChanged: onChanged,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(topic.name, style: AppTextStyles.cardTitle),
+          const SizedBox(height: 4),
+          Text(
+            topic.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.meta,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PreferenceRow extends StatelessWidget {
+  const _PreferenceRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.line)),
+      ),
+      child: Row(
+        children: [
+          const Icon(CupertinoIcons.bell, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
+            ),
+          ),
+          CupertinoSwitch(
+            value: value,
+            activeTrackColor: AppColors.primary,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}

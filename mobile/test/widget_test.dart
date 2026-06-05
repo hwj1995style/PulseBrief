@@ -1,30 +1,49 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:pulsebrief/main.dart';
+import 'package:pulsebrief/app/app.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('PulseBrief app launches on home page', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    await tester.pumpWidget(const PulseBriefApp());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('脉闻'), findsOneWidget);
+    expect(find.text('今日全球简报'), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('Main navigation and key routes are reachable', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    await tester.pumpWidget(const PulseBriefApp());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.tap(find.text('分类').last);
+    await tester.pumpAndSettle();
+    expect(find.text('按主题查看你关注的全球资讯'), findsOneWidget);
+
+    await tester.tap(find.text('简报').last);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('每天几分钟，听懂全球重点'), findsOneWidget);
+
+    await tester.tap(find.text('我的').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Wenjin'), findsOneWidget);
+
+    await tester.tap(find.text('我的订阅'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('选择你关注的全球热点与市场动态'), findsOneWidget);
+
+    await tester.tap(find.byIcon(CupertinoIcons.chevron_left));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('首页').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.textContaining('英伟达推出').first);
+    await tester.pumpAndSettle();
+    expect(find.text('AI 摘要'), findsOneWidget);
+
+    await tester.tap(find.text('语音播报'));
+    await tester.pumpAndSettle();
+    expect(find.text('正在播放'), findsOneWidget);
   });
 }
