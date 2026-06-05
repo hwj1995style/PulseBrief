@@ -27,19 +27,31 @@ https://www.figma.com/design/9EfobQfJgjSooTIPJ2tobU
 
 ## 设计方向
 
-### 方向 1：Material Brief
+### 方向 1：Neutral Blue Brief
 
 定位：
 
-主流 Material 3 移动资讯体验，清爽、稳重、跨 iOS / Android 易落地。
+主流蓝灰移动资讯体验，结构采用 Material 3，但视觉上以黑白灰信息层级和蓝色行动色为主，跨 iOS / Android 易落地。
 
 视觉特征：
 
-1. 浅灰绿色背景和白色内容面。
-2. 绿色主色用于简报、播放、订阅标签和关键操作。
+1. 浅灰背景和白色内容面，页面整体保持清爽、现代、主流。
+2. 蓝色主色用于简报、播放、订阅标签和关键操作。
 3. 首页顶部强化“今日简报”和一键播放。
 4. 列表信息密度适中，以轻分隔线和标签承载层级。
 5. 底部迷你播放器常驻，突出语音播报能力。
+6. 避免大面积绿色，减少健康、环保、工具类产品联想。
+
+建议色彩：
+
+1. 页面背景：`#F6F7F9`
+2. 内容面：`#FFFFFF`
+3. 主文字：`#111827`
+4. 次级文字：`#6B7280`
+5. 主行动色：`#2563EB` 或 `#0A84FF`
+6. 标签浅底：`#EFF6FF`
+7. 分隔线：`#E5E7EB`
+8. 播放强调色可少量使用亮蓝或橙色，不使用大面积绿色。
 
 适用判断：
 
@@ -81,7 +93,7 @@ https://www.figma.com/design/9EfobQfJgjSooTIPJ2tobU
 
 ## 推荐结论
 
-建议选择方向 1：Material Brief 作为 PulseBrief V1 默认 UI。
+建议选择方向 1：Neutral Blue Brief 作为 PulseBrief V1 默认 UI。
 
 原因：
 
@@ -89,7 +101,8 @@ https://www.figma.com/design/9EfobQfJgjSooTIPJ2tobU
 2. iOS 和 Android 的一致性最好控制。
 3. 能承载资讯流、AI 摘要、每日简报、播放器等全部核心模块。
 4. 主流审美足够稳，不会像旧 PWA 一样显得网页化。
-5. 后续可以平滑扩展深色模式和专业财经模式。
+5. 蓝灰色调比绿色更符合主流资讯、知识、财经类 App 的认知。
+6. 后续可以平滑扩展深色模式和专业财经模式。
 
 ## 页面范围
 
@@ -126,7 +139,7 @@ Figma 方向稿已覆盖：
 
 请在 Figma 方向稿中选择一个方向：
 
-1. 方向 1：Material Brief
+1. 方向 1：Neutral Blue Brief
 2. 方向 2：Apple Editorial
 3. 方向 3：Pro Market Brief
 
