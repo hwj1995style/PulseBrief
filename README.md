@@ -23,14 +23,17 @@ Flutter 用户端 APP
 4. 工程落地设计与测试方案。
 5. 完整技术路线落地设计：Flutter + Spring Boot + MySQL + React Admin。
 6. GitHub 仓库初始化与同步。
+7. JDK 17 和 Flutter SDK 本地可用。
+8. Spring Boot 3 后端骨架和 `/api/health` 测试。
+9. Flutter 移动端 Android/iOS 工程骨架。
+10. Docker Compose MySQL 开发配置。
 
 下一阶段：
 
-1. 配置 JDK 17 和 Flutter SDK。
-2. 创建 Spring Boot 3 后端工程。
-3. 创建 Flutter 移动端工程。
-4. 创建 Docker Compose MySQL 开发环境。
-5. 使用 Maven Wrapper 固定后端构建方式。
+1. 启动 MySQL 并验证 Flyway migration。
+2. 实现分类、文章、简报核心 API。
+3. 将 Flutter 默认 starter 替换为 PulseBrief 首页、分类、详情和简报页面。
+4. 新建正式 React Admin 工程。
 
 ## 正式技术路线
 
@@ -85,10 +88,11 @@ services/mock-api/    现有 mock API，后续由 backend 替换
 
 当前本机检查结果：
 
-1. 默认 Java 是 Java 8。
-2. Flutter SDK 尚未安装或未加入 PATH。
-3. `mvn` 不在 PATH。
-4. 已发现 IntelliJ 自带 Maven，但项目正式构建会使用 Maven Wrapper。
+1. 默认 Java 是 Java 8，保持不变。
+2. JDK 17 已安装在 `D:\Dev\jdk\jdk-17`。
+3. Flutter SDK 已安装在 `D:\Dev\flutter`。
+4. `mvn` 不在 PATH，但后端已使用 Maven Wrapper。
+5. Docker 可用。
 
 推荐安装路径：
 
@@ -98,6 +102,7 @@ D:\Dev\flutter
 ```
 
 后续会新增脚本：
+已新增脚本：
 
 ```powershell
 .\scripts\use-jdk17.ps1
@@ -105,6 +110,36 @@ D:\Dev\flutter
 ```
 
 脚本只影响当前 PowerShell 会话，不修改系统全局 Java 8。
+
+## 正式工程运行
+
+检查本地环境：
+
+```powershell
+.\scripts\check-env.ps1
+```
+
+启动 PulseBrief MySQL。本项目使用宿主机 `3307` 端口，避免和本机已有 MySQL 的 `3306` 冲突：
+
+```powershell
+docker compose -f deploy/docker-compose.yml up -d
+```
+
+后端测试：
+
+```powershell
+.\scripts\use-jdk17.ps1
+cd backend
+.\mvnw.cmd test
+```
+
+Flutter 测试：
+
+```powershell
+.\scripts\use-flutter.ps1
+cd mobile
+flutter test
+```
 
 ## 现有 MVP 运行
 
@@ -139,11 +174,11 @@ npm run build
 
 第一阶段：工程底座。
 
-1. JDK 17 与 Flutter SDK 环境脚本。
-2. Spring Boot 3 后端工程。
-3. Flutter 移动端工程。
-4. Docker Compose MySQL。
-5. Maven Wrapper。
+1. JDK 17 与 Flutter SDK 环境脚本。已完成。
+2. Spring Boot 3 后端工程。已完成。
+3. Flutter 移动端工程。已完成。
+4. Docker Compose MySQL。已完成。
+5. Maven Wrapper。已完成。
 
 第二阶段：后端核心 API。
 

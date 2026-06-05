@@ -7,3 +7,22 @@ coverage/
 .env.local
 .idea/
 .vscode/
+
+# Java / Spring Boot
+target/
+*.class
+*.jar
+*.war
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+
+# Local runtime data
+*.pid
+*.hprof

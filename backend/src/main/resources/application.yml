@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: pulsebrief-backend
+  datasource:
+    url: ${PULSEBRIEF_DB_URL:jdbc:mysql://localhost:3307/pulsebrief?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}
+    username: ${PULSEBRIEF_DB_USERNAME:pulsebrief}
+    password: ${PULSEBRIEF_DB_PASSWORD:pulsebrief_dev}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+server:
+  port: ${PULSEBRIEF_SERVER_PORT:8080}
