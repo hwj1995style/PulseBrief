@@ -3,19 +3,38 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pulsebrief/app/app.dart';
 
 void main() {
-  testWidgets('PulseBrief app launches on home page', (tester) async {
+  testWidgets('PulseBrief app launches on login page', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     await tester.pumpWidget(const PulseBriefApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('脉闻'), findsOneWidget);
-    expect(find.text('今日全球简报'), findsOneWidget);
+    expect(find.text('脉 闻'), findsOneWidget);
+    expect(find.text('PulseBrief'), findsOneWidget);
+    expect(find.text('登录 / 注册'), findsOneWidget);
+    expect(find.text('游客模式进入'), findsOneWidget);
+  });
+
+  testWidgets('Login requires agreement when unchecked', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    await tester.pumpWidget(const PulseBriefApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('agreement-checkbox')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('login-submit-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('请先同意用户协议和隐私政策'), findsOneWidget);
   });
 
   testWidgets('Main navigation and key routes are reachable', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     await tester.pumpWidget(const PulseBriefApp());
     await tester.pumpAndSettle();
+
+    await tester.tap(find.text('游客模式进入'));
+    await tester.pumpAndSettle();
+    expect(find.text('今日全球简报'), findsOneWidget);
 
     await tester.tap(find.text('分类').last);
     await tester.pumpAndSettle();

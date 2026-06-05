@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pulsebrief/app/routes.dart';
 import 'package:pulsebrief/features/article/pages/article_detail_page.dart';
+import 'package:pulsebrief/features/auth/pages/login_page.dart';
 import 'package:pulsebrief/features/category/pages/category_page.dart';
 import 'package:pulsebrief/features/digest/pages/digest_page.dart';
 import 'package:pulsebrief/features/home/pages/home_page.dart';
@@ -21,12 +22,18 @@ class PulseBriefApp extends StatelessWidget {
       title: '脉闻 PulseBrief',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
+      initialRoute: PulseRoutes.login,
       onGenerateRoute: _onGenerateRoute,
     );
   }
 
   Route<dynamic> _onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case PulseRoutes.login:
+        return MaterialPageRoute(
+          builder: (_) => const LoginPage(),
+          settings: settings,
+        );
       case PulseRoutes.main:
         final initialIndex = settings.arguments is int
             ? settings.arguments! as int
@@ -58,7 +65,7 @@ class PulseBriefApp extends StatelessWidget {
         );
       default:
         return MaterialPageRoute(
-          builder: (_) => const MainShell(),
+          builder: (_) => const LoginPage(),
           settings: settings,
         );
     }
