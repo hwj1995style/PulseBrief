@@ -81,7 +81,13 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
               ),
               sliver: SliverList.list(
                 children: [
-                  Text(article.title, style: AppTextStyles.hero),
+                  Text(
+                    article.title,
+                    style: AppTextStyles.hero.copyWith(
+                      fontSize: 31,
+                      height: 1.28,
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   Row(
                     children: [
@@ -241,6 +247,7 @@ class _AiSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return PulseCard(
       borderColor: AppColors.borderBlue,
+      backgroundColor: AppColors.primaryPale,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -285,6 +292,7 @@ class _DetailActionBar extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(16, 12, 16, bottom + 10),
       decoration: const BoxDecoration(
         color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
             color: Color(0x1A061331),

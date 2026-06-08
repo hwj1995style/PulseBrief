@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pulsebrief/core/constants/app_assets.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
-import 'package:pulsebrief/shared/theme/app_spacing.dart';
 import 'package:pulsebrief/shared/theme/app_text_styles.dart';
 
 class BrandHeader extends StatelessWidget {
@@ -12,7 +11,7 @@ class BrandHeader extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final height = (width * 0.78).clamp(282.0, 340.0).toDouble();
+        final height = (width * 0.84).clamp(300.0, 350.0).toDouble();
 
         return SizedBox(
           height: height,
@@ -21,19 +20,19 @@ class BrandHeader extends StatelessWidget {
             children: [
               Positioned(
                 right: -width * 0.16,
-                top: 14,
+                top: 12,
                 child: Opacity(
-                  opacity: 0.36,
+                  opacity: 0.42,
                   child: Image.asset(
-                    AppAssets.artGlobalGlobe,
-                    width: width * 1.04,
+                    AppAssets.artCleanGlobal,
+                    width: width * 1.05,
                     fit: BoxFit.contain,
                   ),
                 ),
               ),
               Positioned(
                 left: width * 0.12,
-                top: height * 0.42,
+                top: height * 0.45,
                 child: _FloatingSignal(
                   icon: Icons.query_stats_rounded,
                   color: AppColors.primary,
@@ -41,19 +40,19 @@ class BrandHeader extends StatelessWidget {
               ),
               Positioned(
                 right: width * 0.1,
-                top: height * 0.58,
+                top: height * 0.6,
                 child: const _FloatingSignal(
                   label: 'AI',
                   color: AppColors.cyan,
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.xxl),
+                padding: EdgeInsets.only(top: height * 0.08),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const _PulseLogoMark(),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
                     Text(
                       '脉 闻',
                       style: AppTextStyles.pageTitle.copyWith(
@@ -96,8 +95,8 @@ class _PulseLogoMark extends StatelessWidget {
     final heights = [34.0, 66.0, 90.0, 66.0, 34.0];
 
     return SizedBox(
-      width: 120,
-      height: 104,
+      width: 126,
+      height: 96,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,

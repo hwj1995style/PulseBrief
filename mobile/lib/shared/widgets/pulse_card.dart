@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
 import 'package:pulsebrief/shared/theme/app_radius.dart';
 import 'package:pulsebrief/shared/theme/app_shadows.dart';
+import 'package:pulsebrief/shared/theme/app_spacing.dart';
 
 class PulseCard extends StatelessWidget {
   const PulseCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.all(AppSpacing.cardPadding),
     this.margin,
     this.borderColor = AppColors.line,
     this.backgroundColor = AppColors.surface,
     this.radius = AppRadius.lg,
     this.shadow = true,
+    this.clip = true,
     this.onTap,
   });
 
@@ -23,6 +25,7 @@ class PulseCard extends StatelessWidget {
   final Color backgroundColor;
   final double radius;
   final bool shadow;
+  final bool clip;
   final VoidCallback? onTap;
 
   @override
@@ -36,6 +39,7 @@ class PulseCard extends StatelessWidget {
         border: Border.all(color: borderColor),
         boxShadow: shadow ? AppShadows.card : null,
       ),
+      clipBehavior: clip ? Clip.antiAlias : Clip.none,
       child: child,
     );
 

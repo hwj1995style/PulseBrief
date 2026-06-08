@@ -51,13 +51,13 @@ class DigestPage extends StatelessWidget {
                   title: '今日全球早报',
                   subtitle: '精选全球、财经、AI 与投行观点 10 条重点',
                   description: '覆盖全球热点、市场动态、科技趋势与机构观点，帮助你快速完成每日信息输入。',
-                  imageAsset: AppAssets.artDigestGlobe,
+                  imageAsset: AppAssets.artCleanDigest,
                   primaryAction: '播放整篇简报',
                   secondaryAction: '查看全文',
                   onPrimary: () => _openPlayer(context),
                   onSecondary: () {},
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.sectionGap),
                 ...mockDigests.map(
                   (digest) => Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -68,7 +68,7 @@ class DigestPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.sectionGap),
                 PulseCard(
                   borderColor: AppColors.borderBlue,
                   child: Column(

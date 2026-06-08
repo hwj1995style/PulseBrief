@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
+import 'package:pulsebrief/shared/theme/app_radius.dart';
 import 'package:pulsebrief/shared/theme/app_shadows.dart';
 import 'package:pulsebrief/shared/theme/app_spacing.dart';
 
@@ -20,10 +21,10 @@ class PulseBottomNav extends StatelessWidget {
 
     return Container(
       height: AppSpacing.bottomNavHeight + bottom,
-      padding: EdgeInsets.fromLTRB(8, 8, 8, bottom),
+      padding: EdgeInsets.fromLTRB(10, 10, 10, bottom + 6),
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
         boxShadow: AppShadows.nav,
       ),
       child: Row(
@@ -78,12 +79,12 @@ class _NavItem extends StatelessWidget {
 
     return Expanded(
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: onTap,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(selected ? selectedIcon : icon, color: color, size: 26),
+            Icon(selected ? selectedIcon : icon, color: color, size: 28),
             const SizedBox(height: 5),
             Text(
               label,
@@ -115,23 +116,30 @@ class _BriefButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 58,
-              height: 58,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.28),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+            Transform.translate(
+              offset: const Offset(0, -8),
+              child: Container(
+                width: 62,
+                height: 62,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.34),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.graphic_eq_rounded,
+                  color: Colors.white,
+                  size: 30,
+                ),
               ),
-              child: const Icon(Icons.graphic_eq_rounded, color: Colors.white),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 0),
             Text(
               '简报',
               style: TextStyle(

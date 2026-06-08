@@ -171,7 +171,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
-                                childAspectRatio: 1,
+                                childAspectRatio: 1.18,
                                 crossAxisSpacing: 12,
                                 mainAxisSpacing: 12,
                               ),
@@ -229,11 +229,11 @@ class _OverviewCard extends StatelessWidget {
         children: [
           Positioned(
             right: 0,
-            top: -16,
-            bottom: -16,
+            top: -26,
+            bottom: -20,
             child: Opacity(
-              opacity: 0.72,
-              child: Image.asset(AppAssets.artSubscriptionGlobe, width: 180),
+              opacity: 0.78,
+              child: Image.asset(AppAssets.artCleanSubscription, width: 196),
             ),
           ),
           Column(
@@ -334,7 +334,7 @@ class _ChannelCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(topic.name, style: AppTextStyles.cardTitle),
           const SizedBox(height: 4),
           Text(

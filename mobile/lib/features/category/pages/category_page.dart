@@ -101,12 +101,13 @@ class _CategoryPageState extends State<CategoryPage> {
                   subtitle: _selected.description,
                   description: '今日 ${_selected.todayCount} 条更新，精选重点事件和可播报摘要。',
                   imageAsset: _selected.code == 'finance'
-                      ? AppAssets.artFinanceGlobe
-                      : AppAssets.artGlobalGlobe,
+                      ? AppAssets.artCleanFinance
+                      : AppAssets.artCleanGlobal,
                   compact: true,
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.sectionGap),
                 PulseCard(
+                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -126,52 +127,51 @@ class _CategoryPageState extends State<CategoryPage> {
                       LayoutBuilder(
                         builder: (context, constraints) {
                           final compact = constraints.maxWidth < 360;
+                          final focusArticles = articles.take(2).toList();
                           return compact
                               ? Column(
-                                  children: articles
-                                      .take(2)
-                                      .map(
-                                        (article) => Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: AppSpacing.md,
-                                          ),
-                                          child: NewsCard(
-                                            article: article,
-                                            compact: true,
-                                            onTap: () => _openArticle(article),
-                                            onPlay: _openPlayer,
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
+                                  children: [
+                                    for (final article in focusArticles) ...[
+                                      NewsCard(
+                                        article: article,
+                                        compact: true,
+                                        onTap: () => _openArticle(article),
+                                        onPlay: _openPlayer,
+                                      ),
+                                      if (article != focusArticles.last)
+                                        const SizedBox(height: AppSpacing.md),
+                                    ],
+                                  ],
                                 )
                               : Row(
-                                  children: articles
-                                      .take(2)
-                                      .map(
-                                        (article) => Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                              right: AppSpacing.md,
-                                            ),
-                                            child: NewsCard(
-                                              article: article,
-                                              compact: true,
-                                              onTap: () =>
-                                                  _openArticle(article),
-                                              onPlay: _openPlayer,
-                                            ),
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    for (
+                                      var index = 0;
+                                      index < focusArticles.length;
+                                      index++
+                                    ) ...[
+                                      Expanded(
+                                        child: NewsCard(
+                                          article: focusArticles[index],
+                                          compact: true,
+                                          onTap: () => _openArticle(
+                                            focusArticles[index],
                                           ),
+                                          onPlay: _openPlayer,
                                         ),
-                                      )
-                                      .toList(),
+                                      ),
+                                      if (index != focusArticles.length - 1)
+                                        const SizedBox(width: AppSpacing.md),
+                                    ],
+                                  ],
                                 );
                         },
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.sectionGap),
                 SectionHeader(title: '${_selected.name}资讯'),
                 const SizedBox(height: AppSpacing.md),
               ],

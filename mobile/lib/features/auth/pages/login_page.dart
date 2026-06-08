@@ -64,63 +64,72 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        bottom: false,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.xxl,
-              ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  children: [
-                    const BrandHeader(),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.pagePadding,
-                      ),
-                      child: Column(
-                        children: [
-                          _LoginPanel(
-                            accountController: _accountController,
-                            codeController: _codeController,
-                            codeSent: _codeSent,
-                            onSendCode: _sendCode,
-                            onLogin: _login,
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-                          GuestEntryButton(
-                            label: '游客模式进入',
-                            icon: CupertinoIcons.person,
-                            iconColor: AppColors.primary,
-                            onTap: _enterAsGuest,
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          GuestEntryButton(
-                            label: '稍后登录',
-                            icon: CupertinoIcons.clock,
-                            iconColor: AppColors.cyan,
-                            onTap: _enterAsGuest,
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-                          AgreementCheckbox(
-                            value: _agreementAccepted,
-                            onChanged: (value) {
-                              setState(() => _agreementAccepted = value);
-                            },
-                            onAgreementTap: () => _showLinkTip('用户协议'),
-                            onPrivacyTap: () => _showLinkTip('隐私政策'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.backgroundTop, AppColors.background],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.xxl,
                 ),
-              ),
-            );
-          },
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    children: [
+                      const BrandHeader(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.pagePadding,
+                        ),
+                        child: Column(
+                          children: [
+                            _LoginPanel(
+                              accountController: _accountController,
+                              codeController: _codeController,
+                              codeSent: _codeSent,
+                              onSendCode: _sendCode,
+                              onLogin: _login,
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            GuestEntryButton(
+                              label: '游客模式进入',
+                              icon: CupertinoIcons.person,
+                              iconColor: AppColors.primary,
+                              onTap: _enterAsGuest,
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            GuestEntryButton(
+                              label: '稍后登录',
+                              icon: CupertinoIcons.clock,
+                              iconColor: AppColors.cyan,
+                              onTap: _enterAsGuest,
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            AgreementCheckbox(
+                              value: _agreementAccepted,
+                              onChanged: (value) {
+                                setState(() => _agreementAccepted = value);
+                              },
+                              onAgreementTap: () => _showLinkTip('用户协议'),
+                              onPrivacyTap: () => _showLinkTip('隐私政策'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -145,10 +154,10 @@ class _LoginPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+      padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
       decoration: BoxDecoration(
         color: AppColors.surface.withValues(alpha: 0.96),
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
         boxShadow: AppShadows.nav,
       ),
       child: Column(
@@ -173,22 +182,16 @@ class _LoginPanel extends StatelessWidget {
           const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
-            height: 64,
+            height: 62,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [AppColors.primary, Color(0xFF0846CE)],
+                  colors: [AppColors.primary, AppColors.primaryDeep],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
                 borderRadius: BorderRadius.circular(AppRadius.xl),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.26),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
+                boxShadow: AppShadows.primaryButton,
               ),
               child: FilledButton(
                 key: const ValueKey('login-submit-button'),

@@ -71,19 +71,7 @@ class _HomePageState extends State<HomePage> {
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: AppHeader(
-              title: AppStrings.appName,
-              subtitle: '${AppStrings.appNameEn}  ·  ${AppStrings.greeting}',
-              actions: [
-                PulseIconButton(
-                  icon: CupertinoIcons.bell,
-                  showDot: true,
-                  onPressed: () {},
-                ),
-                const SizedBox(width: 10),
-                PulseIconButton(icon: CupertinoIcons.search, onPressed: () {}),
-              ],
-            ),
+            child: _HomeHeader(onSearch: () {}, onBell: () {}),
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(
@@ -95,14 +83,14 @@ class _HomePageState extends State<HomePage> {
                   title: '今日全球简报',
                   subtitle: '精选 10 条全球重点资讯',
                   description: '为你精选全球热点、市场、科技、AI 与投行观点，10 分钟快速掌握世界动态。',
-                  imageAsset: AppAssets.artGlobalGlobe,
+                  imageAsset: AppAssets.artCleanGlobal,
                   primaryAction: '一键播放今日简报',
                   onPrimary: () {
                     setState(() => _isPlaying = true);
                     _openPlayer();
                   },
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.sectionGap),
                 SizedBox(
                   height: 44,
                   child: ListView.separated(
@@ -121,7 +109,7 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.sectionGap),
                 if (visibleArticles.isNotEmpty)
                   NewsCard(
                     article: visibleArticles.first,
@@ -129,14 +117,14 @@ class _HomePageState extends State<HomePage> {
                     onPlay: _openPlayer,
                     onFavorite: () => _toggleFavorite(visibleArticles.first),
                   ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.sectionGap),
                 _InvestmentInsightCard(
                   article: _articles.firstWhere(
                     (item) => item.categoryName == '投行观点',
                   ),
                   onTap: _openArticle,
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.sectionGap),
                 const SectionHeader(title: '热点资讯'),
                 const SizedBox(height: AppSpacing.md),
               ],
@@ -163,25 +151,111 @@ class _HomePageState extends State<HomePage> {
               itemCount: visibleArticles.length,
             ),
           ),
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              AppSpacing.pagePadding,
-              0,
-              AppSpacing.pagePadding,
-              AppSpacing.bottomNavHeight +
-                  MediaQuery.paddingOf(context).bottom +
-                  86,
-            ),
-            sliver: SliverToBoxAdapter(
-              child: MiniPlayer(
-                title: '今日全球早报：美股反弹，AI 与市场热点快速梳理',
-                isPlaying: _isPlaying,
-                onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
-                onNext: () {},
-                onOpenPlayer: _openPlayer,
+          if (_isPlaying)
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.pagePadding,
+                0,
+                AppSpacing.pagePadding,
+                AppSpacing.bottomNavHeight +
+                    MediaQuery.paddingOf(context).bottom +
+                    AppSpacing.md,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: MiniPlayer(
+                  title: '今日全球早报：美股反弹，AI 与市场热点快速梳理',
+                  isPlaying: _isPlaying,
+                  onPlayPause: () => setState(() => _isPlaying = !_isPlaying),
+                  onNext: () {},
+                  onOpenPlayer: _openPlayer,
+                ),
+              ),
+            )
+          else
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height:
+                    AppSpacing.bottomNavHeight +
+                    MediaQuery.paddingOf(context).bottom +
+                    AppSpacing.md,
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({required this.onSearch, required this.onBell});
+
+  final VoidCallback onSearch;
+  final VoidCallback onBell;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.pagePadding,
+        14,
+        AppSpacing.pagePadding,
+        AppSpacing.lg,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('脉闻', style: AppTextStyles.pageTitle),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                AppStrings.appNameEn,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.title.copyWith(
+                                  fontSize: 18,
+                                  color: AppColors.primaryDark,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            const Icon(
+                              Icons.graphic_eq_rounded,
+                              size: 19,
+                              color: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(AppStrings.today, style: AppTextStyles.body),
+                const SizedBox(height: 4),
+                Text('早上好，今天也要掌握全球脉搏', style: AppTextStyles.body),
+              ],
+            ),
           ),
+          PulseIconButton(
+            icon: CupertinoIcons.bell,
+            showDot: true,
+            onPressed: onBell,
+          ),
+          const SizedBox(width: 10),
+          PulseIconButton(icon: CupertinoIcons.search, onPressed: onSearch),
         ],
       ),
     );

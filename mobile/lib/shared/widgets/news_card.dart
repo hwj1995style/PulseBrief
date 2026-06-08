@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:pulsebrief/shared/models/article.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
 import 'package:pulsebrief/shared/theme/app_radius.dart';
-import 'package:pulsebrief/shared/theme/app_spacing.dart';
 import 'package:pulsebrief/shared/theme/app_text_styles.dart';
 import 'package:pulsebrief/shared/widgets/pulse_card.dart';
 import 'package:pulsebrief/shared/widgets/source_badge.dart';
@@ -28,7 +27,7 @@ class NewsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return PulseCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: EdgeInsets.all(compact ? 10 : 12),
       child: compact
           ? _CompactArticle(
               article: article,
@@ -56,8 +55,18 @@ class _LargeArticle extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ArticleImage(article: article, width: 102, height: 96),
-        const SizedBox(width: 14),
+        SizedBox(
+          width: 112,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _ArticleImage(article: article, width: 112, height: 86),
+              const SizedBox(height: 9),
+              _PlayPill(duration: article.duration, onTap: onPlay),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,17 +82,11 @@ class _LargeArticle extends StatelessWidget {
                       style: AppTextStyles.cardTitle,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  SourceBadge(
-                    label: article.categoryName,
-                    hot: article.isHot,
-                    breaking: article.isBreaking,
-                  ),
                 ],
               ),
               const SizedBox(height: 7),
               Text(
-                '${article.sourceName} · ${article.publishTime} · ${article.categoryName}',
+                '${article.sourceName} · ${article.publishTime}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.meta,
@@ -95,20 +98,30 @@ class _LargeArticle extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.body,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _PlayPill(duration: article.duration, onTap: onPlay),
+                  SourceBadge(
+                    label: article.categoryName,
+                    hot: article.isHot,
+                    breaking: article.isBreaking,
+                  ),
                   const Spacer(),
-                  IconButton(
-                    onPressed: onFavorite,
-                    icon: Icon(
-                      article.isFavorited
-                          ? CupertinoIcons.bookmark_fill
-                          : CupertinoIcons.bookmark,
-                      color: article.isFavorited
-                          ? AppColors.primary
-                          : AppColors.textPrimary,
+                  SizedBox(
+                    width: 34,
+                    height: 34,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: onFavorite,
+                      icon: Icon(
+                        article.isFavorited
+                            ? CupertinoIcons.bookmark_fill
+                            : CupertinoIcons.bookmark,
+                        color: article.isFavorited
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
+                      ),
                     ),
                   ),
                 ],
@@ -158,15 +171,20 @@ class _CompactArticle extends StatelessWidget {
           children: [
             _PlayPill(duration: article.duration, onTap: onPlay),
             const Spacer(),
-            IconButton(
-              onPressed: onFavorite,
-              icon: Icon(
-                article.isFavorited
-                    ? CupertinoIcons.bookmark_fill
-                    : CupertinoIcons.bookmark,
-                color: article.isFavorited
-                    ? AppColors.primary
-                    : AppColors.textPrimary,
+            SizedBox(
+              width: 34,
+              height: 34,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                onPressed: onFavorite,
+                icon: Icon(
+                  article.isFavorited
+                      ? CupertinoIcons.bookmark_fill
+                      : CupertinoIcons.bookmark,
+                  color: article.isFavorited
+                      ? AppColors.primary
+                      : AppColors.textPrimary,
+                ),
               ),
             ),
           ],
@@ -217,19 +235,22 @@ class _PlayPill extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.primarySoft,
           borderRadius: BorderRadius.circular(AppRadius.pill),
-          border: Border.all(color: AppColors.borderBlue),
+          border: Border.all(color: AppColors.borderSoftBlue),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.play_circle_fill,
-              size: 20,
-              color: AppColors.primary,
-            ),
-            const SizedBox(width: 5),
-            Text('播放 $duration', style: AppTextStyles.label),
-          ],
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.play_circle_fill,
+                size: 20,
+                color: AppColors.primary,
+              ),
+              const SizedBox(width: 5),
+              Text('播放 $duration', style: AppTextStyles.label),
+            ],
+          ),
         ),
       ),
     );

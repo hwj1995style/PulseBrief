@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
 import 'package:pulsebrief/shared/theme/app_radius.dart';
+import 'package:pulsebrief/shared/theme/app_shadows.dart';
 import 'package:pulsebrief/shared/theme/app_text_styles.dart';
 
 enum CategoryChipState { normal, selected, disabled }
@@ -28,13 +29,15 @@ class CategoryChip extends StatelessWidget {
     final disabled = state == CategoryChipState.disabled;
     final child = AnimatedContainer(
       duration: const Duration(milliseconds: 180),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+      constraints: const BoxConstraints(minHeight: 44),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: _selected ? AppColors.primary : AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
-          color: _selected ? AppColors.primary : AppColors.line,
+          color: _selected ? AppColors.primary : AppColors.borderSoftBlue,
         ),
+        boxShadow: _selected ? AppShadows.softCard : null,
       ),
       child: Row(
         mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
@@ -50,6 +53,7 @@ class CategoryChip extends StatelessWidget {
                     : _selected
                     ? Colors.white
                     : AppColors.textPrimary,
+                fontSize: 14,
               ),
             ),
           ),

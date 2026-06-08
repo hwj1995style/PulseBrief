@@ -64,16 +64,16 @@ class _PlayerPageState extends State<PlayerPage> {
               sliver: SliverList.list(
                 children: [
                   _CoverCard(),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: 26),
                   Text(
                     '今日全球早报：美股反弹，AI 与市场热点快速梳理',
-                    style: AppTextStyles.hero.copyWith(fontSize: 30),
+                    style: AppTextStyles.hero.copyWith(fontSize: 29),
                   ),
                   const SizedBox(height: 12),
                   Text('脉闻语音简报 · 每日早报', style: AppTextStyles.body),
                   const SizedBox(height: 8),
                   Text('更新于 08:30 · 总时长 08:12', style: AppTextStyles.meta),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: 22),
                   Slider(
                     value: 3.43,
                     min: 0,
@@ -89,7 +89,7 @@ class _PlayerPageState extends State<PlayerPage> {
                       Text('08:12', style: AppTextStyles.body),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: 18),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -132,14 +132,14 @@ class _PlayerPageState extends State<PlayerPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: 24),
                   _ControlsCard(
                     speed: _speed,
                     favorited: _favorited,
                     onSpeedChanged: (speed) => setState(() => _speed = speed),
                     onFavorite: () => setState(() => _favorited = !_favorited),
                   ),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: 26),
                   const SectionHeader(title: '当前播报要点'),
                   const SizedBox(height: AppSpacing.md),
                   ..._points(article).asMap().entries.map(
@@ -206,7 +206,7 @@ class _CoverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 280,
+      height: 298,
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -220,13 +220,16 @@ class _CoverCard extends StatelessWidget {
       child: Stack(
         children: [
           Positioned.fill(
-            left: 120,
-            child: Image.asset(AppAssets.artPlayerGlobe, fit: BoxFit.cover),
+            left: 110,
+            right: -26,
+            top: -18,
+            bottom: -18,
+            child: Image.asset(AppAssets.artCleanPlayer, fit: BoxFit.contain),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('今日全球早报', style: AppTextStyles.hero),
+              Text('今日全球早报', style: AppTextStyles.hero.copyWith(fontSize: 34)),
               const SizedBox(height: 10),
               Text('精选 10 条重点资讯', style: AppTextStyles.sectionTitle),
               const Spacer(),

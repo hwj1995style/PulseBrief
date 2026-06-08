@@ -7,7 +7,11 @@ class AppSpacing {
   static const double lg = 16;
   static const double xl = 24;
   static const double xxl = 32;
+  static const double xxxl = 40;
 
-  static const double pagePadding = 20;
-  static const double bottomNavHeight = 92;
+  static const double pagePadding = 18;
+  static const double sectionGap = 18;
+  static const double cardPadding = 16;
+  static const double bottomNavHeight = 96;
+  static const double floatingPlayerHeight = 68;
 }

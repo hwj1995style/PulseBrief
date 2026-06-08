@@ -5,15 +5,15 @@ class AppTextStyles {
   const AppTextStyles._();
 
   static const TextStyle hero = TextStyle(
-    fontSize: 34,
-    height: 1.12,
+    fontSize: 32,
+    height: 1.18,
     fontWeight: FontWeight.w800,
     color: AppColors.textPrimary,
     letterSpacing: 0,
   );
 
   static const TextStyle pageTitle = TextStyle(
-    fontSize: 34,
+    fontSize: 32,
     height: 1.1,
     fontWeight: FontWeight.w800,
     color: AppColors.primaryDark,
@@ -22,23 +22,23 @@ class AppTextStyles {
 
   static const TextStyle title = TextStyle(
     fontSize: 22,
-    height: 1.18,
+    height: 1.22,
     fontWeight: FontWeight.w800,
     color: AppColors.textPrimary,
     letterSpacing: 0,
   );
 
   static const TextStyle sectionTitle = TextStyle(
-    fontSize: 20,
-    height: 1.2,
+    fontSize: 19,
+    height: 1.22,
     fontWeight: FontWeight.w800,
     color: AppColors.textPrimary,
     letterSpacing: 0,
   );
 
   static const TextStyle cardTitle = TextStyle(
-    fontSize: 17,
-    height: 1.28,
+    fontSize: 16,
+    height: 1.32,
     fontWeight: FontWeight.w800,
     color: AppColors.textPrimary,
     letterSpacing: 0,
@@ -46,7 +46,7 @@ class AppTextStyles {
 
   static const TextStyle body = TextStyle(
     fontSize: 15,
-    height: 1.45,
+    height: 1.48,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
     letterSpacing: 0,
@@ -65,6 +65,14 @@ class AppTextStyles {
     height: 1.2,
     fontWeight: FontWeight.w400,
     color: AppColors.textTertiary,
+    letterSpacing: 0,
+  );
+
+  static const TextStyle button = TextStyle(
+    fontSize: 17,
+    height: 1.15,
+    fontWeight: FontWeight.w800,
+    color: AppColors.surface,
     letterSpacing: 0,
   );
 }

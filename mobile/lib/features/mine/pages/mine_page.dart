@@ -22,6 +22,8 @@ class MinePage extends StatelessWidget {
           SliverToBoxAdapter(
             child: AppHeader(
               title: '我的',
+              topPadding: 16,
+              bottomPadding: 20,
               actions: [
                 PulseIconButton(
                   icon: CupertinoIcons.bell,
@@ -211,8 +213,8 @@ class _ProfileBlock extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 96,
-          height: 96,
+          width: 92,
+          height: 92,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: const LinearGradient(
@@ -228,7 +230,7 @@ class _ProfileBlock extends StatelessWidget {
             size: 62,
           ),
         ),
-        const SizedBox(width: 22),
+        const SizedBox(width: 20),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -13,6 +13,10 @@ class AppHeader extends StatelessWidget {
     this.leading,
     this.actions = const [],
     this.centerTitle = false,
+    this.topPadding = 12,
+    this.bottomPadding = AppSpacing.lg,
+    this.titleStyle,
+    this.subtitleStyle,
   });
 
   final String title;
@@ -20,16 +24,20 @@ class AppHeader extends StatelessWidget {
   final Widget? leading;
   final List<Widget> actions;
   final bool centerTitle;
+  final double topPadding;
+  final double bottomPadding;
+  final TextStyle? titleStyle;
+  final TextStyle? subtitleStyle;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.pagePadding,
-        10,
+        0,
         AppSpacing.pagePadding,
-        AppSpacing.lg,
-      ),
+        0,
+      ).copyWith(top: topPadding, bottom: bottomPadding),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -43,11 +51,11 @@ class AppHeader extends StatelessWidget {
                 Text(
                   title,
                   textAlign: centerTitle ? TextAlign.center : TextAlign.start,
-                  style: AppTextStyles.pageTitle,
+                  style: titleStyle ?? AppTextStyles.pageTitle,
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 6),
-                  Text(subtitle!, style: AppTextStyles.body),
+                  Text(subtitle!, style: subtitleStyle ?? AppTextStyles.body),
                 ],
               ],
             ),
@@ -80,11 +88,11 @@ class PulseIconButton extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         SizedBox(
-          width: 46,
-          height: 46,
+          width: 48,
+          height: 48,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: AppColors.surface.withValues(alpha: 0.94),
               borderRadius: BorderRadius.circular(AppRadius.md),
               border: Border.all(color: AppColors.line),
             ),

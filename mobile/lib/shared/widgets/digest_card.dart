@@ -22,80 +22,111 @@ class DigestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return PulseCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
-        children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, Color(0xFF6EA8FF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              digest.iconLabel,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  digest.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.sectionTitle,
-                ),
-                const SizedBox(height: 6),
-                _UpdateBadge(updateTime: digest.updateTime),
-                const SizedBox(height: 7),
-                Text(
-                  digest.subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.body,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 84,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: IconButton.filledTonal(
-                    onPressed: onPlay,
-                    icon: const Icon(Icons.play_arrow_rounded),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 330;
+
+          return Row(
+            children: [
+              Container(
+                width: compact ? 58 : 64,
+                height: compact ? 58 : 64,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: _colorsForDigest(digest.id),
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: onViewDetail,
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: const Size(0, 36),
-                  ),
-                  child: const Text('详情'),
+                alignment: Alignment.center,
+                child: Icon(_iconForDigest(digest.id), color: Colors.white),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        Text(
+                          digest.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.sectionTitle.copyWith(
+                            fontSize: compact ? 18 : 20,
+                          ),
+                        ),
+                        _UpdateBadge(updateTime: digest.updateTime),
+                      ],
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      digest.subtitle,
+                      maxLines: compact ? 1 : 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.body,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+              const SizedBox(width: 8),
+              IconButton.outlined(
+                onPressed: onPlay,
+                style: IconButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.borderBlue),
+                  fixedSize: Size(compact ? 42 : 46, compact ? 42 : 46),
+                ),
+                icon: const Icon(Icons.play_arrow_rounded),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: onViewDetail,
+                style: OutlinedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 12),
+                  minimumSize: Size(compact ? 54 : 78, compact ? 40 : 44),
+                ),
+                child: Text(compact ? '详情' : '查看详情'),
+              ),
+            ],
+          );
+        },
       ),
     );
+  }
+
+  List<Color> _colorsForDigest(String id) {
+    switch (id) {
+      case 'noon':
+        return const [Color(0xFF20B7D7), Color(0xFF54D0E5)];
+      case 'evening':
+        return const [Color(0xFF4F46E5), Color(0xFF7C6CF2)];
+      case 'ai':
+        return const [Color(0xFF0B55D9), Color(0xFF2B77F0)];
+      case 'ib':
+        return const [Color(0xFF2F76D2), Color(0xFF67A3F4)];
+      default:
+        return const [AppColors.primary, Color(0xFF6EA8FF)];
+    }
+  }
+
+  IconData _iconForDigest(String id) {
+    switch (id) {
+      case 'noon':
+        return Icons.access_time_rounded;
+      case 'evening':
+        return Icons.dark_mode_rounded;
+      case 'ai':
+        return Icons.smart_toy_rounded;
+      case 'ib':
+        return Icons.account_balance_rounded;
+      default:
+        return Icons.wb_twilight_rounded;
+    }
   }
 }
 

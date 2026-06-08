@@ -8,6 +8,19 @@ class AppAssets {
   static const String artSubscriptionGlobe =
       'assets/images/art_subscription_globe.png';
 
+  static const String artCleanGlobal = 'assets/images/art_clean_global.png';
+  static const String artCleanFinance = 'assets/images/art_clean_finance.png';
+  static const String artCleanDigest = 'assets/images/art_clean_digest.png';
+  static const String artCleanPlayer = 'assets/images/art_clean_player.png';
+  static const String artCleanSubscription =
+      'assets/images/art_clean_subscription.png';
+
+  static const String heroGlobal = 'assets/images/hero_global.png';
+  static const String heroFinance = 'assets/images/hero_finance.png';
+  static const String heroDigest = 'assets/images/hero_digest.png';
+  static const String heroPlayer = 'assets/images/hero_player.png';
+  static const String heroSubscription = 'assets/images/hero_subscription.png';
+
   static const String thumbNvidia = 'assets/images/thumb_nvidia.png';
   static const String thumbCity = 'assets/images/thumb_city.png';
   static const String thumbGoldman = 'assets/images/thumb_goldman.png';
