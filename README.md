@@ -28,12 +28,15 @@ Flutter 用户端 APP
 9. Docker Compose MySQL 开发配置。
 10. Flutter 高保真移动端 UI 首版：登录、首页、分类、订阅、资讯详情、每日简报、语音播放器、我的。
 11. 移动端主题 tokens、通用组件、mock 数据和统一路由。
+12. Android Studio、Android SDK 和 Android 模拟器已按 D 盘路径配置。
+13. 已完成 8 个 Flutter 页面模拟器截图验收和首轮 P2 排版修正。
+14. 已补充 Flutter 本机预览、APK 构建和透明插图资产生成说明。
 
 下一阶段：
 
 1. 启动 MySQL 并验证 Flyway migration。
-2. 实现分类、文章、简报核心 API。
-3. 将 Flutter mock 数据替换为 Spring Boot API 数据源。
+2. 设计并实现分类、文章、简报核心 API。
+3. 为 Flutter 增加 Repository 层，将 mock 数据切换为可替换数据源。
 4. 新建正式 React Admin 工程。
 
 ## 正式技术路线
@@ -90,14 +93,19 @@ docs/architecture/    架构图、环境说明和阶段计划
 1. 默认 Java 是 Java 8，保持不变。
 2. JDK 17 已安装在 `D:\Dev\jdk\jdk-17`。
 3. Flutter SDK 已安装在 `D:\Dev\flutter`。
-4. `mvn` 不在 PATH，但后端已使用 Maven Wrapper。
-5. Docker 可用。
+4. Android SDK 已安装在 `D:\Dev\Android\Sdk`。
+5. Android 模拟器数据目录使用 `D:\Dev\Android\Avd`。
+6. `mvn` 不在 PATH，但后端已使用 Maven Wrapper。
+7. Docker 可用。
 
 推荐安装路径：
 
 ```text
 D:\Dev\jdk\jdk-17
 D:\Dev\flutter
+D:\Dev\Android\Sdk
+D:\Dev\Android\Avd
+D:\Dev\Gradle
 ```
 
 已新增脚本：
@@ -137,6 +145,34 @@ Flutter 测试：
 .\scripts\use-flutter.ps1
 cd mobile
 flutter test
+```
+
+Flutter 本机预览：
+
+```powershell
+cd mobile
+$env:JAVA_HOME='D:\Dev\jdk\jdk-17'
+$env:ANDROID_HOME='D:\Dev\Android\Sdk'
+$env:ANDROID_SDK_ROOT='D:\Dev\Android\Sdk'
+$env:ANDROID_USER_HOME='D:\Dev\Android\.android'
+$env:ANDROID_AVD_HOME='D:\Dev\Android\Avd'
+$env:GRADLE_USER_HOME='D:\Dev\Gradle'
+$env:Path='D:\Dev\flutter\bin;D:\Dev\jdk\jdk-17\bin;D:\Dev\Android\Sdk\platform-tools;D:\Dev\Android\Sdk\emulator;D:\Dev\Android\Sdk\cmdline-tools\latest\bin;' + $env:Path
+flutter devices
+flutter run -d emulator-5554
+```
+
+构建 Android debug APK：
+
+```powershell
+cd mobile
+flutter build apk --debug --target-platform android-x64
+```
+
+APK 输出路径：
+
+```text
+mobile\build\app\outputs\flutter-apk\app-debug.apk
 ```
 
 ## 正式 V1 分阶段计划
@@ -195,6 +231,9 @@ flutter test
 5. [React/Vite PWA MVP 移除设计](./docs/工程裁剪与PWA移除设计.md)
 6. [Flutter UI 设计方向稿](./docs/UI设计方向稿.md)
 7. [Flutter 高保真 UI 实现设计](./docs/Flutter高保真UI实现设计.md)
+8. [Flutter 高保真 UI 逐页精修设计](./docs/Flutter高保真UI逐页精修设计.md)
+9. [Flutter 高保真 UI 截图验收记录](./docs/Flutter高保真UI截图验收记录.md)
+10. [下一阶段任务清单](./docs/下一阶段任务清单.md)
 
 ## 合规边界
 
