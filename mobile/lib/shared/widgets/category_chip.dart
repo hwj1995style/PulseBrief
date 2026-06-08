@@ -44,16 +44,19 @@ class CategoryChip extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Flexible(
-            child: Text(
-              label,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.label.copyWith(
-                color: disabled
-                    ? AppColors.textTertiary
-                    : _selected
-                    ? Colors.white
-                    : AppColors.textPrimary,
-                fontSize: 14,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: AppTextStyles.label.copyWith(
+                  color: disabled
+                      ? AppColors.textTertiary
+                      : _selected
+                      ? Colors.white
+                      : AppColors.textPrimary,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),

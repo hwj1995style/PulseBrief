@@ -24,13 +24,13 @@ class DigestCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 330;
+          final compact = constraints.maxWidth < 390;
 
           return Row(
             children: [
               Container(
-                width: compact ? 58 : 64,
-                height: compact ? 58 : 64,
+                width: compact ? 56 : 64,
+                height: compact ? 56 : 64,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: _colorsForDigest(digest.id),
@@ -42,7 +42,7 @@ class DigestCard extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Icon(_iconForDigest(digest.id), color: Colors.white),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: compact ? 10 : 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,7 +57,7 @@ class DigestCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.sectionTitle.copyWith(
-                            fontSize: compact ? 18 : 20,
+                            fontSize: compact ? 17 : 20,
                           ),
                         ),
                         _UpdateBadge(updateTime: digest.updateTime),
@@ -66,14 +66,14 @@ class DigestCard extends StatelessWidget {
                     const SizedBox(height: 7),
                     Text(
                       digest.subtitle,
-                      maxLines: compact ? 1 : 2,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.body,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: compact ? 6 : 8),
               IconButton.outlined(
                 onPressed: onPlay,
                 style: IconButton.styleFrom(
@@ -83,11 +83,11 @@ class DigestCard extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.play_arrow_rounded),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: compact ? 6 : 8),
               OutlinedButton(
                 onPressed: onViewDetail,
                 style: OutlinedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 12),
+                  padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 12),
                   minimumSize: Size(compact ? 54 : 78, compact ? 40 : 44),
                 ),
                 child: Text(compact ? '详情' : '查看详情'),
