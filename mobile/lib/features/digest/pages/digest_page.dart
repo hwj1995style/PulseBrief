@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:pulsebrief/app/routes.dart';
 import 'package:pulsebrief/core/constants/app_assets.dart';
 import 'package:pulsebrief/core/constants/app_strings.dart';
-import 'package:pulsebrief/mock/mock_digests.dart';
+import 'package:pulsebrief/shared/repositories/pulse_repository.dart';
+import 'package:pulsebrief/shared/repositories/repository_scope.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
 import 'package:pulsebrief/shared/theme/app_radius.dart';
 import 'package:pulsebrief/shared/theme/app_spacing.dart';
@@ -11,10 +12,52 @@ import 'package:pulsebrief/shared/theme/app_text_styles.dart';
 import 'package:pulsebrief/shared/widgets/app_header.dart';
 import 'package:pulsebrief/shared/widgets/brief_hero_card.dart';
 import 'package:pulsebrief/shared/widgets/digest_card.dart';
+import 'package:pulsebrief/shared/widgets/empty_state.dart';
+import 'package:pulsebrief/shared/widgets/loading_state.dart';
 import 'package:pulsebrief/shared/widgets/pulse_card.dart';
 
-class DigestPage extends StatelessWidget {
+class DigestPage extends StatefulWidget {
   const DigestPage({super.key});
+
+  @override
+  State<DigestPage> createState() => _DigestPageState();
+}
+
+class _DigestPageState extends State<DigestPage> {
+  bool _loaded = false;
+  bool _isLoading = true;
+  String? _errorMessage;
+  TodayDigestFeed? _feed;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loaded) {
+      _loaded = true;
+      _loadDigest();
+    }
+  }
+
+  Future<void> _loadDigest() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final feed = await RepositoryScope.of(context).getTodayDigest();
+      if (!mounted) return;
+      setState(() {
+        _feed = feed;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '简报加载失败，请稍后重试';
+        _isLoading = false;
+      });
+    }
+  }
 
   void _openPlayer(BuildContext context) {
     Navigator.pushNamed(context, PulseRoutes.player);
@@ -22,6 +65,20 @@ class DigestPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const SafeArea(bottom: false, child: LoadingState());
+    }
+    if (_errorMessage != null) {
+      return SafeArea(
+        bottom: false,
+        child: EmptyState(title: '加载失败', message: _errorMessage!),
+      );
+    }
+    final feed = _feed;
+    if (feed == null) {
+      return const SafeArea(bottom: false, child: EmptyState());
+    }
+
     return SafeArea(
       bottom: false,
       child: CustomScrollView(
@@ -48,8 +105,8 @@ class DigestPage extends StatelessWidget {
             sliver: SliverList.list(
               children: [
                 BriefHeroCard(
-                  title: '今日全球早报',
-                  subtitle: '精选全球、财经、AI 与投行观点 10 条重点',
+                  title: feed.headline.title,
+                  subtitle: feed.headline.subtitle,
                   description: '覆盖全球热点、市场动态、科技趋势与机构观点，帮助你快速完成每日信息输入。',
                   imageAsset: AppAssets.artCleanDigest,
                   primaryAction: '播放整篇简报',
@@ -58,7 +115,7 @@ class DigestPage extends StatelessWidget {
                   onSecondary: () {},
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
-                ...mockDigests.map(
+                ...feed.digests.map(
                   (digest) => Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
                     child: DigestCard(
@@ -100,12 +157,10 @@ class DigestPage extends StatelessWidget {
                         builder: (context, constraints) {
                           final twoColumns = constraints.maxWidth > 340;
                           if (!twoColumns) {
-                            return Column(
-                              children: _rankRows(digestHighlights),
-                            );
+                            return Column(children: _rankRows(feed.highlights));
                           }
-                          final left = digestHighlights.take(3).toList();
-                          final right = digestHighlights
+                          final left = feed.highlights.take(3).toList();
+                          final right = feed.highlights
                               .skip(3)
                               .take(3)
                               .toList();

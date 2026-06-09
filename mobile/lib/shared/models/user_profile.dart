@@ -14,4 +14,6 @@ class UserProfile {
   final int favoriteCount;
   final int readCount;
   final int playCount;
+
+  String get nickname => name;
 }

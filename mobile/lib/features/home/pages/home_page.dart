@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:pulsebrief/app/routes.dart';
 import 'package:pulsebrief/core/constants/app_assets.dart';
 import 'package:pulsebrief/core/constants/app_strings.dart';
-import 'package:pulsebrief/mock/mock_articles.dart';
 import 'package:pulsebrief/shared/models/article.dart';
+import 'package:pulsebrief/shared/repositories/pulse_repository.dart';
+import 'package:pulsebrief/shared/repositories/repository_scope.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
 import 'package:pulsebrief/shared/theme/app_radius.dart';
 import 'package:pulsebrief/shared/theme/app_spacing.dart';
@@ -12,6 +13,8 @@ import 'package:pulsebrief/shared/theme/app_text_styles.dart';
 import 'package:pulsebrief/shared/widgets/app_header.dart';
 import 'package:pulsebrief/shared/widgets/brief_hero_card.dart';
 import 'package:pulsebrief/shared/widgets/category_chip.dart';
+import 'package:pulsebrief/shared/widgets/empty_state.dart';
+import 'package:pulsebrief/shared/widgets/loading_state.dart';
 import 'package:pulsebrief/shared/widgets/mini_player.dart';
 import 'package:pulsebrief/shared/widgets/news_card.dart';
 import 'package:pulsebrief/shared/widgets/pulse_card.dart';
@@ -28,14 +31,45 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String _selectedCategory = '全部';
   bool _isPlaying = false;
-  late List<Article> _articles;
+  bool _loaded = false;
+  bool _isLoading = true;
+  String? _errorMessage;
+  DigestHero? _todayDigest;
+  Article? _investmentPick;
+  List<Article> _articles = const [];
 
   final _quickCategories = const ['全部', '财经', '科技', 'AI', '投行观点', '宏观'];
 
   @override
-  void initState() {
-    super.initState();
-    _articles = List<Article>.from(mockArticles);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loaded) {
+      _loaded = true;
+      _loadHomeFeed();
+    }
+  }
+
+  Future<void> _loadHomeFeed() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final feed = await RepositoryScope.of(context).getHomeFeed(pageSize: 20);
+      if (!mounted) return;
+      setState(() {
+        _todayDigest = feed.todayDigest;
+        _investmentPick = feed.investmentPick;
+        _articles = feed.articles;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '首页内容加载失败，请稍后重试';
+        _isLoading = false;
+      });
+    }
   }
 
   void _openArticle(Article article) {
@@ -56,15 +90,42 @@ class _HomePageState extends State<HomePage> {
           )
           .toList();
     });
+    final repository = RepositoryScope.of(context);
+    if (article.isFavorited) {
+      repository.unfavoriteArticle(article.id);
+    } else {
+      repository.favoriteArticle(article.id);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const SafeArea(bottom: false, child: LoadingState());
+    }
+    if (_errorMessage != null) {
+      return SafeArea(
+        bottom: false,
+        child: EmptyState(title: '加载失败', message: _errorMessage!),
+      );
+    }
+    if (_articles.isEmpty) {
+      return const SafeArea(bottom: false, child: EmptyState());
+    }
+
     final visibleArticles = _selectedCategory == '全部'
         ? _articles
         : _articles
               .where((item) => item.categoryName.contains(_selectedCategory))
               .toList();
+    final listedArticles = visibleArticles.isEmpty ? _articles : visibleArticles;
+    final investmentPick =
+        _investmentPick ??
+        _articles.firstWhere(
+          (item) => item.categoryName == '投行观点',
+          orElse: () => _articles.first,
+        );
+    final todayDigest = _todayDigest;
 
     return SafeArea(
       bottom: false,
@@ -80,8 +141,8 @@ class _HomePageState extends State<HomePage> {
             sliver: SliverList.list(
               children: [
                 BriefHeroCard(
-                  title: '今日全球简报',
-                  subtitle: '精选 10 条全球重点资讯',
+                  title: todayDigest?.title ?? '今日全球简报',
+                  subtitle: todayDigest?.subtitle ?? '精选 10 条全球重点资讯',
                   description: '为你精选全球热点、市场、科技、AI 与投行观点，10 分钟快速掌握世界动态。',
                   imageAsset: AppAssets.artCleanGlobal,
                   primaryAction: '一键播放今日简报',
@@ -110,18 +171,15 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
-                if (visibleArticles.isNotEmpty)
-                  NewsCard(
-                    article: visibleArticles.first,
-                    onTap: () => _openArticle(visibleArticles.first),
-                    onPlay: _openPlayer,
-                    onFavorite: () => _toggleFavorite(visibleArticles.first),
-                  ),
+                NewsCard(
+                  article: listedArticles.first,
+                  onTap: () => _openArticle(listedArticles.first),
+                  onPlay: _openPlayer,
+                  onFavorite: () => _toggleFavorite(listedArticles.first),
+                ),
                 const SizedBox(height: AppSpacing.sectionGap),
                 _InvestmentInsightCard(
-                  article: _articles.firstWhere(
-                    (item) => item.categoryName == '投行观点',
-                  ),
+                  article: investmentPick,
                   onTap: _openArticle,
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
@@ -139,7 +197,7 @@ class _HomePageState extends State<HomePage> {
             ),
             sliver: SliverList.separated(
               itemBuilder: (context, index) {
-                final article = visibleArticles[index % visibleArticles.length];
+                final article = listedArticles[index % listedArticles.length];
                 return NewsCard(
                   article: article,
                   onTap: () => _openArticle(article),
@@ -148,7 +206,7 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-              itemCount: visibleArticles.length,
+              itemCount: listedArticles.length,
             ),
           ),
           if (_isPlaying)

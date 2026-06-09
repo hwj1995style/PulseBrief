@@ -2,16 +2,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pulsebrief/app/routes.dart';
 import 'package:pulsebrief/core/constants/app_assets.dart';
-import 'package:pulsebrief/mock/mock_articles.dart';
-import 'package:pulsebrief/mock/mock_categories.dart';
 import 'package:pulsebrief/shared/models/article.dart';
 import 'package:pulsebrief/shared/models/news_category.dart';
+import 'package:pulsebrief/shared/repositories/repository_scope.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
 import 'package:pulsebrief/shared/theme/app_spacing.dart';
 import 'package:pulsebrief/shared/theme/app_text_styles.dart';
 import 'package:pulsebrief/shared/widgets/app_header.dart';
 import 'package:pulsebrief/shared/widgets/brief_hero_card.dart';
 import 'package:pulsebrief/shared/widgets/category_chip.dart';
+import 'package:pulsebrief/shared/widgets/empty_state.dart';
+import 'package:pulsebrief/shared/widgets/loading_state.dart';
 import 'package:pulsebrief/shared/widgets/news_card.dart';
 import 'package:pulsebrief/shared/widgets/pulse_card.dart';
 import 'package:pulsebrief/shared/widgets/section_header.dart';
@@ -24,13 +25,76 @@ class CategoryPage extends StatefulWidget {
 }
 
 class _CategoryPageState extends State<CategoryPage> {
-  NewsCategory _selected = mockCategories[1];
-  late List<Article> _articles;
+  bool _loaded = false;
+  bool _isLoading = true;
+  String? _errorMessage;
+  NewsCategory? _selected;
+  List<NewsCategory> _categories = const [];
+  List<Article> _articles = const [];
 
   @override
-  void initState() {
-    super.initState();
-    _articles = List<Article>.from(mockArticles);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loaded) {
+      _loaded = true;
+      _loadCategories();
+    }
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final repository = RepositoryScope.of(context);
+      final categories = await repository.getCategories();
+      final selected = categories.firstWhere(
+        (category) => category.code == 'finance',
+        orElse: () => categories.first,
+      );
+      final articles = await repository.getArticles(
+        categoryCode: selected.code,
+        pageSize: 20,
+      );
+      if (!mounted) return;
+      setState(() {
+        _categories = categories;
+        _selected = selected;
+        _articles = articles;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '分类内容加载失败，请稍后重试';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _selectCategory(NewsCategory category) async {
+    setState(() {
+      _selected = category;
+      _isLoading = true;
+    });
+    try {
+      final articles = await RepositoryScope.of(context).getArticles(
+        categoryCode: category.code,
+        pageSize: 20,
+      );
+      if (!mounted) return;
+      setState(() {
+        _articles = articles;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '分类内容加载失败，请稍后重试';
+        _isLoading = false;
+      });
+    }
   }
 
   void _openArticle(Article article) {
@@ -41,20 +105,22 @@ class _CategoryPageState extends State<CategoryPage> {
     Navigator.pushNamed(context, PulseRoutes.player);
   }
 
-  List<Article> get _categoryArticles {
-    final filtered = _articles
-        .where(
-          (article) =>
-              article.categoryName.contains(_selected.name[0]) ||
-              article.categoryName == _selected.name,
-        )
-        .toList();
-    return filtered.isEmpty ? _articles : filtered;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final articles = _categoryArticles;
+    if (_errorMessage != null) {
+      return SafeArea(
+        bottom: false,
+        child: EmptyState(title: '加载失败', message: _errorMessage!),
+      );
+    }
+    if (_isLoading && _categories.isEmpty) {
+      return const SafeArea(bottom: false, child: LoadingState());
+    }
+    final selected = _selected;
+    if (selected == null || _categories.isEmpty) {
+      return const SafeArea(bottom: false, child: EmptyState());
+    }
+    final articles = _articles;
 
     return SafeArea(
       bottom: false,
@@ -77,16 +143,16 @@ class _CategoryPageState extends State<CategoryPage> {
                   horizontal: AppSpacing.pagePadding,
                 ),
                 scrollDirection: Axis.horizontal,
-                itemCount: mockCategories.length,
+                itemCount: _categories.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
-                  final category = mockCategories[index];
+                  final category = _categories[index];
                   return CategoryChip(
                     label: category.name,
-                    state: category.code == _selected.code
+                    state: category.code == selected.code
                         ? CategoryChipState.selected
                         : CategoryChipState.normal,
-                    onTap: () => setState(() => _selected = category),
+                    onTap: () => _selectCategory(category),
                   );
                 },
               ),
@@ -97,10 +163,10 @@ class _CategoryPageState extends State<CategoryPage> {
             sliver: SliverList.list(
               children: [
                 BriefHeroCard(
-                  title: _selected.name,
-                  subtitle: _selected.description,
-                  description: '今日 ${_selected.todayCount} 条更新，精选重点事件和可播报摘要。',
-                  imageAsset: _selected.code == 'finance'
+                  title: selected.name,
+                  subtitle: selected.description,
+                  description: '今日 ${selected.todayCount} 条更新，精选重点事件和可播报摘要。',
+                  imageAsset: selected.code == 'finance'
                       ? AppAssets.artCleanFinance
                       : AppAssets.artCleanGlobal,
                   compact: true,
@@ -172,7 +238,7 @@ class _CategoryPageState extends State<CategoryPage> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sectionGap),
-                SectionHeader(title: '${_selected.name}资讯'),
+                SectionHeader(title: '${selected.name}资讯'),
                 const SizedBox(height: AppSpacing.md),
               ],
             ),

@@ -6,6 +6,7 @@ import 'package:pulsebrief/features/auth/widgets/brand_header.dart';
 import 'package:pulsebrief/features/auth/widgets/guest_entry_button.dart';
 import 'package:pulsebrief/features/auth/widgets/login_input_field.dart';
 import 'package:pulsebrief/features/auth/widgets/verification_code_button.dart';
+import 'package:pulsebrief/shared/repositories/repository_scope.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
 import 'package:pulsebrief/shared/theme/app_radius.dart';
 import 'package:pulsebrief/shared/theme/app_shadows.dart';
@@ -24,6 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   final _codeController = TextEditingController();
   bool _agreementAccepted = true;
   bool _codeSent = false;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -39,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
     ).showSnackBar(const SnackBar(content: Text('验证码已发送')));
   }
 
-  void _login() {
+  Future<void> _login() async {
     if (!_agreementAccepted) {
       ScaffoldMessenger.of(
         context,
@@ -47,10 +49,22 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    setState(() => _isSubmitting = true);
+    await RepositoryScope.of(context).login(
+      account: _accountController.text.trim(),
+      verificationCode: _codeController.text.trim(),
+      agreementAccepted: _agreementAccepted,
+    );
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
     Navigator.pushReplacementNamed(context, PulseRoutes.main);
   }
 
-  void _enterAsGuest() {
+  Future<void> _enterAsGuest() async {
+    setState(() => _isSubmitting = true);
+    await RepositoryScope.of(context).guest();
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
     Navigator.pushReplacementNamed(context, PulseRoutes.main);
   }
 
@@ -95,6 +109,7 @@ class _LoginPageState extends State<LoginPage> {
                               accountController: _accountController,
                               codeController: _codeController,
                               codeSent: _codeSent,
+                              isSubmitting: _isSubmitting,
                               onSendCode: _sendCode,
                               onLogin: _login,
                             ),
@@ -141,6 +156,7 @@ class _LoginPanel extends StatelessWidget {
     required this.accountController,
     required this.codeController,
     required this.codeSent,
+    required this.isSubmitting,
     required this.onSendCode,
     required this.onLogin,
   });
@@ -148,6 +164,7 @@ class _LoginPanel extends StatelessWidget {
   final TextEditingController accountController;
   final TextEditingController codeController;
   final bool codeSent;
+  final bool isSubmitting;
   final VoidCallback onSendCode;
   final VoidCallback onLogin;
 
@@ -195,7 +212,7 @@ class _LoginPanel extends StatelessWidget {
               ),
               child: FilledButton(
                 key: const ValueKey('login-submit-button'),
-                onPressed: onLogin,
+                onPressed: isSubmitting ? null : onLogin,
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
@@ -204,7 +221,7 @@ class _LoginPanel extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  '登录 / 注册',
+                  isSubmitting ? '登录中...' : '登录 / 注册',
                   style: AppTextStyles.title.copyWith(
                     color: Colors.white,
                     fontSize: 22,

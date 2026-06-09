@@ -10,15 +10,22 @@ import 'package:pulsebrief/features/player/pages/player_page.dart';
 import 'package:pulsebrief/features/subscription/pages/subscription_page.dart';
 import 'package:pulsebrief/mock/mock_articles.dart';
 import 'package:pulsebrief/shared/models/article.dart';
+import 'package:pulsebrief/shared/repositories/pulse_repository.dart';
+import 'package:pulsebrief/shared/repositories/pulse_repository_factory.dart';
+import 'package:pulsebrief/shared/repositories/repository_scope.dart';
 import 'package:pulsebrief/shared/theme/app_theme.dart';
 import 'package:pulsebrief/shared/widgets/mobile_viewport.dart';
 import 'package:pulsebrief/shared/widgets/pulse_bottom_nav.dart';
 
 class PulseBriefApp extends StatelessWidget {
-  const PulseBriefApp({super.key});
+  const PulseBriefApp({super.key, this.repository});
+
+  final PulseRepository? repository;
 
   @override
   Widget build(BuildContext context) {
+    final appRepository = repository ?? PulseRepositoryFactory.create();
+
     return MaterialApp(
       title: '脉闻 PulseBrief',
       debugShowCheckedModeBanner: false,
@@ -26,7 +33,10 @@ class PulseBriefApp extends StatelessWidget {
       initialRoute: PulseRoutes.login,
       onGenerateRoute: _onGenerateRoute,
       builder: (context, child) {
-        return MobileViewport(child: child ?? const SizedBox.shrink());
+        return RepositoryScope(
+          repository: appRepository,
+          child: MobileViewport(child: child ?? const SizedBox.shrink()),
+        );
       },
     );
   }

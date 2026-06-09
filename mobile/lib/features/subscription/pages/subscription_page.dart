@@ -4,12 +4,16 @@ import 'package:pulsebrief/app/routes.dart';
 import 'package:pulsebrief/core/constants/app_assets.dart';
 import 'package:pulsebrief/mock/mock_subscriptions.dart';
 import 'package:pulsebrief/shared/models/subscription_topic.dart';
+import 'package:pulsebrief/shared/repositories/pulse_repository.dart';
+import 'package:pulsebrief/shared/repositories/repository_scope.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
 import 'package:pulsebrief/shared/theme/app_radius.dart';
 import 'package:pulsebrief/shared/theme/app_spacing.dart';
 import 'package:pulsebrief/shared/theme/app_text_styles.dart';
 import 'package:pulsebrief/shared/widgets/app_header.dart';
 import 'package:pulsebrief/shared/widgets/category_chip.dart';
+import 'package:pulsebrief/shared/widgets/empty_state.dart';
+import 'package:pulsebrief/shared/widgets/loading_state.dart';
 import 'package:pulsebrief/shared/widgets/pulse_bottom_nav.dart';
 import 'package:pulsebrief/shared/widgets/pulse_card.dart';
 
@@ -21,7 +25,11 @@ class SubscriptionPage extends StatefulWidget {
 }
 
 class _SubscriptionPageState extends State<SubscriptionPage> {
-  late List<SubscriptionTopic> _topics;
+  bool _loaded = false;
+  bool _isLoading = true;
+  String? _errorMessage;
+  int _todayMatchedCount = 0;
+  List<SubscriptionTopic> _topics = const [];
   late List<SubscriptionTopic> _channels;
   final Map<String, bool> _pushPrefs = {
     '每日早报推送': true,
@@ -33,11 +41,53 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   @override
   void initState() {
     super.initState();
-    _topics = List<SubscriptionTopic>.from(mockSubscriptionTopics);
     _channels = List<SubscriptionTopic>.from(focusChannels);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loaded) {
+      _loaded = true;
+      _loadSubscriptions();
+    }
+  }
+
   int get _selectedCount => _topics.where((topic) => topic.selected).length;
+
+  List<SubscriptionTopic> get _selectedTopics {
+    return _topics.where((topic) => topic.selected).toList();
+  }
+
+  Future<void> _loadSubscriptions() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final snapshot = await RepositoryScope.of(context).getSubscriptions();
+      if (!mounted) return;
+      setState(() {
+        _applySnapshot(snapshot);
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '订阅内容加载失败，请稍后重试';
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _applySnapshot(SubscriptionSnapshot snapshot) {
+    _topics = snapshot.topics;
+    _todayMatchedCount = snapshot.todayMatchedCount;
+    _pushPrefs['每日早报推送'] = snapshot.preferences.morningDigest;
+    _pushPrefs['晚间复盘推送'] = snapshot.preferences.eveningReview;
+    _pushPrefs['突发热点推送'] = snapshot.preferences.breakingNews;
+    _pushPrefs['投行观点推送'] = snapshot.preferences.investmentView;
+  }
 
   void _toggleTopic(int index) {
     setState(() {
@@ -53,15 +103,59 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     });
   }
 
-  void _save() {
+  Future<void> _save() async {
+    final preferences = PushPreferences(
+      morningDigest: _pushPrefs['每日早报推送'] ?? true,
+      eveningReview: _pushPrefs['晚间复盘推送'] ?? true,
+      breakingNews: _pushPrefs['突发热点推送'] ?? false,
+      investmentView: _pushPrefs['投行观点推送'] ?? false,
+    );
+    final selectedCodes = _selectedTopics.map((topic) {
+      return _codeForTopicName(topic.name);
+    }).toList();
+    final snapshot = await RepositoryScope.of(context).saveSubscriptions(
+      categoryCodes: selectedCodes,
+      preferences: preferences,
+    );
+    if (!mounted) return;
+    setState(() => _applySnapshot(snapshot));
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('订阅已保存')));
   }
 
+  String _codeForTopicName(String name) {
+    return switch (name) {
+      '全球热点' => 'global',
+      '财经市场' => 'finance',
+      '科技趋势' => 'tech',
+      'AI 前沿' => 'ai',
+      '宏观政策' => 'macro',
+      '投行观点' => 'investment_view',
+      '产业观察' => 'industry',
+      '公司动态' => 'company',
+      '中美动态' => 'china_us',
+      '半导体' => 'semiconductor',
+      '新能源' => 'new_energy',
+      '数字资产' => 'digital_asset',
+      _ => name,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
+
+    if (_isLoading) {
+      return const Scaffold(body: SafeArea(child: LoadingState()));
+    }
+    if (_errorMessage != null) {
+      return Scaffold(
+        body: SafeArea(
+          child: EmptyState(title: '加载失败', message: _errorMessage!),
+        ),
+      );
+    }
 
     return Scaffold(
       bottomNavigationBar: Column(
@@ -116,7 +210,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               padding: EdgeInsets.fromLTRB(20, 0, 20, 24 + bottom),
               sliver: SliverList.list(
                 children: [
-                  _OverviewCard(selectedCount: _selectedCount),
+                  _OverviewCard(
+                    selectedCount: _selectedCount,
+                    selectedTopics: _selectedTopics,
+                    todayMatchedCount: _todayMatchedCount,
+                  ),
                   const SizedBox(height: AppSpacing.lg),
                   PulseCard(
                     child: Column(
@@ -216,9 +314,15 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 }
 
 class _OverviewCard extends StatelessWidget {
-  const _OverviewCard({required this.selectedCount});
+  const _OverviewCard({
+    required this.selectedCount,
+    required this.selectedTopics,
+    required this.todayMatchedCount,
+  });
 
   final int selectedCount;
+  final List<SubscriptionTopic> selectedTopics;
+  final int todayMatchedCount;
 
   @override
   Widget build(BuildContext context) {
@@ -246,28 +350,15 @@ class _OverviewCard extends StatelessWidget {
               Wrap(
                 spacing: 10,
                 runSpacing: 10,
-                children: const [
-                  CategoryChip(
-                    label: '全球热点',
-                    state: CategoryChipState.selected,
-                  ),
-                  CategoryChip(
-                    label: '财经市场',
-                    state: CategoryChipState.selected,
-                  ),
-                  CategoryChip(
-                    label: 'AI 前沿',
-                    state: CategoryChipState.selected,
-                  ),
-                  CategoryChip(
-                    label: '投行观点',
-                    state: CategoryChipState.selected,
-                  ),
-                  CategoryChip(
-                    label: '科技趋势',
-                    state: CategoryChipState.selected,
-                  ),
-                ],
+                children: selectedTopics
+                    .take(5)
+                    .map(
+                      (topic) => CategoryChip(
+                        label: topic.name,
+                        state: CategoryChipState.selected,
+                      ),
+                    )
+                    .toList(),
               ),
               const SizedBox(height: 14),
               Container(
@@ -280,7 +371,7 @@ class _OverviewCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Text(
-                  '今日已为你筛选 42 条重点资讯',
+                  '今日已为你筛选 $todayMatchedCount 条重点资讯',
                   style: AppTextStyles.body.copyWith(
                     color: AppColors.textPrimary,
                   ),
