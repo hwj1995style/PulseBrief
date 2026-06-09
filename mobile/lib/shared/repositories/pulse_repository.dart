@@ -55,6 +55,8 @@ abstract class PulseRepository {
     int pageSize = 20,
   });
 
+  Future<bool> clearReadHistory();
+
   Future<int> recordPlayback({
     required String playType,
     String? articleId,
@@ -67,6 +69,8 @@ abstract class PulseRepository {
     int page = 1,
     int pageSize = 20,
   });
+
+  Future<bool> clearPlaybackHistory();
 }
 
 class AuthSession {

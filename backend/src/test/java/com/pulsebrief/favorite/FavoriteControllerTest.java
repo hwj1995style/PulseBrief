@@ -1,6 +1,7 @@
 package com.pulsebrief.favorite;
 
 import com.pulsebrief.article.api.ArticleCardResponse;
+import com.pulsebrief.common.api.PageResponse;
 import com.pulsebrief.favorite.api.FavoriteController;
 import com.pulsebrief.favorite.api.FavoriteResponse;
 import com.pulsebrief.favorite.service.FavoriteService;
@@ -50,7 +51,7 @@ class FavoriteControllerTest {
 
     @Test
     void listsFavoritesForLoggedInUser() throws Exception {
-        when(favoriteService.listFavorites(1L, 1, 20)).thenReturn(List.of(new ArticleCardResponse(
+        when(favoriteService.listFavorites(1L, 1, 20)).thenReturn(PageResponse.of(List.of(new ArticleCardResponse(
                 10L,
                 "高盛：AI 基建投资仍将持续",
                 "Goldman Sachs Research",
@@ -63,13 +64,17 @@ class FavoriteControllerTest {
                 true,
                 false,
                 true
-        )));
+        )), 1, 20, 1L));
 
         mockMvc.perform(get("/api/user/favorites")
                         .header("Authorization", "Bearer dev-token-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("OK"))
-                .andExpect(jsonPath("$.data[0].id").value(10))
-                .andExpect(jsonPath("$.data[0].favorited").value(true));
+                .andExpect(jsonPath("$.data.items[0].id").value(10))
+                .andExpect(jsonPath("$.data.items[0].favorited").value(true))
+                .andExpect(jsonPath("$.data.page").value(1))
+                .andExpect(jsonPath("$.data.pageSize").value(20))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.hasMore").value(false));
     }
 }

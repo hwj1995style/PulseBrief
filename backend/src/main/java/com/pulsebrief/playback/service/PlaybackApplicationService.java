@@ -1,5 +1,6 @@
 package com.pulsebrief.playback.service;
 
+import com.pulsebrief.common.api.PageResponse;
 import com.pulsebrief.playback.api.PlaybackHistoryItemResponse;
 import com.pulsebrief.playback.api.PlaybackHistoryRequest;
 import com.pulsebrief.playback.api.PlaybackHistoryResponse;
@@ -35,12 +36,19 @@ public class PlaybackApplicationService implements PlaybackService {
     }
 
     @Override
-    public List<PlaybackHistoryItemResponse> listPlaybackHistory(Long userId, Integer page, Integer pageSize) {
+    public PageResponse<PlaybackHistoryItemResponse> listPlaybackHistory(Long userId, Integer page, Integer pageSize) {
         PageRequest pageable = PageRequest.of(safePage(page), safePageSize(pageSize));
-        return playHistoryRepository.findByUserIdOrderByPlayTimeDesc(userId, pageable)
+        List<PlaybackHistoryItemResponse> items = playHistoryRepository.findByUserIdOrderByPlayTimeDesc(userId, pageable)
                 .stream()
                 .map(this::toHistoryItem)
                 .toList();
+        return PageResponse.of(items, page, pageSize, playHistoryRepository.countByUserId(userId).longValue());
+    }
+
+    @Override
+    public Boolean clearPlaybackHistory(Long userId) {
+        playHistoryRepository.deleteByUserId(userId);
+        return true;
     }
 
     private PlaybackHistoryItemResponse toHistoryItem(UserPlayHistory history) {

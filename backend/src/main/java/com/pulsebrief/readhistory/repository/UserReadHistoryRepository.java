@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface UserReadHistoryRepository extends JpaRepository<UserReadHistory, Long> {
     Integer countByUserId(Long userId);
@@ -20,4 +21,7 @@ public interface UserReadHistoryRepository extends JpaRepository<UserReadHistory
             order by history.readTime desc
             """)
     List<NewsArticle> findReadArticles(@Param("userId") Long userId, Pageable pageable);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }

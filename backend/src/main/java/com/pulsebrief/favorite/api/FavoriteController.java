@@ -2,9 +2,9 @@ package com.pulsebrief.favorite.api;
 
 import com.pulsebrief.article.api.ArticleCardResponse;
 import com.pulsebrief.common.api.ApiResponse;
+import com.pulsebrief.common.api.PageResponse;
 import com.pulsebrief.common.security.DevTokenSupport;
 import com.pulsebrief.favorite.service.FavoriteService;
-import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,7 +42,7 @@ public class FavoriteController {
     }
 
     @GetMapping("/api/user/favorites")
-    public ApiResponse<List<ArticleCardResponse>> favorites(
+    public ApiResponse<PageResponse<ArticleCardResponse>> favorites(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize

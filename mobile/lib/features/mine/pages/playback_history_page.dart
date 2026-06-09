@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:pulsebrief/shared/models/playback_history_item.dart';
 import 'package:pulsebrief/shared/repositories/repository_scope.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
@@ -23,64 +24,92 @@ class _PlaybackHistoryPageState extends State<PlaybackHistoryPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _historyFuture = RepositoryScope.of(context).getPlaybackHistory();
+    _historyFuture = _loadHistory();
+  }
+
+  Future<List<PlaybackHistoryItem>> _loadHistory() {
+    return RepositoryScope.of(context).getPlaybackHistory();
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _historyFuture = _loadHistory();
+    });
+    await _historyFuture;
+  }
+
+  Future<void> _clearPlaybackHistory() async {
+    await RepositoryScope.of(context).clearPlaybackHistory();
+    setState(() {
+      _historyFuture = Future.value(const []);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       bottom: false,
-      child: CustomScrollView(
-        slivers: [
-          const SliverToBoxAdapter(
-            child: AppHeader(
-              title: '播放历史',
-              subtitle: '最近听过的资讯播报与每日简报',
-              leading: BackSquareButton(),
-              topPadding: AppSpacing.md,
+      child: RefreshIndicator(
+        onRefresh: _refresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: AppHeader(
+                title: '播放历史',
+                subtitle: '最近听过的资讯播报与每日简报',
+                leading: const BackSquareButton(),
+                actions: [
+                  PulseIconButton(
+                    icon: CupertinoIcons.trash,
+                    onPressed: _clearPlaybackHistory,
+                  ),
+                ],
+                topPadding: AppSpacing.md,
+              ),
             ),
-          ),
-          FutureBuilder<List<PlaybackHistoryItem>>(
-            future: _historyFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const SliverFillRemaining(child: LoadingState());
-              }
-              if (snapshot.hasError) {
-                return const SliverFillRemaining(
-                  child: EmptyState(
-                    title: '加载失败',
-                    message: '暂时无法获取播放历史，请稍后重试。',
+            FutureBuilder<List<PlaybackHistoryItem>>(
+              future: _historyFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const SliverFillRemaining(child: LoadingState());
+                }
+                if (snapshot.hasError) {
+                  return const SliverFillRemaining(
+                    child: EmptyState(
+                      title: '加载失败',
+                      message: '暂时无法获取播放历史，请稍后重试。',
+                    ),
+                  );
+                }
+                final items = snapshot.data ?? const [];
+                if (items.isEmpty) {
+                  return const SliverFillRemaining(
+                    child: EmptyState(
+                      title: '暂无播放历史',
+                      message: '播放资讯或简报后会出现在这里。',
+                    ),
+                  );
+                }
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.pagePadding,
+                    0,
+                    AppSpacing.pagePadding,
+                    120,
+                  ),
+                  sliver: SliverList.separated(
+                    itemCount: items.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      return _PlaybackHistoryCard(item: items[index]);
+                    },
                   ),
                 );
-              }
-              final items = snapshot.data ?? const [];
-              if (items.isEmpty) {
-                return const SliverFillRemaining(
-                  child: EmptyState(
-                    title: '暂无播放历史',
-                    message: '播放资讯或简报后会出现在这里。',
-                  ),
-                );
-              }
-              return SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.pagePadding,
-                  0,
-                  AppSpacing.pagePadding,
-                  120,
-                ),
-                sliver: SliverList.separated(
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    return _PlaybackHistoryCard(item: items[index]);
-                  },
-                ),
-              );
-            },
-          ),
-        ],
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

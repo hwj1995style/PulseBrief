@@ -1,9 +1,11 @@
 package com.pulsebrief.playback.api;
 
 import com.pulsebrief.common.api.ApiResponse;
+import com.pulsebrief.common.api.ClearResponse;
+import com.pulsebrief.common.api.PageResponse;
 import com.pulsebrief.common.security.DevTokenSupport;
 import com.pulsebrief.playback.service.PlaybackService;
-import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,12 +33,21 @@ public class PlaybackController {
     }
 
     @GetMapping
-    public ApiResponse<List<PlaybackHistoryItemResponse>> playbackHistory(
+    public ApiResponse<PageResponse<PlaybackHistoryItemResponse>> playbackHistory(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize
     ) {
         Long userId = DevTokenSupport.requireUserId(authorization);
         return ApiResponse.ok(playbackService.listPlaybackHistory(userId, page, pageSize));
+    }
+
+    @DeleteMapping
+    public ApiResponse<ClearResponse> clearPlaybackHistory(
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        Long userId = DevTokenSupport.requireUserId(authorization);
+        playbackService.clearPlaybackHistory(userId);
+        return ApiResponse.ok(ClearResponse.ok());
     }
 }

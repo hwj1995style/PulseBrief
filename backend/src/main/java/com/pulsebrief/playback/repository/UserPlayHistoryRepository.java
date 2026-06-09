@@ -4,9 +4,13 @@ import com.pulsebrief.playback.domain.UserPlayHistory;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface UserPlayHistoryRepository extends JpaRepository<UserPlayHistory, Long> {
     Integer countByUserId(Long userId);
 
     List<UserPlayHistory> findByUserIdOrderByPlayTimeDesc(Long userId, Pageable pageable);
+
+    @Transactional
+    void deleteByUserId(Long userId);
 }

@@ -14,10 +14,26 @@ import 'package:pulsebrief/shared/repositories/pulse_repository.dart';
 class MockPulseRepository implements PulseRepository {
   MockPulseRepository()
     : _articles = List<Article>.from(mockArticles),
-      _topics = List<SubscriptionTopic>.from(mockSubscriptionTopics);
+      _topics = List<SubscriptionTopic>.from(mockSubscriptionTopics),
+      _readHistory = List<Article>.from(mockArticles),
+      _playbackHistory = mockArticles
+          .map(
+            (article) => PlaybackHistoryItem(
+              id: article.id,
+              playType: 'ARTICLE',
+              articleId: article.id,
+              digestId: null,
+              playTitle: article.title,
+              playTime: article.publishTime,
+              durationSeconds: 168,
+            ),
+          )
+          .toList();
 
   List<Article> _articles;
   List<SubscriptionTopic> _topics;
+  List<Article> _readHistory;
+  List<PlaybackHistoryItem> _playbackHistory;
   String _token = '';
 
   @override
@@ -214,7 +230,13 @@ class MockPulseRepository implements PulseRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    return _articles.take(pageSize).toList();
+    return _readHistory.take(pageSize).toList();
+  }
+
+  @override
+  Future<bool> clearReadHistory() async {
+    _readHistory = [];
+    return true;
   }
 
   @override
@@ -233,20 +255,13 @@ class MockPulseRepository implements PulseRepository {
     int page = 1,
     int pageSize = 20,
   }) async {
-    return _articles
-        .take(pageSize)
-        .map(
-          (article) => PlaybackHistoryItem(
-            id: article.id,
-            playType: 'ARTICLE',
-            articleId: article.id,
-            digestId: null,
-            playTitle: article.title,
-            playTime: article.publishTime,
-            durationSeconds: 168,
-          ),
-        )
-        .toList();
+    return _playbackHistory.take(pageSize).toList();
+  }
+
+  @override
+  Future<bool> clearPlaybackHistory() async {
+    _playbackHistory = [];
+    return true;
   }
 
   String _codeForTopicName(String name) {

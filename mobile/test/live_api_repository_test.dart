@@ -74,6 +74,9 @@ void main() {
       expect(favorites.map((item) => item.id), contains(article.id));
       expect(readHistory.map((item) => item.id), contains(article.id));
       expect(playbackHistory, isNotEmpty);
+
+      expect(await repository.clearReadHistory(), isTrue);
+      expect(await repository.clearPlaybackHistory(), isTrue);
     },
     skip: _liveApiEnabled ? false : 'Set PULSEBRIEF_LIVE_API=true to run.',
   );

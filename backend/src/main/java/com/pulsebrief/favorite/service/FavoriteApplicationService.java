@@ -2,6 +2,7 @@ package com.pulsebrief.favorite.service;
 
 import com.pulsebrief.article.api.ArticleCardResponse;
 import com.pulsebrief.article.service.ArticleCardMapper;
+import com.pulsebrief.common.api.PageResponse;
 import com.pulsebrief.favorite.api.FavoriteResponse;
 import com.pulsebrief.favorite.domain.UserFavorite;
 import com.pulsebrief.favorite.repository.UserFavoriteRepository;
@@ -39,12 +40,13 @@ public class FavoriteApplicationService implements FavoriteService {
     }
 
     @Override
-    public List<ArticleCardResponse> listFavorites(Long userId, Integer page, Integer pageSize) {
+    public PageResponse<ArticleCardResponse> listFavorites(Long userId, Integer page, Integer pageSize) {
         PageRequest pageable = PageRequest.of(safePage(page), safePageSize(pageSize));
-        return favoriteRepository.findFavoriteArticles(userId, pageable)
+        List<ArticleCardResponse> items = favoriteRepository.findFavoriteArticles(userId, pageable)
                 .stream()
                 .map(articleCardMapper::toFavoriteCard)
                 .toList();
+        return PageResponse.of(items, page, pageSize, favoriteRepository.countByUserId(userId).longValue());
     }
 
     private int safePage(Integer page) {

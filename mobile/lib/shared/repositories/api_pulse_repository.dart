@@ -254,6 +254,15 @@ class ApiPulseRepository implements PulseRepository {
   }
 
   @override
+  Future<bool> clearReadHistory() async {
+    final json = await transport.deleteJson(
+      '/user/read-history',
+      token: _accessToken,
+    );
+    return _dataMap(json)['cleared'] == true;
+  }
+
+  @override
   Future<int> recordPlayback({
     required String playType,
     String? articleId,
@@ -285,6 +294,15 @@ class ApiPulseRepository implements PulseRepository {
       token: _accessToken,
     );
     return _dataList(json).map(_playbackHistoryFromJson).toList();
+  }
+
+  @override
+  Future<bool> clearPlaybackHistory() async {
+    final json = await transport.deleteJson(
+      '/playback/history',
+      token: _accessToken,
+    );
+    return _dataMap(json)['cleared'] == true;
   }
 
   Article _articleFromJson(Map<String, Object?> json) {
@@ -464,7 +482,11 @@ class ApiPulseRepository implements PulseRepository {
   }
 
   List<Map<String, Object?>> _dataList(Map<String, Object?> json) {
-    return _list(json['data']).map(_map).toList();
+    final data = json['data'];
+    if (data is Map) {
+      return _list(data['items']).map(_map).toList();
+    }
+    return _list(data).map(_map).toList();
   }
 
   Map<String, Object?> _map(Object? value) {

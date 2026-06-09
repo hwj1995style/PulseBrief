@@ -44,6 +44,8 @@ flutter test --dart-define=PULSEBRIEF_LIVE_API=true --dart-define=PULSEBRIEF_API
 13. `POST /api/user/read-history`
 14. `GET /api/user/read-history`
 15. `GET /api/playback/history`
+16. `DELETE /api/user/read-history`
+17. `DELETE /api/playback/history`
 
 ## 本轮发现与修复
 
@@ -86,7 +88,8 @@ PowerShell 冒烟脚本发送中文播放标题时出现非 UTF-8 请求体。Fl
 3. 后端订阅保存与播放历史写入已通过真实 MySQL + Spring Boot 冒烟。
 4. 用户中心资料接口已接入，API 模式“我的”页资料与统计不再直接依赖本地 `mockUser`。
 5. 用户收藏、阅读历史和播放历史列表已接入，API 模式“我的”页三个入口可打开真实列表。
-6. Android 模拟器 API 模式已完成 8 页面页面级截图验收。
+6. 用户列表接口已切换分页响应，Flutter API Repository 已兼容 `data.items`。
+7. Android 模拟器 API 模式已完成 8 页面页面级截图验收。
 
 ## Android 模拟器页面级验收
 
@@ -150,6 +153,8 @@ GET  /api/user/favorites
 POST /api/user/read-history
 GET  /api/user/read-history
 GET  /api/playback/history
+DELETE /api/user/read-history
+DELETE /api/playback/history
 ```
 
 验证结果：
@@ -158,3 +163,5 @@ GET  /api/playback/history
 2. Flutter live API 测试已覆盖阅读历史写入后读取阅读历史列表。
 3. Flutter live API 测试已覆盖播放历史写入后读取播放历史列表。
 4. “我的收藏”“阅读历史”“播放历史”三个页面在 mock 模式 widget 测试中可打开。
+5. Flutter live API 测试已覆盖阅读历史和播放历史清空接口。
+6. Flutter Repository 测试已覆盖分页响应 `items` 解析。

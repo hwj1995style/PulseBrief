@@ -2,6 +2,7 @@ package com.pulsebrief.readhistory.service;
 
 import com.pulsebrief.article.api.ArticleCardResponse;
 import com.pulsebrief.article.service.ArticleCardMapper;
+import com.pulsebrief.common.api.PageResponse;
 import com.pulsebrief.readhistory.api.ReadHistoryRecordResponse;
 import com.pulsebrief.readhistory.domain.UserReadHistory;
 import com.pulsebrief.readhistory.repository.UserReadHistoryRepository;
@@ -29,12 +30,19 @@ public class ReadHistoryApplicationService implements ReadHistoryService {
     }
 
     @Override
-    public List<ArticleCardResponse> listReadHistory(Long userId, Integer page, Integer pageSize) {
+    public PageResponse<ArticleCardResponse> listReadHistory(Long userId, Integer page, Integer pageSize) {
         PageRequest pageable = PageRequest.of(safePage(page), safePageSize(pageSize));
-        return readHistoryRepository.findReadArticles(userId, pageable)
+        List<ArticleCardResponse> items = readHistoryRepository.findReadArticles(userId, pageable)
                 .stream()
                 .map(articleCardMapper::toCard)
                 .toList();
+        return PageResponse.of(items, page, pageSize, readHistoryRepository.countByUserId(userId).longValue());
+    }
+
+    @Override
+    public Boolean clearReadHistory(Long userId) {
+        readHistoryRepository.deleteByUserId(userId);
+        return true;
     }
 
     private int safePage(Integer page) {

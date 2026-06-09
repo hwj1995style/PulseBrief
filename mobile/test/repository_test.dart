@@ -89,29 +89,55 @@ void main() {
         },
         'GET /user/favorites?page=1&pageSize=20': {
           'code': 'OK',
-          'data': [_articleJson(id: 2, categoryName: 'AI 前沿')],
+          'data': {
+            'items': [_articleJson(id: 2, categoryName: 'AI 前沿')],
+            'page': 1,
+            'pageSize': 20,
+            'total': 1,
+            'hasMore': false,
+          },
         },
         'GET /user/read-history?page=1&pageSize=20': {
           'code': 'OK',
-          'data': [_articleJson(id: 3, categoryName: '宏观政策')],
+          'data': {
+            'items': [_articleJson(id: 3, categoryName: '宏观政策')],
+            'page': 1,
+            'pageSize': 20,
+            'total': 1,
+            'hasMore': false,
+          },
         },
         'GET /playback/history?page=1&pageSize=20': {
           'code': 'OK',
-          'data': [
-            {
-              'id': 99,
-              'playType': 'ARTICLE',
-              'articleId': 2,
-              'digestId': null,
-              'playTitle': '高盛：AI 基建投资仍将持续',
-              'playTime': '2026-06-09T09:30:00+08:00',
-              'durationSeconds': 168,
-            },
-          ],
+          'data': {
+            'items': [
+              {
+                'id': 99,
+                'playType': 'ARTICLE',
+                'articleId': 2,
+                'digestId': null,
+                'playTitle': '高盛：AI 基建投资仍将持续',
+                'playTime': '2026-06-09T09:30:00+08:00',
+                'durationSeconds': 168,
+              },
+            ],
+            'page': 1,
+            'pageSize': 20,
+            'total': 1,
+            'hasMore': false,
+          },
         },
         'POST /user/read-history': {
           'code': 'OK',
           'data': {'id': 77},
+        },
+        'DELETE /user/read-history': {
+          'code': 'OK',
+          'data': {'cleared': true},
+        },
+        'DELETE /playback/history': {
+          'code': 'OK',
+          'data': {'cleared': true},
         },
         'GET /articles/home?categoryCode=all&pageSize=20': {
           'code': 'OK',
@@ -162,6 +188,8 @@ void main() {
     final readHistory = await repository.getReadHistoryArticles();
     final playbackHistory = await repository.getPlaybackHistory();
     final readHistoryId = await repository.recordReadHistory(articleId: '2');
+    final readHistoryCleared = await repository.clearReadHistory();
+    final playbackHistoryCleared = await repository.clearPlaybackHistory();
     final homeFeed = await repository.getHomeFeed();
     final digestFeed = await repository.getTodayDigest();
 
@@ -173,6 +201,8 @@ void main() {
     expect(playbackHistory.single.id, '99');
     expect(playbackHistory.single.playTitle, contains('高盛'));
     expect(readHistoryId, 77);
+    expect(readHistoryCleared, isTrue);
+    expect(playbackHistoryCleared, isTrue);
     expect(categories.single.name, '财经市场');
     expect(homeFeed.todayDigest.title, '今日全球简报');
     expect(homeFeed.articles.single.id, '1');

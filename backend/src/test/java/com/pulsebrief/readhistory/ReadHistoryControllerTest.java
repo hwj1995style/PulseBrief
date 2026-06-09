@@ -1,6 +1,7 @@
 package com.pulsebrief.readhistory;
 
 import com.pulsebrief.article.api.ArticleCardResponse;
+import com.pulsebrief.common.api.PageResponse;
 import com.pulsebrief.readhistory.api.ReadHistoryController;
 import com.pulsebrief.readhistory.api.ReadHistoryRecordResponse;
 import com.pulsebrief.readhistory.service.ReadHistoryService;
@@ -14,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -46,7 +48,7 @@ class ReadHistoryControllerTest {
 
     @Test
     void listsReadHistoryForLoggedInUser() throws Exception {
-        when(readHistoryService.listReadHistory(1L, 1, 20)).thenReturn(List.of(new ArticleCardResponse(
+        when(readHistoryService.listReadHistory(1L, 1, 20)).thenReturn(PageResponse.of(List.of(new ArticleCardResponse(
                 10L,
                 "高盛：AI 基建投资仍将持续",
                 "Goldman Sachs Research",
@@ -59,12 +61,27 @@ class ReadHistoryControllerTest {
                 true,
                 false,
                 false
-        )));
+        )), 1, 20, 1L));
 
         mockMvc.perform(get("/api/user/read-history")
                         .header("Authorization", "Bearer dev-token-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("OK"))
-                .andExpect(jsonPath("$.data[0].id").value(10));
+                .andExpect(jsonPath("$.data.items[0].id").value(10))
+                .andExpect(jsonPath("$.data.page").value(1))
+                .andExpect(jsonPath("$.data.pageSize").value(20))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.hasMore").value(false));
+    }
+
+    @Test
+    void clearsReadHistoryForLoggedInUser() throws Exception {
+        when(readHistoryService.clearReadHistory(1L)).thenReturn(true);
+
+        mockMvc.perform(delete("/api/user/read-history")
+                        .header("Authorization", "Bearer dev-token-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("OK"))
+                .andExpect(jsonPath("$.data.cleared").value(true));
     }
 }
