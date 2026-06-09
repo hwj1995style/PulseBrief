@@ -27,6 +27,8 @@ springdoc:
   paths-to-match: /api/**
 
 pulsebrief:
+  admin:
+    token: ${PULSEBRIEF_ADMIN_TOKEN:dev-admin-token}
   ingestion:
     enabled: ${PULSEBRIEF_INGESTION_ENABLED:false}
     sources: []

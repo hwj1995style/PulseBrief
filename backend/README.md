@@ -55,6 +55,13 @@ Swagger UI 调试需要登录接口时，使用开发态 Bearer Token：
 Authorization: Bearer dev-token-1
 ```
 
+Admin API 使用独立开发态 Token，默认值可通过环境变量覆盖：
+
+```text
+PULSEBRIEF_ADMIN_TOKEN=dev-admin-token
+Authorization: Bearer dev-admin-token
+```
+
 ## News Ingestion
 
 真实资讯采集 V1 已开始搭建后端基础能力。当前阶段提供 `FIXTURE` Provider，用于验证采集抽象、配置绑定和入库流程；不会请求真实外部 API，也不需要 API Key。
@@ -67,7 +74,7 @@ PULSEBRIEF_INGESTION_ENABLED=false
 
 当前已新增原始资讯池、采集任务日志、采集源配置表和候选资讯审核池。采集后的 `raw_news_item` 可生成 `PENDING_REVIEW` 候选资讯，未审核候选不会进入用户端文章 API。
 
-Admin 审核发布 API 设计见 `docs/Admin审核发布V1设计.md`。当前已完成接口边界设计，Admin API 代码实现将按设计分阶段推进。
+Admin 审核发布 API 设计见 `docs/Admin审核发布V1设计.md`。当前已实现 `/api/admin/candidates` 候选列表、详情、编辑、拒绝和发布接口；Admin Token 与用户端 Token 隔离，候选发布后会写入 `news_article`，用户端只读取已发布文章。
 
 最新内容与授权全文/PDF 采集设计见 `docs/最新内容与授权全文PDF采集V1设计.md`。真实 Provider 必须默认只采集最新内容：新闻默认 24 小时窗口，公开报告和授权 PDF 默认 72 小时窗口；付费研报、登录后 PDF、历史研报库和未授权全文不进入 V1。当前后端已支持采集源许可字段、最新窗口过滤、`report_asset` 授权 PDF 元数据入库和文件哈希去重；授权全文字段与 PDF 文件缓存后续分阶段实现。
 

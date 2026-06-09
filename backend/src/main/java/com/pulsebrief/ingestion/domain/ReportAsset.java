@@ -93,6 +93,22 @@ public class ReportAsset {
         return fileHash;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public String getOriginalUrl() {
+        return originalUrl;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public Long getFileSizeBytes() {
+        return fileSizeBytes;
+    }
+
     public String getLicensePolicy() {
         return licensePolicy;
     }

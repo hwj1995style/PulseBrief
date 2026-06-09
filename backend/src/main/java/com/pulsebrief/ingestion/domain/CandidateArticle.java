@@ -82,6 +82,10 @@ public class CandidateArticle {
         return title;
     }
 
+    public String getSummary() {
+        return summary;
+    }
+
     public String getCategoryCode() {
         return categoryCode;
     }
@@ -94,7 +98,44 @@ public class CandidateArticle {
         return originalUrl;
     }
 
+    public LocalDateTime getPublishedAt() {
+        return publishedAt;
+    }
+
     public String getStatus() {
         return status;
+    }
+
+    public String getReviewNote() {
+        return reviewNote;
+    }
+
+    public Long getPublishedArticleId() {
+        return publishedArticleId;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void updateDraft(String title, String summary, String categoryCode) {
+        this.title = title.trim();
+        this.summary = summary;
+        this.categoryCode = categoryCode;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void reject(String reviewNote) {
+        this.status = "REJECTED";
+        this.reviewNote = reviewNote;
+        this.updatedAt = LocalDateTime.now();
+        this.rawNewsItem.markAsRejected();
+    }
+
+    public void publish(Long publishedArticleId) {
+        this.status = "PUBLISHED";
+        this.publishedArticleId = publishedArticleId;
+        this.updatedAt = LocalDateTime.now();
+        this.rawNewsItem.markAsPublished();
     }
 }

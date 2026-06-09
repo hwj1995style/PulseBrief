@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
@@ -26,7 +28,8 @@ import org.springframework.context.annotation.Configuration;
                 @Tag(name = "Digests", description = "Daily digest and audio briefing"),
                 @Tag(name = "Subscriptions", description = "User subscription settings"),
                 @Tag(name = "User", description = "User profile, favorites, and reading history"),
-                @Tag(name = "Playback", description = "Audio playback history")
+                @Tag(name = "Playback", description = "Audio playback history"),
+                @Tag(name = "Admin", description = "Admin review and publishing APIs")
         }
 )
 @SecurityScheme(
@@ -36,4 +39,20 @@ import org.springframework.context.annotation.Configuration;
         bearerFormat = "dev-token"
 )
 public class OpenApiConfig {
+    @Bean
+    public GroupedOpenApi mobileV1Api() {
+        return GroupedOpenApi.builder()
+                .group("mobile-v1")
+                .pathsToMatch("/api/**")
+                .pathsToExclude("/api/admin/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi adminV1Api() {
+        return GroupedOpenApi.builder()
+                .group("admin-v1")
+                .pathsToMatch("/api/admin/**")
+                .build();
+    }
 }

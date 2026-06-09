@@ -2,6 +2,8 @@ package com.pulsebrief.article.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
@@ -11,6 +13,7 @@ import java.time.LocalDateTime;
 @Table(name = "news_article")
 public class NewsArticle {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String title;
@@ -48,7 +51,37 @@ public class NewsArticle {
     @Column(name = "is_top")
     private Byte top;
 
+    @Column(name = "article_hash")
+    private String articleHash;
+
     protected NewsArticle() {
+    }
+
+    public NewsArticle(
+            String title,
+            String summary,
+            String aiSummary,
+            String keyPoints,
+            String impactAnalysis,
+            String sourceName,
+            String originalUrl,
+            String categoryCode,
+            LocalDateTime publishTime,
+            String articleHash
+    ) {
+        this.title = title;
+        this.summary = summary;
+        this.aiSummary = aiSummary;
+        this.keyPoints = keyPoints;
+        this.impactAnalysis = impactAnalysis;
+        this.sourceName = sourceName;
+        this.originalUrl = originalUrl;
+        this.categoryCode = categoryCode;
+        this.publishTime = publishTime;
+        this.hotScore = BigDecimal.ZERO;
+        this.articleStatus = "PUBLISHED";
+        this.top = 0;
+        this.articleHash = articleHash;
     }
 
     public Long getId() {
@@ -97,5 +130,9 @@ public class NewsArticle {
 
     public Byte getTop() {
         return top;
+    }
+
+    public String getArticleStatus() {
+        return articleStatus;
     }
 }

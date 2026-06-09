@@ -27,4 +27,12 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/articles/home']").exists())
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"));
     }
+
+    @Test
+    void exposesAdminOpenApiGroup() throws Exception {
+        mockMvc.perform(get("/v3/api-docs/admin-v1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/admin/candidates']").exists())
+                .andExpect(jsonPath("$.paths['/api/admin/candidates/{id}/publish']").exists());
+    }
 }

@@ -106,12 +106,32 @@ public class RawNewsItem {
         return summary;
     }
 
+    public String getSourceCode() {
+        return sourceCode;
+    }
+
     public String getSourceName() {
         return sourceName;
     }
 
+    public String getProviderItemId() {
+        return providerItemId;
+    }
+
     public LocalDateTime getPublishedAt() {
         return publishedAt;
+    }
+
+    public LocalDateTime getFetchedAt() {
+        return fetchedAt;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public String getCountry() {
+        return country;
     }
 
     public String getItemStatus() {
@@ -120,6 +140,16 @@ public class RawNewsItem {
 
     public void markAsCandidate() {
         this.itemStatus = "CANDIDATE";
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void markAsRejected() {
+        this.itemStatus = "REJECTED";
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void markAsPublished() {
+        this.itemStatus = "PUBLISHED";
         this.updatedAt = LocalDateTime.now();
     }
 }
