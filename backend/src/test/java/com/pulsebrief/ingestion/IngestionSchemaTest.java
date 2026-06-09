@@ -18,6 +18,11 @@ class IngestionSchemaTest {
         assertThat(tableExists("news_ingestion_job")).isTrue();
         assertThat(tableExists("raw_news_item")).isTrue();
         assertThat(tableExists("candidate_article")).isTrue();
+        assertThat(columnExists("news_ingestion_source", "content_access_policy")).isTrue();
+        assertThat(columnExists("news_ingestion_source", "max_age_hours")).isTrue();
+        assertThat(columnExists("news_ingestion_source", "allow_pdf_download")).isTrue();
+        assertThat(columnExists("news_ingestion_source", "allow_full_text")).isTrue();
+        assertThat(columnExists("news_ingestion_source", "license_note")).isTrue();
     }
 
     private boolean tableExists(String tableName) {
@@ -25,6 +30,20 @@ class IngestionSchemaTest {
                 "select count(*) from information_schema.tables where table_schema = database() and table_name = ?",
                 Integer.class,
                 tableName
+        );
+        return count != null && count > 0;
+    }
+
+    private boolean columnExists(String tableName, String columnName) {
+        Integer count = jdbcTemplate.queryForObject(
+                """
+                        select count(*)
+                        from information_schema.columns
+                        where table_schema = database() and table_name = ? and column_name = ?
+                        """,
+                Integer.class,
+                tableName,
+                columnName
         );
         return count != null && count > 0;
     }

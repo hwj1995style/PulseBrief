@@ -144,6 +144,8 @@
 2. 超过最新窗口的内容不会进入采集池。
 3. PDF 只允许授权公开来源，并且必须经过 Admin 审核。
 
+阶段结果：已完成设计，并已落地第一步后端基础能力：采集源可配置 `content_access_policy`、`max_age_hours`、`allow_pdf_download`、`allow_full_text` 和 `license_note`，原始资讯入库会按采集源窗口跳过过期内容。授权全文字段、`report_asset` 和 PDF 文件缓存后续分阶段实现。
+
 ## 阶段 17：候选资讯审核 UI
 
 - [ ] 实现候选资讯列表。

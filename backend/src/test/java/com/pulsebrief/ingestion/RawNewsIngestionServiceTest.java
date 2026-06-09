@@ -1,8 +1,10 @@
 package com.pulsebrief.ingestion;
 
 import com.pulsebrief.ingestion.domain.NewsIngestionJob;
+import com.pulsebrief.ingestion.domain.NewsIngestionSource;
 import com.pulsebrief.ingestion.provider.RawNewsPayload;
 import com.pulsebrief.ingestion.repository.NewsIngestionJobRepository;
+import com.pulsebrief.ingestion.repository.NewsIngestionSourceRepository;
 import com.pulsebrief.ingestion.repository.RawNewsItemRepository;
 import com.pulsebrief.ingestion.service.IngestionResult;
 import com.pulsebrief.ingestion.service.RawNewsIngestionService;
@@ -26,6 +28,9 @@ class RawNewsIngestionServiceTest {
 
     @Autowired
     private NewsIngestionJobRepository jobRepository;
+
+    @Autowired
+    private NewsIngestionSourceRepository sourceRepository;
 
     @Test
     void storesNewRawItemsAndSkipsDuplicateOriginalUrls() {
@@ -78,7 +83,73 @@ class RawNewsIngestionServiceTest {
         assertThat(rawNewsItemRepository.countByOriginalUrl(secondUrl)).isZero();
     }
 
+    @Test
+    void skipsItemsOlderThanConfiguredLatestWindow() {
+        String uniquePath = UUID.randomUUID().toString();
+        String sourceCode = "latest-window-" + uniquePath;
+        sourceRepository.save(NewsIngestionSource.fixture(
+                sourceCode,
+                "Latest Window Fixture",
+                "SUMMARY_ONLY",
+                24
+        ));
+        String freshUrl = "https://example.com/latest-window/" + uniquePath + "/fresh";
+        String staleUrl = "https://example.com/latest-window/" + uniquePath + "/stale";
+
+        IngestionResult result = ingestionService.ingest(
+                sourceCode,
+                "MANUAL",
+                List.of(
+                        payload(
+                                "fresh-" + uniquePath,
+                                "Fresh market update " + uniquePath,
+                                freshUrl,
+                                OffsetDateTime.now().minusHours(2)
+                        ),
+                        payload(
+                                "stale-" + uniquePath,
+                                "Stale market update " + uniquePath,
+                                staleUrl,
+                                OffsetDateTime.now().minusHours(30)
+                        )
+                )
+        );
+
+        assertThat(result.fetchedCount()).isEqualTo(2);
+        assertThat(result.newCount()).isEqualTo(1);
+        assertThat(rawNewsItemRepository.countByOriginalUrl(freshUrl)).isEqualTo(1);
+        assertThat(rawNewsItemRepository.countByOriginalUrl(staleUrl)).isZero();
+    }
+
+    @Test
+    void persistsContentAccessPolicyForConfiguredSource() {
+        String uniquePath = UUID.randomUUID().toString();
+        String sourceCode = "policy-" + uniquePath;
+
+        sourceRepository.save(NewsIngestionSource.fixture(
+                sourceCode,
+                "Policy Fixture",
+                "PDF_ALLOWED",
+                72
+        ));
+
+        NewsIngestionSource source = sourceRepository.findByCode(sourceCode).orElseThrow();
+        assertThat(source.getContentAccessPolicy()).isEqualTo("PDF_ALLOWED");
+        assertThat(source.getMaxAgeHours()).isEqualTo(72);
+        assertThat(source.isPdfDownloadAllowed()).isTrue();
+        assertThat(source.isFullTextAllowed()).isFalse();
+    }
+
     private RawNewsPayload payload(String providerItemId, String title, String originalUrl) {
+        return payload(
+                providerItemId,
+                title,
+                originalUrl,
+                OffsetDateTime.parse("2026-06-09T09:00:00+08:00")
+        );
+    }
+
+    private RawNewsPayload payload(String providerItemId, String title, String originalUrl, OffsetDateTime publishedAt) {
         return new RawNewsPayload(
                 providerItemId,
                 title,
@@ -86,7 +157,7 @@ class RawNewsIngestionServiceTest {
                 "Example Markets",
                 originalUrl,
                 null,
-                OffsetDateTime.parse("2026-06-09T09:00:00+08:00"),
+                publishedAt,
                 "en",
                 "US",
                 "{\"id\":\"" + providerItemId + "\"}"

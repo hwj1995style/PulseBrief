@@ -33,6 +33,21 @@ public class NewsIngestionSource {
     @Column(name = "rate_limit_per_hour")
     private Integer rateLimitPerHour;
 
+    @Column(name = "content_access_policy")
+    private String contentAccessPolicy;
+
+    @Column(name = "max_age_hours")
+    private Integer maxAgeHours;
+
+    @Column(name = "allow_pdf_download")
+    private Byte allowPdfDownload;
+
+    @Column(name = "allow_full_text")
+    private Byte allowFullText;
+
+    @Column(name = "license_note")
+    private String licenseNote;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -40,5 +55,46 @@ public class NewsIngestionSource {
     private LocalDateTime updatedAt;
 
     protected NewsIngestionSource() {
+    }
+
+    public static NewsIngestionSource fixture(
+            String code,
+            String name,
+            String contentAccessPolicy,
+            Integer maxAgeHours
+    ) {
+        LocalDateTime now = LocalDateTime.now();
+        NewsIngestionSource source = new NewsIngestionSource();
+        source.code = code;
+        source.name = name;
+        source.providerType = "FIXTURE";
+        source.baseUrl = "fixture://" + code;
+        source.defaultCategoryCode = "global";
+        source.enabled = 1;
+        source.rateLimitPerHour = 60;
+        source.contentAccessPolicy = contentAccessPolicy;
+        source.maxAgeHours = maxAgeHours;
+        source.allowPdfDownload = "PDF_ALLOWED".equals(contentAccessPolicy) ? (byte) 1 : (byte) 0;
+        source.allowFullText = "FULLTEXT_ALLOWED".equals(contentAccessPolicy) ? (byte) 1 : (byte) 0;
+        source.licenseNote = "Fixture source for ingestion tests";
+        source.createdAt = now;
+        source.updatedAt = now;
+        return source;
+    }
+
+    public String getContentAccessPolicy() {
+        return contentAccessPolicy;
+    }
+
+    public Integer getMaxAgeHours() {
+        return maxAgeHours;
+    }
+
+    public boolean isPdfDownloadAllowed() {
+        return allowPdfDownload != null && allowPdfDownload == 1;
+    }
+
+    public boolean isFullTextAllowed() {
+        return allowFullText != null && allowFullText == 1;
     }
 }
