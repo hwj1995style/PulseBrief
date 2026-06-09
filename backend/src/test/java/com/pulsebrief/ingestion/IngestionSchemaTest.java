@@ -17,6 +17,7 @@ class IngestionSchemaTest {
         assertThat(tableExists("news_ingestion_source")).isTrue();
         assertThat(tableExists("news_ingestion_job")).isTrue();
         assertThat(tableExists("raw_news_item")).isTrue();
+        assertThat(tableExists("candidate_article")).isTrue();
     }
 
     private boolean tableExists(String tableName) {

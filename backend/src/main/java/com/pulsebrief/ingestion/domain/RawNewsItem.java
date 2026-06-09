@@ -97,4 +97,29 @@ public class RawNewsItem {
     public String getOriginalUrl() {
         return originalUrl;
     }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public String getSourceName() {
+        return sourceName;
+    }
+
+    public LocalDateTime getPublishedAt() {
+        return publishedAt;
+    }
+
+    public String getItemStatus() {
+        return itemStatus;
+    }
+
+    public void markAsCandidate() {
+        this.itemStatus = "CANDIDATE";
+        this.updatedAt = LocalDateTime.now();
+    }
 }
