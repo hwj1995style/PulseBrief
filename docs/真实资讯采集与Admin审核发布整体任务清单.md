@@ -62,20 +62,22 @@
 
 ## 阶段 13：采集入库与去重
 
-- [ ] 新增 Flyway migration：`raw_news_item`、`news_ingestion_job`、`news_ingestion_source`。
-- [ ] 新增 Repository / Service / DTO。
-- [ ] 实现原始资讯写入。
-- [ ] 实现 URL 去重。
-- [ ] 实现标题指纹去重。
-- [ ] 实现采集任务日志。
-- [ ] 实现采集结果统计：新增、重复、失败、候选数。
-- [ ] 补充后端测试。
+- [x] 新增 Flyway migration：`raw_news_item`、`news_ingestion_job`、`news_ingestion_source`。
+- [x] 新增 Repository / Service / DTO。
+- [x] 实现原始资讯写入。
+- [x] 实现 URL 去重。
+- [x] 实现标题指纹去重。
+- [x] 实现采集任务日志。
+- [x] 实现采集结果统计：新增、重复、候选数。
+- [x] 补充后端测试。
 
 验收标准：
 
 1. 同一原文链接重复采集不会重复入库。
 2. 同一标题短时间重复采集会标记重复。
 3. 采集任务有可查询日志。
+
+阶段结果：已完成后端原始资讯池和去重基础能力。失败状态和重试细化留到阶段 19 运营质量中补齐。
 
 ## 阶段 14：候选资讯生成
 

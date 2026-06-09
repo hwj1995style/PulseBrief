@@ -57,7 +57,7 @@ Authorization: Bearer dev-token-1
 
 ## News Ingestion
 
-真实资讯采集 V1 已开始搭建适配层。当前阶段只提供 `FIXTURE` Provider，用于验证采集抽象、配置绑定和后续入库流程；不会请求真实外部 API，也不需要 API Key。
+真实资讯采集 V1 已开始搭建后端基础能力。当前阶段提供 `FIXTURE` Provider，用于验证采集抽象、配置绑定和入库流程；不会请求真实外部 API，也不需要 API Key。
 
 采集总开关默认关闭：
 
@@ -65,7 +65,7 @@ Authorization: Bearer dev-token-1
 PULSEBRIEF_INGESTION_ENABLED=false
 ```
 
-后续接入真实公开 API 或 RSS 时，密钥、关键词、语言、国家/市场和请求频率必须通过环境变量或本地未提交配置注入，不提交到 Git。
+当前已新增原始资讯池、采集任务日志和采集源配置表。后续接入真实公开 API 或 RSS 时，密钥、关键词、语言、国家/市场和请求频率必须通过环境变量或本地未提交配置注入，不提交到 Git。
 
 ## V1 App API
 
@@ -109,7 +109,7 @@ DELETE /api/playback/history
 Authorization: Bearer dev-token-1
 ```
 
-当前阶段不接真实短信、邮件或 AI 服务；用户端数据仍来自 Flyway V2 种子数据。真实资讯采集已具备适配层和 fixture Provider，尚未写入业务表或发布到用户端。
+当前阶段不接真实短信、邮件或 AI 服务；用户端数据仍来自 Flyway V2 种子数据。真实资讯采集已具备适配层、fixture Provider、原始资讯入库和去重能力，尚未发布到用户端。
 
 ## Smoke Check
 

@@ -67,7 +67,7 @@ Update `docs/下一阶段任务清单.md` with stages 11-20 and mark stage 11 pl
 
 ## Task 2: Backend Ingestion Domain Design
 
-- [ ] **Step 1: Write a failing Flyway schema expectation test**
+- [x] **Step 1: Write a failing Flyway schema expectation test**
 
 Create `backend/src/test/java/com/pulsebrief/ingestion/IngestionSchemaTest.java`:
 
@@ -105,7 +105,7 @@ class IngestionSchemaTest {
 }
 ```
 
-- [ ] **Step 2: Run the targeted test and verify failure**
+- [x] **Step 2: Run the targeted test and verify failure**
 
 Run:
 
@@ -117,7 +117,7 @@ $env:Path='D:\Dev\jdk\jdk-17\bin;' + $env:Path
 
 Expected: test fails because the four ingestion tables do not exist.
 
-- [ ] **Step 3: Add Flyway migration**
+- [x] **Step 3: Add Flyway migration**
 
 Create `backend/src/main/resources/db/migration/V3__news_ingestion.sql` with tables:
 
@@ -194,7 +194,7 @@ create table candidate_article (
 );
 ```
 
-- [ ] **Step 4: Run the targeted test and verify pass**
+- [x] **Step 4: Run the targeted test and verify pass**
 
 Run:
 
