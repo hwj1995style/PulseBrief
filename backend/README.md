@@ -67,6 +67,8 @@ PULSEBRIEF_INGESTION_ENABLED=false
 
 当前已新增原始资讯池、采集任务日志、采集源配置表和候选资讯审核池。采集后的 `raw_news_item` 可生成 `PENDING_REVIEW` 候选资讯，未审核候选不会进入用户端文章 API。
 
+Admin 审核发布 API 设计见 `docs/Admin审核发布V1设计.md`。当前已完成接口边界设计，Admin API 代码实现将按设计分阶段推进。
+
 后续接入真实公开 API 或 RSS 时，密钥、关键词、语言、国家/市场和请求频率必须通过环境变量或本地未提交配置注入，不提交到 Git。
 
 ## V1 App API

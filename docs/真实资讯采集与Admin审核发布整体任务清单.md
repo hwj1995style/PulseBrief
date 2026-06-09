@@ -97,18 +97,20 @@
 
 ## 阶段 15：Admin API 审核发布设计
 
-- [ ] 补充 `docs/Admin审核发布V1设计.md`。
-- [ ] 设计 `/api/admin/ingestion/**`：采集任务、原始资讯、候选资讯。
-- [ ] 设计 `/api/admin/articles/**`：文章编辑、发布、下线。
-- [ ] 设计 `/api/admin/digests/**`：简报编辑、发布。
-- [ ] 设计开发期 Admin Token 或单管理员登录。
-- [ ] OpenAPI 增加 Admin API 分组。
+- [x] 补充 `docs/Admin审核发布V1设计.md`。
+- [x] 设计 `/api/admin/ingestion/**`：采集任务、原始资讯、候选资讯。
+- [x] 设计 `/api/admin/articles/**`：文章编辑、发布、下线。
+- [x] 设计 `/api/admin/digests/**`：简报编辑、发布。
+- [x] 设计开发期 Admin Token 或单管理员登录。
+- [x] OpenAPI 增加 Admin API 分组。
 
 验收标准：
 
 1. Admin API 与用户端 API 边界清晰。
 2. 写操作都需要 Admin 鉴权。
 3. 后续 React Admin 可以直接按接口实现。
+
+阶段结果：已完成 Admin 审核发布 V1 设计。实现阶段建议先做 Admin Token 与候选查询，再逐步实现编辑、拒绝、发布和 OpenAPI 分组。
 
 ## 阶段 16：React Admin 工程骨架
 
