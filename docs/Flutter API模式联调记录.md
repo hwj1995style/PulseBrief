@@ -79,5 +79,41 @@ PowerShell 冒烟脚本发送中文播放标题时出现非 UTF-8 请求体。Fl
 1. Flutter mock 模式仍为默认模式，本机预览不依赖后端。
 2. Flutter API Repository 已可对接 Spring Boot V1 API。
 3. 后端订阅保存与播放历史写入已通过真实 MySQL + Spring Boot 冒烟。
-4. 下一步可进入 Android 模拟器 API 模式运行，做真实 APP 页面级端到端验收。
+4. Android 模拟器 API 模式已完成 8 页面页面级截图验收。
 
+## Android 模拟器页面级验收
+
+运行命令：
+
+```powershell
+flutter build apk --debug --target-platform android-x64 --dart-define=PULSEBRIEF_DATA_SOURCE=api --dart-define=PULSEBRIEF_API_BASE_URL=http://10.0.2.2:8080/api
+adb install -r .\build\app\outputs\flutter-apk\app-debug.apk
+adb shell pm clear com.pulsebrief.pulsebrief
+adb shell monkey -p com.pulsebrief.pulsebrief 1
+```
+
+截图目录：
+
+```text
+D:\Projects\PulseBrief\.codex\screenshots\api-mode
+```
+
+截图清单：
+
+1. `01_login_api.png`：登录页。
+2. `02_home_api.png`：首页。
+3. `03_category_api.png`：分类页。
+4. `04_subscription_api.png`：订阅页。
+5. `05_article_detail_api.png`：资讯详情页。
+6. `06_digest_api.png`：每日简报页。
+7. `07_player_api.png`：语音播放器页。
+8. `08_mine_api.png`：我的页面。
+
+验收结果：
+
+1. P0：未发现页面无法打开、白屏、崩溃、严重遮挡。
+2. P1：未发现主导航、主按钮、详情页底部操作栏不可用问题。
+3. P2：已修复 API `publishTime` 原始 ISO 字符串展示问题，改为 `昨天 09:30` 等短时间文案。
+4. P2：已修复 API 模式分类首屏默认选中空分类导致页面大面积留白的问题，改为优先选择有内容的分类，并为无内容分类提供空状态。
+5. P2：已修复 API 数字 digest id 导致简报列表图标无法区分的问题，改为按标题识别午间、晚间、AI、投行等类型。
+6. P3：我的页用户统计仍来自本地 mock 用户资料，后续接用户中心 API 时再统一替换。

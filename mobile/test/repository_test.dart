@@ -116,6 +116,8 @@ void main() {
     expect(categories.single.name, '财经市场');
     expect(homeFeed.todayDigest.title, '今日全球简报');
     expect(homeFeed.articles.single.id, '1');
+    expect(homeFeed.articles.single.publishTime, isNot(contains('T')));
+    expect(homeFeed.articles.single.publishTime, contains('09:30'));
     expect(digestFeed.highlights.single, contains('Blackwell'));
   });
 }

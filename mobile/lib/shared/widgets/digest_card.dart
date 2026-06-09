@@ -33,14 +33,14 @@ class DigestCard extends StatelessWidget {
                 height: compact ? 56 : 64,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: _colorsForDigest(digest.id),
+                    colors: _colorsForDigest(digest),
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
                 alignment: Alignment.center,
-                child: Icon(_iconForDigest(digest.id), color: Colors.white),
+                child: Icon(_iconForDigest(digest), color: Colors.white),
               ),
               SizedBox(width: compact ? 10 : 14),
               Expanded(
@@ -99,34 +99,52 @@ class DigestCard extends StatelessWidget {
     );
   }
 
-  List<Color> _colorsForDigest(String id) {
-    switch (id) {
-      case 'noon':
-        return const [Color(0xFF20B7D7), Color(0xFF54D0E5)];
-      case 'evening':
-        return const [Color(0xFF4F46E5), Color(0xFF7C6CF2)];
-      case 'ai':
-        return const [Color(0xFF0B55D9), Color(0xFF2B77F0)];
-      case 'ib':
-        return const [Color(0xFF2F76D2), Color(0xFF67A3F4)];
-      default:
-        return const [AppColors.primary, Color(0xFF6EA8FF)];
+  List<Color> _colorsForDigest(Digest digest) {
+    if (_isNoon(digest)) {
+      return const [Color(0xFF20B7D7), Color(0xFF54D0E5)];
     }
+    if (_isEvening(digest)) {
+      return const [Color(0xFF4F46E5), Color(0xFF7C6CF2)];
+    }
+    if (_isAi(digest)) {
+      return const [Color(0xFF0B55D9), Color(0xFF2B77F0)];
+    }
+    if (_isInvestment(digest)) {
+      return const [Color(0xFF2F76D2), Color(0xFF67A3F4)];
+    }
+    return const [AppColors.primary, Color(0xFF6EA8FF)];
   }
 
-  IconData _iconForDigest(String id) {
-    switch (id) {
-      case 'noon':
-        return Icons.access_time_rounded;
-      case 'evening':
-        return Icons.dark_mode_rounded;
-      case 'ai':
-        return Icons.smart_toy_rounded;
-      case 'ib':
-        return Icons.account_balance_rounded;
-      default:
-        return Icons.wb_twilight_rounded;
+  IconData _iconForDigest(Digest digest) {
+    if (_isNoon(digest)) {
+      return Icons.access_time_rounded;
     }
+    if (_isEvening(digest)) {
+      return Icons.dark_mode_rounded;
+    }
+    if (_isAi(digest)) {
+      return Icons.smart_toy_rounded;
+    }
+    if (_isInvestment(digest)) {
+      return Icons.account_balance_rounded;
+    }
+    return Icons.wb_twilight_rounded;
+  }
+
+  bool _isNoon(Digest digest) {
+    return digest.id == 'noon' || digest.title.contains('午间');
+  }
+
+  bool _isEvening(Digest digest) {
+    return digest.id == 'evening' || digest.title.contains('晚间');
+  }
+
+  bool _isAi(Digest digest) {
+    return digest.id == 'ai' || digest.title.contains('AI');
+  }
+
+  bool _isInvestment(Digest digest) {
+    return digest.id == 'ib' || digest.title.contains('投行');
   }
 }
 

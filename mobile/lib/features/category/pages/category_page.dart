@@ -4,6 +4,7 @@ import 'package:pulsebrief/app/routes.dart';
 import 'package:pulsebrief/core/constants/app_assets.dart';
 import 'package:pulsebrief/shared/models/article.dart';
 import 'package:pulsebrief/shared/models/news_category.dart';
+import 'package:pulsebrief/shared/repositories/pulse_repository.dart';
 import 'package:pulsebrief/shared/repositories/repository_scope.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
 import 'package:pulsebrief/shared/theme/app_spacing.dart';
@@ -49,19 +50,15 @@ class _CategoryPageState extends State<CategoryPage> {
     try {
       final repository = RepositoryScope.of(context);
       final categories = await repository.getCategories();
-      final selected = categories.firstWhere(
-        (category) => category.code == 'finance',
-        orElse: () => categories.first,
-      );
-      final articles = await repository.getArticles(
-        categoryCode: selected.code,
-        pageSize: 20,
+      final initial = await _loadInitialCategory(
+        repository: repository,
+        categories: categories,
       );
       if (!mounted) return;
       setState(() {
         _categories = categories;
-        _selected = selected;
-        _articles = articles;
+        _selected = initial.category;
+        _articles = initial.articles;
         _isLoading = false;
       });
     } catch (_) {
@@ -71,6 +68,29 @@ class _CategoryPageState extends State<CategoryPage> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<_CategoryLoadResult> _loadInitialCategory({
+    required PulseRepository repository,
+    required List<NewsCategory> categories,
+  }) async {
+    final preferred = [
+      ...categories.where((category) => category.code == 'finance'),
+      ...categories.where((category) => category.code != 'finance'),
+    ];
+    for (final category in preferred) {
+      final articles = await repository.getArticles(
+        categoryCode: category.code,
+        pageSize: 20,
+      );
+      if (articles.isNotEmpty) {
+        return _CategoryLoadResult(category: category, articles: articles);
+      }
+    }
+    return _CategoryLoadResult(
+      category: categories.first,
+      articles: const <Article>[],
+    );
   }
 
   Future<void> _selectCategory(NewsCategory category) async {
@@ -121,6 +141,7 @@ class _CategoryPageState extends State<CategoryPage> {
       return const SafeArea(bottom: false, child: EmptyState());
     }
     final articles = _articles;
+    final updateCount = articles.isEmpty ? selected.todayCount : articles.length;
 
     return SafeArea(
       bottom: false,
@@ -165,7 +186,7 @@ class _CategoryPageState extends State<CategoryPage> {
                 BriefHeroCard(
                   title: selected.name,
                   subtitle: selected.description,
-                  description: '今日 ${selected.todayCount} 条更新，精选重点事件和可播报摘要。',
+                  description: '今日 $updateCount 条更新，精选重点事件和可播报摘要。',
                   imageAsset: selected.code == 'finance'
                       ? AppAssets.artCleanFinance
                       : AppAssets.artCleanGlobal,
@@ -194,6 +215,9 @@ class _CategoryPageState extends State<CategoryPage> {
                         builder: (context, constraints) {
                           final compact = constraints.maxWidth < 360;
                           final focusArticles = articles.take(2).toList();
+                          if (focusArticles.isEmpty) {
+                            return const _CategoryEmptyHint();
+                          }
                           return compact
                               ? Column(
                                   children: [
@@ -250,20 +274,51 @@ class _CategoryPageState extends State<CategoryPage> {
               AppSpacing.pagePadding,
               AppSpacing.bottomNavHeight + MediaQuery.paddingOf(context).bottom,
             ),
-            sliver: SliverList.separated(
-              itemCount: articles.length,
-              itemBuilder: (context, index) {
-                final article = articles[index];
-                return NewsCard(
-                  article: article,
-                  onTap: () => _openArticle(article),
-                  onPlay: _openPlayer,
-                );
-              },
-              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-            ),
+            sliver: articles.isEmpty
+                ? const SliverToBoxAdapter(
+                    child: EmptyState(
+                      title: '暂无分类资讯',
+                      message: '该主题暂时没有新的可播报摘要，可以先查看其他分类。',
+                    ),
+                  )
+                : SliverList.separated(
+                    itemCount: articles.length,
+                    itemBuilder: (context, index) {
+                      final article = articles[index];
+                      return NewsCard(
+                        article: article,
+                        onTap: () => _openArticle(article),
+                        onPlay: _openPlayer,
+                      );
+                    },
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: AppSpacing.md),
+                  ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CategoryLoadResult {
+  const _CategoryLoadResult({required this.category, required this.articles});
+
+  final NewsCategory category;
+  final List<Article> articles;
+}
+
+class _CategoryEmptyHint extends StatelessWidget {
+  const _CategoryEmptyHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      child: Text(
+        '该分类暂时没有新的重点资讯',
+        textAlign: TextAlign.center,
+        style: AppTextStyles.body,
       ),
     );
   }

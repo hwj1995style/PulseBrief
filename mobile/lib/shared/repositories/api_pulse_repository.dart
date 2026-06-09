@@ -50,8 +50,9 @@ class ApiPulseRepository implements PulseRepository {
     final json = await transport.postJson('/auth/guest');
     final data = _dataMap(json);
     final user = _map(data['user']);
+    _accessToken = _string(data['accessToken']);
     return AuthSession(
-      accessToken: _string(data['accessToken']),
+      accessToken: _accessToken,
       tokenType: _string(data['tokenType'], fallback: 'Guest'),
       expiresIn: _int(data['expiresIn']),
       user: UserProfile(
@@ -230,7 +231,7 @@ class ApiPulseRepository implements PulseRepository {
       id: _string(json['id']),
       title: _string(json['title']),
       sourceName: _string(json['sourceName']),
-      publishTime: _string(json['publishTime']),
+      publishTime: _formatDisplayTime(_string(json['publishTime'])),
       categoryName: categoryName,
       summary: _string(json['summary'], fallback: _string(json['aiSummary'])),
       imageAsset: _imageFor(categoryCode, categoryName),
@@ -318,6 +319,44 @@ class ApiPulseRepository implements PulseRepository {
     if (title.contains('晚间')) return '☾';
     if (title.contains('AI')) return 'AI';
     return '☀';
+  }
+
+  String _formatDisplayTime(String value) {
+    if (value.isEmpty) {
+      return value;
+    }
+    final match = RegExp(
+      r'^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})',
+    ).firstMatch(value);
+    if (match == null) {
+      return value;
+    }
+    final local = DateTime(
+      int.parse(match.group(1)!),
+      int.parse(match.group(2)!),
+      int.parse(match.group(3)!),
+      int.parse(match.group(4)!),
+      int.parse(match.group(5)!),
+    );
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final date = DateTime(local.year, local.month, local.day);
+    final time =
+        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    if (date == today) {
+      final difference = now.difference(local);
+      if (difference.inMinutes < 60 && !difference.isNegative) {
+        return '${difference.inMinutes.clamp(1, 59)}分钟前';
+      }
+      if (difference.inHours < 24 && !difference.isNegative) {
+        return '${difference.inHours}小时前';
+      }
+      return '今天 $time';
+    }
+    if (date == today.subtract(const Duration(days: 1))) {
+      return '昨天 $time';
+    }
+    return '${local.month}月${local.day}日 $time';
   }
 
   String _codeForTopicName(String name) {
