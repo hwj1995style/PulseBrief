@@ -18,6 +18,7 @@ class IngestionSchemaTest {
         assertThat(tableExists("news_ingestion_job")).isTrue();
         assertThat(tableExists("raw_news_item")).isTrue();
         assertThat(tableExists("candidate_article")).isTrue();
+        assertThat(tableExists("report_asset")).isTrue();
         assertThat(columnExists("news_ingestion_source", "content_access_policy")).isTrue();
         assertThat(columnExists("news_ingestion_source", "max_age_hours")).isTrue();
         assertThat(columnExists("news_ingestion_source", "allow_pdf_download")).isTrue();
