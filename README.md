@@ -31,13 +31,15 @@ Flutter 用户端 APP
 12. Android Studio、Android SDK 和 Android 模拟器已按 D 盘路径配置。
 13. 已完成 8 个 Flutter 页面模拟器截图验收和首轮 P2 排版修正。
 14. 已补充 Flutter 本机预览、APK 构建和透明插图资产生成说明。
+15. 已完成 Spring Boot V1 用户端 API、Flutter API 模式联调、用户中心真实数据、历史列表、分页规范和列表管理。
+16. 已接入 OpenAPI/Swagger 在线接口文档。
 
 下一阶段：
 
-1. 启动 MySQL 并验证 Flyway migration。
-2. 设计并实现分类、文章、简报核心 API。
-3. 为 Flutter 增加 Repository 层，将 mock 数据切换为可替换数据源。
-4. 新建正式 React Admin 工程。
+1. 精修 Swagger 接口注解与请求/响应示例。
+2. 新建正式 React Admin 工程。
+3. 设计后台管理 API 与权限边界。
+4. 补充 CI 验证流水线。
 
 ## 正式技术路线
 

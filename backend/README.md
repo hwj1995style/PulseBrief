@@ -40,6 +40,21 @@ password: pulsebrief_dev
 .\mvnw.cmd spring-boot:run
 ```
 
+## API Documentation
+
+本地后端启动后可访问在线接口文档：
+
+```text
+http://localhost:8080/swagger-ui.html
+http://localhost:8080/v3/api-docs
+```
+
+Swagger UI 调试需要登录接口时，使用开发态 Bearer Token：
+
+```text
+Authorization: Bearer dev-token-1
+```
+
 ## V1 App API
 
 当前已实现用户端 V1 API 骨架：
