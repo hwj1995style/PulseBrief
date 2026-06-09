@@ -40,6 +40,10 @@ flutter test --dart-define=PULSEBRIEF_LIVE_API=true --dart-define=PULSEBRIEF_API
 9. `POST /api/articles/{id}/favorite`
 10. `POST /api/playback/history`
 11. `GET /api/user/profile`
+12. `GET /api/user/favorites`
+13. `POST /api/user/read-history`
+14. `GET /api/user/read-history`
+15. `GET /api/playback/history`
 
 ## 本轮发现与修复
 
@@ -81,7 +85,8 @@ PowerShell 冒烟脚本发送中文播放标题时出现非 UTF-8 请求体。Fl
 2. Flutter API Repository 已可对接 Spring Boot V1 API。
 3. 后端订阅保存与播放历史写入已通过真实 MySQL + Spring Boot 冒烟。
 4. 用户中心资料接口已接入，API 模式“我的”页资料与统计不再直接依赖本地 `mockUser`。
-5. Android 模拟器 API 模式已完成 8 页面页面级截图验收。
+5. 用户收藏、阅读历史和播放历史列表已接入，API 模式“我的”页三个入口可打开真实列表。
+6. Android 模拟器 API 模式已完成 8 页面页面级截图验收。
 
 ## Android 模拟器页面级验收
 
@@ -135,3 +140,21 @@ GET /api/user/profile
 3. `subscriptionCount`、`favoriteCount`、`playCount` 来自 MySQL 真实表统计。
 4. Flutter `ApiPulseRepository.getUserProfile()` live API 测试通过。
 5. API 模式 Android debug APK 构建通过。
+
+## 用户历史列表联调补充
+
+本轮新增接口：
+
+```text
+GET  /api/user/favorites
+POST /api/user/read-history
+GET  /api/user/read-history
+GET  /api/playback/history
+```
+
+验证结果：
+
+1. Flutter live API 测试已覆盖收藏写入后读取收藏列表。
+2. Flutter live API 测试已覆盖阅读历史写入后读取阅读历史列表。
+3. Flutter live API 测试已覆盖播放历史写入后读取播放历史列表。
+4. “我的收藏”“阅读历史”“播放历史”三个页面在 mock 模式 widget 测试中可打开。

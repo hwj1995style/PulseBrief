@@ -1,6 +1,7 @@
 import 'package:pulsebrief/shared/models/article.dart';
 import 'package:pulsebrief/shared/models/digest.dart';
 import 'package:pulsebrief/shared/models/news_category.dart';
+import 'package:pulsebrief/shared/models/playback_history_item.dart';
 import 'package:pulsebrief/shared/models/subscription_topic.dart';
 import 'package:pulsebrief/shared/models/user_profile.dart';
 
@@ -45,12 +46,26 @@ abstract class PulseRepository {
 
   Future<bool> unfavoriteArticle(String articleId);
 
+  Future<List<Article>> getFavoriteArticles({int page = 1, int pageSize = 20});
+
+  Future<int> recordReadHistory({required String articleId});
+
+  Future<List<Article>> getReadHistoryArticles({
+    int page = 1,
+    int pageSize = 20,
+  });
+
   Future<int> recordPlayback({
     required String playType,
     String? articleId,
     String? digestId,
     required String playTitle,
     required int durationSeconds,
+  });
+
+  Future<List<PlaybackHistoryItem>> getPlaybackHistory({
+    int page = 1,
+    int pageSize = 20,
   });
 }
 

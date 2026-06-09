@@ -6,6 +6,7 @@ import com.pulsebrief.article.api.ArticleDetailResponse;
 import com.pulsebrief.article.api.DigestHeroResponse;
 import com.pulsebrief.article.api.HomeArticlesResponse;
 import com.pulsebrief.article.service.ArticleService;
+import com.pulsebrief.readhistory.service.ReadHistoryService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,9 @@ class ArticleControllerTest {
 
     @MockitoBean
     private ArticleService articleService;
+
+    @MockitoBean
+    private ReadHistoryService readHistoryService;
 
     @Test
     void returnsHomeDigestInvestmentPickAndArticleCards() throws Exception {

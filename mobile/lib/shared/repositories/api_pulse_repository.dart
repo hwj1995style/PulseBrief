@@ -4,6 +4,7 @@ import 'package:pulsebrief/shared/data/pulse_api_transport.dart';
 import 'package:pulsebrief/shared/models/article.dart';
 import 'package:pulsebrief/shared/models/digest.dart';
 import 'package:pulsebrief/shared/models/news_category.dart';
+import 'package:pulsebrief/shared/models/playback_history_item.dart';
 import 'package:pulsebrief/shared/models/user_profile.dart';
 import 'package:pulsebrief/shared/repositories/pulse_repository.dart';
 
@@ -219,6 +220,40 @@ class ApiPulseRepository implements PulseRepository {
   }
 
   @override
+  Future<List<Article>> getFavoriteArticles({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final json = await transport.getJson(
+      '/user/favorites?page=$page&pageSize=$pageSize',
+      token: _accessToken,
+    );
+    return _dataList(json).map(_articleFromJson).toList();
+  }
+
+  @override
+  Future<int> recordReadHistory({required String articleId}) async {
+    final json = await transport.postJson(
+      '/user/read-history',
+      token: _accessToken,
+      body: {'articleId': int.tryParse(articleId)},
+    );
+    return _int(_dataMap(json)['id']);
+  }
+
+  @override
+  Future<List<Article>> getReadHistoryArticles({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final json = await transport.getJson(
+      '/user/read-history?page=$page&pageSize=$pageSize',
+      token: _accessToken,
+    );
+    return _dataList(json).map(_articleFromJson).toList();
+  }
+
+  @override
   Future<int> recordPlayback({
     required String playType,
     String? articleId,
@@ -238,6 +273,18 @@ class ApiPulseRepository implements PulseRepository {
       },
     );
     return _int(_dataMap(json)['id']);
+  }
+
+  @override
+  Future<List<PlaybackHistoryItem>> getPlaybackHistory({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final json = await transport.getJson(
+      '/playback/history?page=$page&pageSize=$pageSize',
+      token: _accessToken,
+    );
+    return _dataList(json).map(_playbackHistoryFromJson).toList();
   }
 
   Article _articleFromJson(Map<String, Object?> json) {
@@ -319,6 +366,18 @@ class ApiPulseRepository implements PulseRepository {
       favoriteCount: _int(json['favoriteCount']),
       readCount: _int(json['readCount']),
       playCount: _int(json['playCount']),
+    );
+  }
+
+  PlaybackHistoryItem _playbackHistoryFromJson(Map<String, Object?> json) {
+    return PlaybackHistoryItem(
+      id: _string(json['id']),
+      playType: _string(json['playType']),
+      articleId: _nullableString(json['articleId']),
+      digestId: _nullableString(json['digestId']),
+      playTitle: _string(json['playTitle']),
+      playTime: _formatDisplayTime(_string(json['playTime'])),
+      durationSeconds: _int(json['durationSeconds']),
     );
   }
 
@@ -428,6 +487,14 @@ class ApiPulseRepository implements PulseRepository {
     }
     final text = value.toString();
     return text.isEmpty ? fallback : text;
+  }
+
+  String? _nullableString(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    final text = value.toString();
+    return text.isEmpty ? null : text;
   }
 
   int _int(Object? value) {

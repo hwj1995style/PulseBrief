@@ -1,8 +1,9 @@
-package com.pulsebrief.playback.api;
+package com.pulsebrief.readhistory.api;
 
+import com.pulsebrief.article.api.ArticleCardResponse;
 import com.pulsebrief.common.api.ApiResponse;
 import com.pulsebrief.common.security.DevTokenSupport;
-import com.pulsebrief.playback.service.PlaybackService;
+import com.pulsebrief.readhistory.service.ReadHistoryService;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,30 +14,30 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/playback/history")
-public class PlaybackController {
-    private final PlaybackService playbackService;
+@RequestMapping("/api/user/read-history")
+public class ReadHistoryController {
+    private final ReadHistoryService readHistoryService;
 
-    public PlaybackController(PlaybackService playbackService) {
-        this.playbackService = playbackService;
+    public ReadHistoryController(ReadHistoryService readHistoryService) {
+        this.readHistoryService = readHistoryService;
     }
 
     @PostMapping
-    public ApiResponse<PlaybackHistoryResponse> recordPlayback(
+    public ApiResponse<ReadHistoryRecordResponse> recordReadHistory(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestBody PlaybackHistoryRequest request
+            @RequestBody ReadHistoryRecordRequest request
     ) {
         Long userId = DevTokenSupport.requireUserId(authorization);
-        return ApiResponse.ok(playbackService.recordPlayback(userId, request));
+        return ApiResponse.ok(readHistoryService.recordReadHistory(userId, request.articleId()));
     }
 
     @GetMapping
-    public ApiResponse<List<PlaybackHistoryItemResponse>> playbackHistory(
+    public ApiResponse<List<ArticleCardResponse>> readHistory(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "20") Integer pageSize
     ) {
         Long userId = DevTokenSupport.requireUserId(authorization);
-        return ApiResponse.ok(playbackService.listPlaybackHistory(userId, page, pageSize));
+        return ApiResponse.ok(readHistoryService.listReadHistory(userId, page, pageSize));
     }
 }

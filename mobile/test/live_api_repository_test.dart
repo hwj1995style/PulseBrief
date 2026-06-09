@@ -56,6 +56,10 @@ void main() {
       expect(subscriptions.selectedCategoryCodes, hasLength(4));
 
       expect(await repository.favoriteArticle(article.id), isTrue);
+      final readHistoryId = await repository.recordReadHistory(
+        articleId: article.id,
+      );
+      expect(readHistoryId, greaterThan(0));
       final playbackId = await repository.recordPlayback(
         playType: 'ARTICLE',
         articleId: article.id,
@@ -63,6 +67,13 @@ void main() {
         durationSeconds: 168,
       );
       expect(playbackId, greaterThan(0));
+
+      final favorites = await repository.getFavoriteArticles();
+      final readHistory = await repository.getReadHistoryArticles();
+      final playbackHistory = await repository.getPlaybackHistory();
+      expect(favorites.map((item) => item.id), contains(article.id));
+      expect(readHistory.map((item) => item.id), contains(article.id));
+      expect(playbackHistory, isNotEmpty);
     },
     skip: _liveApiEnabled ? false : 'Set PULSEBRIEF_LIVE_API=true to run.',
   );

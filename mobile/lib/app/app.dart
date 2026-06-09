@@ -6,6 +6,8 @@ import 'package:pulsebrief/features/category/pages/category_page.dart';
 import 'package:pulsebrief/features/digest/pages/digest_page.dart';
 import 'package:pulsebrief/features/home/pages/home_page.dart';
 import 'package:pulsebrief/features/mine/pages/mine_page.dart';
+import 'package:pulsebrief/features/mine/pages/playback_history_page.dart';
+import 'package:pulsebrief/features/mine/pages/user_article_list_page.dart';
 import 'package:pulsebrief/features/player/pages/player_page.dart';
 import 'package:pulsebrief/features/subscription/pages/subscription_page.dart';
 import 'package:pulsebrief/mock/mock_articles.dart';
@@ -75,6 +77,23 @@ class PulseBriefApp extends StatelessWidget {
             : null;
         return MaterialPageRoute(
           builder: (_) => PlayerPage(article: article),
+          settings: settings,
+        );
+      case PulseRoutes.favoriteArticles:
+        return MaterialPageRoute(
+          builder: (_) =>
+              const UserArticleListPage(type: UserArticleListType.favorites),
+          settings: settings,
+        );
+      case PulseRoutes.readHistory:
+        return MaterialPageRoute(
+          builder: (_) =>
+              const UserArticleListPage(type: UserArticleListType.readHistory),
+          settings: settings,
+        );
+      case PulseRoutes.playbackHistory:
+        return MaterialPageRoute(
+          builder: (_) => const PlaybackHistoryPage(),
           settings: settings,
         );
       default:

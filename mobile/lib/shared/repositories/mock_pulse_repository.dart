@@ -6,6 +6,7 @@ import 'package:pulsebrief/mock/mock_user.dart';
 import 'package:pulsebrief/shared/models/article.dart';
 import 'package:pulsebrief/shared/models/digest.dart';
 import 'package:pulsebrief/shared/models/news_category.dart';
+import 'package:pulsebrief/shared/models/playback_history_item.dart';
 import 'package:pulsebrief/shared/models/subscription_topic.dart';
 import 'package:pulsebrief/shared/models/user_profile.dart';
 import 'package:pulsebrief/shared/repositories/pulse_repository.dart';
@@ -192,6 +193,31 @@ class MockPulseRepository implements PulseRepository {
   }
 
   @override
+  Future<List<Article>> getFavoriteArticles({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final favorites = _articles
+        .map((article) => article.copyWith(isFavorited: true))
+        .take(pageSize)
+        .toList();
+    return favorites;
+  }
+
+  @override
+  Future<int> recordReadHistory({required String articleId}) async {
+    return 1;
+  }
+
+  @override
+  Future<List<Article>> getReadHistoryArticles({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    return _articles.take(pageSize).toList();
+  }
+
+  @override
   Future<int> recordPlayback({
     required String playType,
     String? articleId,
@@ -200,6 +226,27 @@ class MockPulseRepository implements PulseRepository {
     required int durationSeconds,
   }) async {
     return 1;
+  }
+
+  @override
+  Future<List<PlaybackHistoryItem>> getPlaybackHistory({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    return _articles
+        .take(pageSize)
+        .map(
+          (article) => PlaybackHistoryItem(
+            id: article.id,
+            playType: 'ARTICLE',
+            articleId: article.id,
+            digestId: null,
+            playTitle: article.title,
+            playTime: article.publishTime,
+            durationSeconds: 168,
+          ),
+        )
+        .toList();
   }
 
   String _codeForTopicName(String name) {

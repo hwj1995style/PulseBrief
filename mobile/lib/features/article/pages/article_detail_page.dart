@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:pulsebrief/app/routes.dart';
 import 'package:pulsebrief/mock/mock_articles.dart';
 import 'package:pulsebrief/shared/models/article.dart';
+import 'package:pulsebrief/shared/repositories/repository_scope.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
 import 'package:pulsebrief/shared/theme/app_radius.dart';
 import 'package:pulsebrief/shared/theme/app_spacing.dart';
@@ -28,6 +29,17 @@ class _ArticleDetailPageState extends State<ArticleDetailPage> {
   void initState() {
     super.initState();
     _favorited = widget.article.isFavorited;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recordReadHistory());
+  }
+
+  Future<void> _recordReadHistory() async {
+    try {
+      await RepositoryScope.of(
+        context,
+      ).recordReadHistory(articleId: widget.article.id);
+    } catch (_) {
+      // Reading detail remains available in guest/offline modes.
+    }
   }
 
   void _openPlayer() {

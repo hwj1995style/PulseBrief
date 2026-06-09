@@ -6,8 +6,6 @@ import com.pulsebrief.article.api.DigestHeroResponse;
 import com.pulsebrief.article.api.HomeArticlesResponse;
 import com.pulsebrief.article.domain.NewsArticle;
 import com.pulsebrief.article.repository.ArticleRepository;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
@@ -19,12 +17,13 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Service
 public class ArticleQueryService implements ArticleService {
     private static final String PUBLISHED = "PUBLISHED";
-    private static final DateTimeFormatter API_TIME = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     private final ArticleRepository articleRepository;
+    private final ArticleCardMapper articleCardMapper;
 
-    public ArticleQueryService(ArticleRepository articleRepository) {
+    public ArticleQueryService(ArticleRepository articleRepository, ArticleCardMapper articleCardMapper) {
         this.articleRepository = articleRepository;
+        this.articleCardMapper = articleCardMapper;
     }
 
     @Override
@@ -69,13 +68,13 @@ public class ArticleQueryService implements ArticleService {
                 )
                 .stream()
                 .filter(item -> !item.getId().equals(article.getId()))
-                .map(this::toCard)
+                .map(articleCardMapper::toCard)
                 .toList();
         return new ArticleDetailResponse(
                 article.getId(),
                 article.getTitle(),
                 article.getSourceName(),
-                formatTime(article),
+                articleCardMapper.formatTime(article),
                 article.getCategoryCode(),
                 categoryName(article.getCategoryCode()),
                 article.getAiSummary(),
@@ -88,27 +87,7 @@ public class ArticleQueryService implements ArticleService {
     }
 
     private ArticleCardResponse toCard(NewsArticle article) {
-        return new ArticleCardResponse(
-                article.getId(),
-                article.getTitle(),
-                article.getSourceName(),
-                formatTime(article),
-                article.getCategoryCode(),
-                categoryName(article.getCategoryCode()),
-                article.getSummary(),
-                "",
-                audioDuration(article.getId()),
-                article.getHotScore() != null && article.getHotScore().doubleValue() >= 90,
-                article.getTop() != null && article.getTop() == 1,
-                false
-        );
-    }
-
-    private String formatTime(NewsArticle article) {
-        if (article.getPublishTime() == null) {
-            return null;
-        }
-        return article.getPublishTime().atOffset(ZoneOffset.ofHours(8)).format(API_TIME);
+        return articleCardMapper.toCard(article);
     }
 
     private List<String> parseKeyPoints(String keyPoints) {
@@ -119,16 +98,6 @@ public class ArticleQueryService implements ArticleService {
                 .map(String::trim)
                 .filter(point -> !point.isEmpty())
                 .toList();
-    }
-
-    private String audioDuration(Long id) {
-        return switch (id.intValue() % 5) {
-            case 0 -> "02:05";
-            case 1 -> "02:48";
-            case 2 -> "02:12";
-            case 3 -> "02:36";
-            default -> "02:22";
-        };
     }
 
     private String categoryName(String code) {

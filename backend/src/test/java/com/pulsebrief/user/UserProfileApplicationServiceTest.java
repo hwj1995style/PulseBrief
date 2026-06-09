@@ -2,6 +2,7 @@ package com.pulsebrief.user;
 
 import com.pulsebrief.favorite.repository.UserFavoriteRepository;
 import com.pulsebrief.playback.repository.UserPlayHistoryRepository;
+import com.pulsebrief.readhistory.repository.UserReadHistoryRepository;
 import com.pulsebrief.subscription.repository.UserSubscriptionRepository;
 import com.pulsebrief.user.api.UserProfileSummaryResponse;
 import com.pulsebrief.user.service.UserProfileApplicationService;
@@ -24,15 +25,20 @@ class UserProfileApplicationServiceTest {
     @Mock
     private UserPlayHistoryRepository playHistoryRepository;
 
+    @Mock
+    private UserReadHistoryRepository readHistoryRepository;
+
     @Test
     void aggregatesProfileStatsFromUserTables() {
         when(subscriptionRepository.countByUserIdAndStatus(1L, (byte) 1)).thenReturn(4);
         when(favoriteRepository.countByUserId(1L)).thenReturn(2);
+        when(readHistoryRepository.countByUserId(1L)).thenReturn(7);
         when(playHistoryRepository.countByUserId(1L)).thenReturn(3);
         UserProfileApplicationService service = new UserProfileApplicationService(
                 subscriptionRepository,
                 favoriteRepository,
-                playHistoryRepository
+                playHistoryRepository,
+                readHistoryRepository
         );
 
         UserProfileSummaryResponse profile = service.getProfile(1L);
@@ -41,7 +47,7 @@ class UserProfileApplicationServiceTest {
         assertThat(profile.nickname()).isEqualTo("Wenjin");
         assertThat(profile.subscriptionCount()).isEqualTo(4);
         assertThat(profile.favoriteCount()).isEqualTo(2);
-        assertThat(profile.readCount()).isZero();
+        assertThat(profile.readCount()).isEqualTo(7);
         assertThat(profile.playCount()).isEqualTo(3);
     }
 }

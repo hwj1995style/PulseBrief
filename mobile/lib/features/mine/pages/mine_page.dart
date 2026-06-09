@@ -158,16 +158,28 @@ class _MinePageState extends State<MinePage> {
                         icon: CupertinoIcons.star,
                         title: '我的收藏',
                         trailing: '收藏 ${profile.favoriteCount} 条',
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          PulseRoutes.favoriteArticles,
+                        ),
                       ),
                       _MenuRow(
                         icon: CupertinoIcons.clock,
                         title: '阅读历史',
                         trailing: '最近阅读 ${profile.readCount} 条',
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          PulseRoutes.readHistory,
+                        ),
                       ),
                       _MenuRow(
                         icon: CupertinoIcons.play_circle,
                         title: '播放历史',
                         trailing: '最近播放 ${profile.playCount} 次',
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          PulseRoutes.playbackHistory,
+                        ),
                         showDivider: false,
                       ),
                     ],

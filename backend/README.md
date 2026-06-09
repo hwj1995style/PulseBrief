@@ -58,7 +58,11 @@ GET    /api/digests/{id}
 GET    /api/user/subscriptions
 PUT    /api/user/subscriptions
 GET    /api/user/profile
+GET    /api/user/favorites
+GET    /api/user/read-history
+POST   /api/user/read-history
 POST   /api/playback/history
+GET    /api/playback/history
 ```
 
 登录接口当前使用开发态 mock token：

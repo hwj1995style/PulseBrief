@@ -17,10 +17,16 @@ void main() {
     final homeFeed = await repository.getHomeFeed();
     final digestFeed = await repository.getTodayDigest();
     final profile = await repository.getUserProfile();
+    final favorites = await repository.getFavoriteArticles();
+    final readHistory = await repository.getReadHistoryArticles();
+    final playbackHistory = await repository.getPlaybackHistory();
 
     expect(session.user.nickname, 'Wenjin');
     expect(profile.nickname, 'Wenjin');
     expect(profile.subscriptionCount, greaterThan(0));
+    expect(favorites, isNotEmpty);
+    expect(readHistory, isNotEmpty);
+    expect(playbackHistory, isNotEmpty);
     expect(categories, isNotEmpty);
     expect(homeFeed.articles, isNotEmpty);
     expect(homeFeed.investmentPick.categoryName, '投行观点');
@@ -81,6 +87,32 @@ void main() {
             'playCount': 3,
           },
         },
+        'GET /user/favorites?page=1&pageSize=20': {
+          'code': 'OK',
+          'data': [_articleJson(id: 2, categoryName: 'AI 前沿')],
+        },
+        'GET /user/read-history?page=1&pageSize=20': {
+          'code': 'OK',
+          'data': [_articleJson(id: 3, categoryName: '宏观政策')],
+        },
+        'GET /playback/history?page=1&pageSize=20': {
+          'code': 'OK',
+          'data': [
+            {
+              'id': 99,
+              'playType': 'ARTICLE',
+              'articleId': 2,
+              'digestId': null,
+              'playTitle': '高盛：AI 基建投资仍将持续',
+              'playTime': '2026-06-09T09:30:00+08:00',
+              'durationSeconds': 168,
+            },
+          ],
+        },
+        'POST /user/read-history': {
+          'code': 'OK',
+          'data': {'id': 77},
+        },
         'GET /articles/home?categoryCode=all&pageSize=20': {
           'code': 'OK',
           'data': {
@@ -126,12 +158,21 @@ void main() {
     );
     final categories = await repository.getCategories();
     final profile = await repository.getUserProfile();
+    final favorites = await repository.getFavoriteArticles();
+    final readHistory = await repository.getReadHistoryArticles();
+    final playbackHistory = await repository.getPlaybackHistory();
+    final readHistoryId = await repository.recordReadHistory(articleId: '2');
     final homeFeed = await repository.getHomeFeed();
     final digestFeed = await repository.getTodayDigest();
 
     expect(session.accessToken, 'dev-token-1');
     expect(profile.favoriteCount, 2);
     expect(profile.playCount, 3);
+    expect(favorites.single.id, '2');
+    expect(readHistory.single.id, '3');
+    expect(playbackHistory.single.id, '99');
+    expect(playbackHistory.single.playTitle, contains('高盛'));
+    expect(readHistoryId, 77);
     expect(categories.single.name, '财经市场');
     expect(homeFeed.todayDigest.title, '今日全球简报');
     expect(homeFeed.articles.single.id, '1');

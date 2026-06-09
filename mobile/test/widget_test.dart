@@ -54,6 +54,24 @@ void main() {
 
     await tester.tap(find.byIcon(CupertinoIcons.chevron_left));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('我的收藏'));
+    await tester.pumpAndSettle();
+    expect(find.text('我的收藏'), findsWidgets);
+
+    await tester.tap(find.byIcon(CupertinoIcons.chevron_left));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('阅读历史'));
+    await tester.pumpAndSettle();
+    expect(find.text('阅读历史'), findsWidgets);
+
+    await tester.tap(find.byIcon(CupertinoIcons.chevron_left));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('播放历史'));
+    await tester.pumpAndSettle();
+    expect(find.text('播放历史'), findsWidgets);
+
+    await tester.tap(find.byIcon(CupertinoIcons.chevron_left));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('首页').last);
     await tester.pumpAndSettle();
 

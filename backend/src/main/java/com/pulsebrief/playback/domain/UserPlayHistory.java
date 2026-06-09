@@ -59,4 +59,32 @@ public class UserPlayHistory {
     public Long getId() {
         return id;
     }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public Long getArticleId() {
+        return articleId;
+    }
+
+    public Long getDigestId() {
+        return digestId;
+    }
+
+    public String getPlayType() {
+        return playType;
+    }
+
+    public String getPlayTitle() {
+        return playTitle;
+    }
+
+    public LocalDateTime getPlayTime() {
+        return playTime;
+    }
+
+    public Integer getDurationSeconds() {
+        return durationSeconds;
+    }
 }

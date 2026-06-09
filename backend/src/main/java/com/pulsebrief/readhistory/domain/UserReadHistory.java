@@ -1,4 +1,4 @@
-package com.pulsebrief.favorite.domain;
+package com.pulsebrief.readhistory.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,8 +9,8 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_favorite")
-public class UserFavorite {
+@Table(name = "user_read_history")
+public class UserReadHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,16 +21,20 @@ public class UserFavorite {
     @Column(name = "article_id")
     private Long articleId;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "read_time")
+    private LocalDateTime readTime;
 
-    protected UserFavorite() {
+    protected UserReadHistory() {
     }
 
-    public UserFavorite(Long userId, Long articleId) {
+    public UserReadHistory(Long userId, Long articleId) {
         this.userId = userId;
         this.articleId = articleId;
-        this.createdAt = LocalDateTime.now();
+        this.readTime = LocalDateTime.now();
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public Long getUserId() {
@@ -41,7 +45,7 @@ public class UserFavorite {
         return articleId;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public LocalDateTime getReadTime() {
+        return readTime;
     }
 }

@@ -2,6 +2,7 @@ package com.pulsebrief.user.service;
 
 import com.pulsebrief.favorite.repository.UserFavoriteRepository;
 import com.pulsebrief.playback.repository.UserPlayHistoryRepository;
+import com.pulsebrief.readhistory.repository.UserReadHistoryRepository;
 import com.pulsebrief.subscription.repository.UserSubscriptionRepository;
 import com.pulsebrief.user.api.UserProfileSummaryResponse;
 import org.springframework.stereotype.Service;
@@ -11,15 +12,18 @@ public class UserProfileApplicationService implements UserProfileService {
     private final UserSubscriptionRepository subscriptionRepository;
     private final UserFavoriteRepository favoriteRepository;
     private final UserPlayHistoryRepository playHistoryRepository;
+    private final UserReadHistoryRepository readHistoryRepository;
 
     public UserProfileApplicationService(
             UserSubscriptionRepository subscriptionRepository,
             UserFavoriteRepository favoriteRepository,
-            UserPlayHistoryRepository playHistoryRepository
+            UserPlayHistoryRepository playHistoryRepository,
+            UserReadHistoryRepository readHistoryRepository
     ) {
         this.subscriptionRepository = subscriptionRepository;
         this.favoriteRepository = favoriteRepository;
         this.playHistoryRepository = playHistoryRepository;
+        this.readHistoryRepository = readHistoryRepository;
     }
 
     @Override
@@ -31,7 +35,7 @@ public class UserProfileApplicationService implements UserProfileService {
                 bioFor(userId),
                 subscriptionRepository.countByUserIdAndStatus(userId, (byte) 1),
                 favoriteRepository.countByUserId(userId),
-                0,
+                readHistoryRepository.countByUserId(userId),
                 playHistoryRepository.countByUserId(userId)
         );
     }
