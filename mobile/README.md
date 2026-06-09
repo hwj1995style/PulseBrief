@@ -11,7 +11,7 @@
 7. 语音播放器页
 8. 我的页面
 
-页面使用统一主题 tokens、通用组件、mock 数据和路由配置，后续会通过 Repository 层切换到 Spring Boot API。
+页面使用统一主题 tokens、通用组件、mock 数据、路由配置和 Repository 数据层。默认使用 mock 数据，本机联调时可通过 `--dart-define` 切换到 Spring Boot API。
 
 ## 本机环境
 
@@ -63,6 +63,14 @@ flutter devices
 flutter run -d emulator-5554
 ```
 
+运行 API 模式 APP：
+
+```powershell
+flutter run -d emulator-5554 --dart-define=PULSEBRIEF_DATA_SOURCE=api --dart-define=PULSEBRIEF_API_BASE_URL=http://10.0.2.2:8080/api
+```
+
+说明：Android 模拟器访问本机 Spring Boot 后端需要使用 `10.0.2.2`，不能使用 `localhost`。
+
 如果只想安装已构建 APK：
 
 ```powershell
@@ -83,6 +91,12 @@ D:\Projects\PulseBrief\mobile\build\app\outputs\flutter-apk\app-debug.apk
 flutter analyze
 flutter test
 flutter build apk --debug --target-platform android-x64
+```
+
+Repository 真实 API 联调测试默认跳过。启动本机后端后，可显式开启：
+
+```powershell
+flutter test --dart-define=PULSEBRIEF_LIVE_API=true --dart-define=PULSEBRIEF_API_BASE_URL=http://localhost:8080/api test/live_api_repository_test.dart
 ```
 
 当前验证结果记录在：
@@ -119,7 +133,7 @@ art_clean_subscription.png
 
 ## 当前边界
 
-1. 当前阶段只使用 mock 数据，不接真实后端。
+1. 默认使用 mock 数据；API 模式已支持连接本机 Spring Boot V1 接口。
 2. 不实现真实登录、支付、研报下载或新闻全文展示。
 3. Android 模拟器是当前主要验收环境，Flutter Web 只作为辅助预览。
-4. 后续进入 Spring Boot API 后，页面不直接调用接口，统一从 Repository 层获取数据。
+4. 页面不直接调用接口，统一从 Repository 层获取数据。

@@ -45,6 +45,7 @@ public class SubscriptionApplicationService implements SubscriptionService {
     public SubscriptionResponse saveSubscriptions(Long userId, SubscriptionSaveRequest request) {
         List<String> requestedCodes = request.categoryCodes() == null ? List.of() : request.categoryCodes();
         subscriptionRepository.deleteByUserId(userId);
+        subscriptionRepository.flush();
         List<NewsCategory> categories = categoryRepository.findByCategoryCodeIn(requestedCodes)
                 .stream()
                 .sorted(Comparator.comparing(category -> requestedCodes.indexOf(category.getCategoryCode())))

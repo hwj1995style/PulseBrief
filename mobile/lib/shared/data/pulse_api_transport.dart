@@ -66,7 +66,7 @@ class HttpPulseApiTransport implements PulseApiTransport {
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
     }
     if (body != null) {
-      request.write(jsonEncode(body));
+      request.add(utf8.encode(jsonEncode(body)));
     }
 
     final response = await request.close();
