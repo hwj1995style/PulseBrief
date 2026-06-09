@@ -1,0 +1,81 @@
+import { Bell, ShieldCheck } from 'lucide-react';
+import { HashRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { navigationItems } from './app/navigation';
+import { CandidateReviewPage } from './features/candidates/CandidateReviewPage';
+import { adminApiConfig } from './shared/api/adminApi';
+import './styles.css';
+
+function App() {
+  return (
+    <HashRouter>
+      <div className="admin-shell">
+        <aside className="sidebar">
+          <div className="brand">
+            <span className="brand-mark">PB</span>
+            <div>
+              <strong>PulseBrief</strong>
+              <small>Admin</small>
+            </div>
+          </div>
+
+          <nav aria-label="后台导航" className="sidebar-nav">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
+                  key={item.key}
+                  to={`/${item.key}`}
+                >
+                  <Icon size={18} />
+                  <span>{item.label}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <div className="app-region">
+          <header className="topbar">
+            <div>
+              <strong>运营控制台</strong>
+              <span>真实资讯采集 · 人工审核 · 用户端发布</span>
+            </div>
+            <div className="topbar-actions">
+              <span className="env-pill">
+                <ShieldCheck size={16} />
+                {adminApiConfig.mode === 'mock' ? 'Mock 数据' : 'API 模式'}
+              </span>
+              <button className="icon-button" aria-label="通知">
+                <Bell size={18} />
+              </button>
+            </div>
+          </header>
+
+          <Routes>
+            <Route path="/" element={<Navigate replace to="/candidates" />} />
+            <Route path="/candidates" element={<CandidateReviewPage />} />
+            <Route path="/dashboard" element={<PlaceholderPage title="仪表盘" />} />
+            <Route path="/ingestion" element={<PlaceholderPage title="采集任务" />} />
+            <Route path="/articles" element={<PlaceholderPage title="文章管理" />} />
+            <Route path="/categories" element={<PlaceholderPage title="分类管理" />} />
+            <Route path="/digests" element={<PlaceholderPage title="简报管理" />} />
+          </Routes>
+        </div>
+      </div>
+    </HashRouter>
+  );
+}
+
+function PlaceholderPage({ title }: { title: string }) {
+  return (
+    <main className="workspace placeholder">
+      <section className="empty-panel">
+        <h1>{title}</h1>
+        <p>该模块将在候选审核闭环稳定后接入。</p>
+      </section>
+    </main>
+  );
+}
+
+export default App;

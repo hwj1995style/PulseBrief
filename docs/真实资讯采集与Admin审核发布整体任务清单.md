@@ -116,18 +116,20 @@
 
 ## 阶段 16：React Admin 工程骨架
 
-- [ ] 新建 `admin/` React + Vite + TypeScript 工程。
-- [ ] 配置 ESLint / TypeScript / 基础测试。
-- [ ] 搭建专业后台布局：侧边栏、顶部栏、内容区、表格、筛选、详情抽屉。
-- [ ] 建立 Admin API client。
-- [ ] 建立路由：Dashboard、采集任务、候选资讯、文章管理、分类管理、简报管理。
-- [ ] 更新 README 启动方式。
+- [x] 新建 `admin/` React + Vite + TypeScript 工程。
+- [x] 配置 TypeScript / 基础测试 / 构建脚本。
+- [x] 搭建专业后台布局：侧边栏、顶部栏、内容区、表格、筛选、详情面板。
+- [x] 建立 mock Admin API client。
+- [x] 建立路由：Dashboard、采集任务、候选资讯、文章管理、分类管理、简报管理。
+- [x] 更新 README 启动方式。
 
 验收标准：
 
 1. `admin/` 可独立启动。
 2. UI 风格是专业运营后台，不是移动端或营销页。
 3. 不复活旧 React/Vite PWA MVP。
+
+阶段结果：已完成 React Admin 独立工程骨架和候选资讯审核 mock 页面。当前页面支持候选状态筛选、详情预览、本地发布和拒绝状态流转；下一步接入真实 `/api/admin/candidates`。
 
 ## 阶段 16A：最新内容与授权全文 PDF 采集设计
 
