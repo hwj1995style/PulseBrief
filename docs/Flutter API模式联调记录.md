@@ -39,6 +39,7 @@ flutter test --dart-define=PULSEBRIEF_LIVE_API=true --dart-define=PULSEBRIEF_API
 8. `PUT /api/user/subscriptions`
 9. `POST /api/articles/{id}/favorite`
 10. `POST /api/playback/history`
+11. `GET /api/user/profile`
 
 ## 本轮发现与修复
 
@@ -79,7 +80,8 @@ PowerShell 冒烟脚本发送中文播放标题时出现非 UTF-8 请求体。Fl
 1. Flutter mock 模式仍为默认模式，本机预览不依赖后端。
 2. Flutter API Repository 已可对接 Spring Boot V1 API。
 3. 后端订阅保存与播放历史写入已通过真实 MySQL + Spring Boot 冒烟。
-4. Android 模拟器 API 模式已完成 8 页面页面级截图验收。
+4. 用户中心资料接口已接入，API 模式“我的”页资料与统计不再直接依赖本地 `mockUser`。
+5. Android 模拟器 API 模式已完成 8 页面页面级截图验收。
 
 ## Android 模拟器页面级验收
 
@@ -116,4 +118,20 @@ D:\Projects\PulseBrief\.codex\screenshots\api-mode
 3. P2：已修复 API `publishTime` 原始 ISO 字符串展示问题，改为 `昨天 09:30` 等短时间文案。
 4. P2：已修复 API 模式分类首屏默认选中空分类导致页面大面积留白的问题，改为优先选择有内容的分类，并为无内容分类提供空状态。
 5. P2：已修复 API 数字 digest id 导致简报列表图标无法区分的问题，改为按标题识别午间、晚间、AI、投行等类型。
-6. P3：我的页用户统计仍来自本地 mock 用户资料，后续接用户中心 API 时再统一替换。
+6. P3：我的页用户统计已通过 `GET /api/user/profile` 替换为 API 数据；阅读历史统计当前按设计返回 `0`，后续阅读历史模块补齐。
+
+## 用户中心资料联调补充
+
+本轮新增接口：
+
+```text
+GET /api/user/profile
+```
+
+验证结果：
+
+1. 未登录访问返回 401。
+2. 登录后返回 `nickname`、`bio`、`subscriptionCount`、`favoriteCount`、`readCount` 和 `playCount`。
+3. `subscriptionCount`、`favoriteCount`、`playCount` 来自 MySQL 真实表统计。
+4. Flutter `ApiPulseRepository.getUserProfile()` live API 测试通过。
+5. API 模式 Android debug APK 构建通过。

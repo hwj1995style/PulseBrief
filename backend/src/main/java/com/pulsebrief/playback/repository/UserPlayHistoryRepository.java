@@ -4,4 +4,5 @@ import com.pulsebrief.playback.domain.UserPlayHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserPlayHistoryRepository extends JpaRepository<UserPlayHistory, Long> {
+    Integer countByUserId(Long userId);
 }

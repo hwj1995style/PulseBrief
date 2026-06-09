@@ -24,6 +24,10 @@ void main() {
       );
       expect(session.accessToken, isNotEmpty);
 
+      final profile = await repository.getUserProfile();
+      expect(profile.nickname, 'Wenjin');
+      expect(profile.subscriptionCount, greaterThanOrEqualTo(0));
+
       final categories = await repository.getCategories();
       expect(categories, isNotEmpty);
 
@@ -31,7 +35,9 @@ void main() {
       expect(homeFeed.articles, isNotEmpty);
       expect(homeFeed.todayDigest.title, isNotEmpty);
 
-      final article = await repository.getArticleDetail(homeFeed.articles.first.id);
+      final article = await repository.getArticleDetail(
+        homeFeed.articles.first.id,
+      );
       expect(article.keyPoints, isNotEmpty);
 
       final digestFeed = await repository.getTodayDigest();

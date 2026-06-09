@@ -15,10 +15,7 @@ class PulseRepositoryFactory {
     defaultValue: 'http://10.0.2.2:8080/api',
   );
 
-  static PulseRepository create({
-    String? dataSource,
-    String? apiBaseUrl,
-  }) {
+  static PulseRepository create({String? dataSource, String? apiBaseUrl}) {
     final source = (dataSource ?? _envDataSource).toLowerCase();
     if (source == 'api') {
       return ApiPulseRepository(

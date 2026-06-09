@@ -118,7 +118,9 @@ class _HomePageState extends State<HomePage> {
         : _articles
               .where((item) => item.categoryName.contains(_selectedCategory))
               .toList();
-    final listedArticles = visibleArticles.isEmpty ? _articles : visibleArticles;
+    final listedArticles = visibleArticles.isEmpty
+        ? _articles
+        : visibleArticles;
     final investmentPick =
         _investmentPick ??
         _articles.firstWhere(

@@ -1,20 +1,77 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pulsebrief/app/routes.dart';
-import 'package:pulsebrief/mock/mock_user.dart';
+import 'package:pulsebrief/shared/models/user_profile.dart';
+import 'package:pulsebrief/shared/repositories/repository_scope.dart';
 import 'package:pulsebrief/shared/theme/app_colors.dart';
 import 'package:pulsebrief/shared/theme/app_radius.dart';
 import 'package:pulsebrief/shared/theme/app_spacing.dart';
 import 'package:pulsebrief/shared/theme/app_text_styles.dart';
 import 'package:pulsebrief/shared/widgets/app_header.dart';
 import 'package:pulsebrief/shared/widgets/category_chip.dart';
+import 'package:pulsebrief/shared/widgets/empty_state.dart';
+import 'package:pulsebrief/shared/widgets/loading_state.dart';
 import 'package:pulsebrief/shared/widgets/pulse_card.dart';
 
-class MinePage extends StatelessWidget {
+class MinePage extends StatefulWidget {
   const MinePage({super.key});
 
   @override
+  State<MinePage> createState() => _MinePageState();
+}
+
+class _MinePageState extends State<MinePage> {
+  bool _loaded = false;
+  bool _isLoading = true;
+  String? _errorMessage;
+  UserProfile? _profile;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_loaded) {
+      _loaded = true;
+      _loadProfile();
+    }
+  }
+
+  Future<void> _loadProfile() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final profile = await RepositoryScope.of(context).getUserProfile();
+      if (!mounted) return;
+      setState(() {
+        _profile = profile;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '用户资料加载失败，请稍后重试';
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const SafeArea(bottom: false, child: LoadingState());
+    }
+    if (_errorMessage != null) {
+      return SafeArea(
+        bottom: false,
+        child: EmptyState(title: '加载失败', message: _errorMessage!),
+      );
+    }
+    final profile = _profile;
+    if (profile == null) {
+      return const SafeArea(bottom: false, child: EmptyState());
+    }
+
     return SafeArea(
       bottom: false,
       child: CustomScrollView(
@@ -47,7 +104,7 @@ class MinePage extends StatelessWidget {
             ),
             sliver: SliverList.list(
               children: [
-                const _ProfileBlock(),
+                _ProfileBlock(profile: profile),
                 const SizedBox(height: AppSpacing.xl),
                 PulseCard(
                   borderColor: AppColors.borderBlue,
@@ -91,7 +148,7 @@ class MinePage extends StatelessWidget {
                       _MenuRow(
                         icon: CupertinoIcons.bookmark,
                         title: '我的订阅',
-                        trailing: '订阅 ${mockUser.subscriptionCount} 个主题',
+                        trailing: '订阅 ${profile.subscriptionCount} 个主题',
                         onTap: () => Navigator.pushNamed(
                           context,
                           PulseRoutes.subscription,
@@ -100,17 +157,17 @@ class MinePage extends StatelessWidget {
                       _MenuRow(
                         icon: CupertinoIcons.star,
                         title: '我的收藏',
-                        trailing: '收藏 ${mockUser.favoriteCount} 条',
+                        trailing: '收藏 ${profile.favoriteCount} 条',
                       ),
                       _MenuRow(
                         icon: CupertinoIcons.clock,
                         title: '阅读历史',
-                        trailing: '最近阅读 ${mockUser.readCount} 条',
+                        trailing: '最近阅读 ${profile.readCount} 条',
                       ),
                       _MenuRow(
                         icon: CupertinoIcons.play_circle,
                         title: '播放历史',
-                        trailing: '最近播放 ${mockUser.playCount} 次',
+                        trailing: '最近播放 ${profile.playCount} 次',
                         showDivider: false,
                       ),
                     ],
@@ -206,7 +263,9 @@ class MinePage extends StatelessWidget {
 }
 
 class _ProfileBlock extends StatelessWidget {
-  const _ProfileBlock();
+  const _ProfileBlock({required this.profile});
+
+  final UserProfile profile;
 
   @override
   Widget build(BuildContext context) {
@@ -238,7 +297,7 @@ class _ProfileBlock extends StatelessWidget {
               Row(
                 children: [
                   Flexible(
-                    child: Text(mockUser.name, style: AppTextStyles.hero),
+                    child: Text(profile.name, style: AppTextStyles.hero),
                   ),
                   const SizedBox(width: 8),
                   const Icon(
@@ -249,7 +308,7 @@ class _ProfileBlock extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(mockUser.bio, style: AppTextStyles.body),
+              Text(profile.bio, style: AppTextStyles.body),
             ],
           ),
         ),

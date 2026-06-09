@@ -99,10 +99,9 @@ class _CategoryPageState extends State<CategoryPage> {
       _isLoading = true;
     });
     try {
-      final articles = await RepositoryScope.of(context).getArticles(
-        categoryCode: category.code,
-        pageSize: 20,
-      );
+      final articles = await RepositoryScope.of(
+        context,
+      ).getArticles(categoryCode: category.code, pageSize: 20);
       if (!mounted) return;
       setState(() {
         _articles = articles;
@@ -141,7 +140,9 @@ class _CategoryPageState extends State<CategoryPage> {
       return const SafeArea(bottom: false, child: EmptyState());
     }
     final articles = _articles;
-    final updateCount = articles.isEmpty ? selected.todayCount : articles.length;
+    final updateCount = articles.isEmpty
+        ? selected.todayCount
+        : articles.length;
 
     return SafeArea(
       bottom: false,

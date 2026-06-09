@@ -7,6 +7,7 @@ import 'package:pulsebrief/shared/models/article.dart';
 import 'package:pulsebrief/shared/models/digest.dart';
 import 'package:pulsebrief/shared/models/news_category.dart';
 import 'package:pulsebrief/shared/models/subscription_topic.dart';
+import 'package:pulsebrief/shared/models/user_profile.dart';
 import 'package:pulsebrief/shared/repositories/pulse_repository.dart';
 
 class MockPulseRepository implements PulseRepository {
@@ -42,6 +43,11 @@ class MockPulseRepository implements PulseRepository {
       expiresIn: 0,
       user: mockUser,
     );
+  }
+
+  @override
+  Future<UserProfile> getUserProfile() async {
+    return mockUser;
   }
 
   @override
@@ -94,10 +100,10 @@ class MockPulseRepository implements PulseRepository {
 
   @override
   Future<Article> getArticleDetail(String id) async {
-    return [..._articles, ...relatedArticles].firstWhere(
-      (article) => article.id == id,
-      orElse: () => _articles.first,
-    );
+    return [
+      ..._articles,
+      ...relatedArticles,
+    ].firstWhere((article) => article.id == id, orElse: () => _articles.first);
   }
 
   @override

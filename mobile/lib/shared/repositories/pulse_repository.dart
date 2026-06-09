@@ -13,6 +13,8 @@ abstract class PulseRepository {
 
   Future<AuthSession> guest();
 
+  Future<UserProfile> getUserProfile();
+
   Future<List<NewsCategory>> getCategories();
 
   Future<HomeFeed> getHomeFeed({

@@ -57,6 +57,7 @@ GET    /api/digests/today
 GET    /api/digests/{id}
 GET    /api/user/subscriptions
 PUT    /api/user/subscriptions
+GET    /api/user/profile
 POST   /api/playback/history
 ```
 

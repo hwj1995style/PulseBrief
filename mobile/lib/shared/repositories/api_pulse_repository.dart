@@ -12,6 +12,7 @@ class ApiPulseRepository implements PulseRepository {
 
   final PulseApiTransport transport;
   String _accessToken = '';
+  UserProfile? _cachedUser;
 
   @override
   Future<AuthSession> login({
@@ -30,18 +31,20 @@ class ApiPulseRepository implements PulseRepository {
     final data = _dataMap(json);
     final user = _map(data['user']);
     _accessToken = _string(data['accessToken']);
+    final profile = UserProfile(
+      name: _string(user['nickname'], fallback: 'Wenjin'),
+      bio: _string(user['bio'], fallback: '每天几分钟，掌握全球脉搏'),
+      subscriptionCount: 12,
+      favoriteCount: 28,
+      readCount: 146,
+      playCount: 34,
+    );
+    _cachedUser = profile;
     return AuthSession(
       accessToken: _accessToken,
       tokenType: _string(data['tokenType'], fallback: 'Bearer'),
       expiresIn: _int(data['expiresIn']),
-      user: UserProfile(
-        name: _string(user['nickname'], fallback: 'Wenjin'),
-        bio: _string(user['bio'], fallback: '每天几分钟，掌握全球脉搏'),
-        subscriptionCount: 12,
-        favoriteCount: 28,
-        readCount: 146,
-        playCount: 34,
-      ),
+      user: profile,
     );
   }
 
@@ -51,19 +54,32 @@ class ApiPulseRepository implements PulseRepository {
     final data = _dataMap(json);
     final user = _map(data['user']);
     _accessToken = _string(data['accessToken']);
+    final profile = UserProfile(
+      name: _string(user['nickname'], fallback: '游客'),
+      bio: _string(user['bio'], fallback: '游客模式'),
+      subscriptionCount: 0,
+      favoriteCount: 0,
+      readCount: 0,
+      playCount: 0,
+    );
+    _cachedUser = profile;
     return AuthSession(
       accessToken: _accessToken,
       tokenType: _string(data['tokenType'], fallback: 'Guest'),
       expiresIn: _int(data['expiresIn']),
-      user: UserProfile(
-        name: _string(user['nickname'], fallback: '游客'),
-        bio: _string(user['bio'], fallback: '游客模式'),
-        subscriptionCount: 0,
-        favoriteCount: 0,
-        readCount: 0,
-        playCount: 0,
-      ),
+      user: profile,
     );
+  }
+
+  @override
+  Future<UserProfile> getUserProfile() async {
+    if (_accessToken.isEmpty && _cachedUser != null) {
+      return _cachedUser!;
+    }
+    final json = await transport.getJson('/user/profile', token: _accessToken);
+    final profile = _userProfileFromJson(_dataMap(json));
+    _cachedUser = profile;
+    return profile;
   }
 
   @override
@@ -125,9 +141,9 @@ class ApiPulseRepository implements PulseRepository {
   Future<Article> getArticleDetail(String id) async {
     final json = await transport.getJson('/articles/$id');
     final data = _dataMap(json);
-    return _articleFromJson(data).copyWith(
-      isFavorited: data['favorited'] == true,
-    );
+    return _articleFromJson(
+      data,
+    ).copyWith(isFavorited: data['favorited'] == true);
   }
 
   @override
@@ -292,6 +308,17 @@ class ApiPulseRepository implements PulseRepository {
       eveningReview: json['eveningReview'] != false,
       breakingNews: json['breakingNews'] == true,
       investmentView: json['investmentView'] == true,
+    );
+  }
+
+  UserProfile _userProfileFromJson(Map<String, Object?> json) {
+    return UserProfile(
+      name: _string(json['nickname'], fallback: 'Wenjin'),
+      bio: _string(json['bio'], fallback: '每天几分钟，掌握全球脉搏'),
+      subscriptionCount: _int(json['subscriptionCount']),
+      favoriteCount: _int(json['favoriteCount']),
+      readCount: _int(json['readCount']),
+      playCount: _int(json['playCount']),
     );
   }
 

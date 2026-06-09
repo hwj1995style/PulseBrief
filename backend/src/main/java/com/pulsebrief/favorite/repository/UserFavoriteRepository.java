@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 public interface UserFavoriteRepository extends JpaRepository<UserFavorite, Long> {
     Optional<UserFavorite> findByUserIdAndArticleId(Long userId, Long articleId);
 
+    Integer countByUserId(Long userId);
+
     @Transactional
     void deleteByUserIdAndArticleId(Long userId, Long articleId);
 }

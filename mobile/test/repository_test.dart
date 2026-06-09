@@ -16,8 +16,11 @@ void main() {
     final categories = await repository.getCategories();
     final homeFeed = await repository.getHomeFeed();
     final digestFeed = await repository.getTodayDigest();
+    final profile = await repository.getUserProfile();
 
     expect(session.user.nickname, 'Wenjin');
+    expect(profile.nickname, 'Wenjin');
+    expect(profile.subscriptionCount, greaterThan(0));
     expect(categories, isNotEmpty);
     expect(homeFeed.articles, isNotEmpty);
     expect(homeFeed.investmentPick.categoryName, '投行观点');
@@ -65,6 +68,19 @@ void main() {
             },
           ],
         },
+        'GET /user/profile': {
+          'code': 'OK',
+          'data': {
+            'id': 1,
+            'nickname': 'Wenjin',
+            'avatarUrl': '',
+            'bio': '每天几分钟，掌握全球脉搏',
+            'subscriptionCount': 4,
+            'favoriteCount': 2,
+            'readCount': 0,
+            'playCount': 3,
+          },
+        },
         'GET /articles/home?categoryCode=all&pageSize=20': {
           'code': 'OK',
           'data': {
@@ -109,10 +125,13 @@ void main() {
       agreementAccepted: true,
     );
     final categories = await repository.getCategories();
+    final profile = await repository.getUserProfile();
     final homeFeed = await repository.getHomeFeed();
     final digestFeed = await repository.getTodayDigest();
 
     expect(session.accessToken, 'dev-token-1');
+    expect(profile.favoriteCount, 2);
+    expect(profile.playCount, 3);
     expect(categories.single.name, '财经市场');
     expect(homeFeed.todayDigest.title, '今日全球简报');
     expect(homeFeed.articles.single.id, '1');
@@ -122,7 +141,10 @@ void main() {
   });
 }
 
-Map<String, Object?> _articleJson({required int id, required String categoryName}) {
+Map<String, Object?> _articleJson({
+  required int id,
+  required String categoryName,
+}) {
   return {
     'id': id,
     'title': '高盛：AI 基建投资仍将持续',

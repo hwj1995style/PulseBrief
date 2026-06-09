@@ -113,10 +113,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     final selectedCodes = _selectedTopics.map((topic) {
       return _codeForTopicName(topic.name);
     }).toList();
-    final snapshot = await RepositoryScope.of(context).saveSubscriptions(
-      categoryCodes: selectedCodes,
-      preferences: preferences,
-    );
+    final snapshot = await RepositoryScope.of(
+      context,
+    ).saveSubscriptions(categoryCodes: selectedCodes, preferences: preferences);
     if (!mounted) return;
     setState(() => _applySnapshot(snapshot));
     ScaffoldMessenger.of(
