@@ -2,10 +2,10 @@ package com.pulsebrief.admin;
 
 import com.pulsebrief.article.domain.NewsArticle;
 import com.pulsebrief.article.repository.ArticleRepository;
+import com.pulsebrief.digest.repository.DigestRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,6 +30,9 @@ class AdminDigestControllerTest {
 
     @Autowired
     private ArticleRepository articleRepository;
+
+    @Autowired
+    private DigestRepository digestRepository;
 
     @Test
     void requiresAdminTokenForDigestList() throws Exception {
@@ -232,7 +235,12 @@ class AdminDigestControllerTest {
     }
 
     private LocalDate futureDigestDate() {
-        return LocalDate.now().plusDays(ThreadLocalRandom.current().nextInt(400000, 800000));
+        return digestRepository.findAll()
+                .stream()
+                .map(digest -> digest.getDigestDate())
+                .max(LocalDate::compareTo)
+                .orElse(LocalDate.now())
+                .plusDays(1);
     }
 
     private Long extractId(String content) {

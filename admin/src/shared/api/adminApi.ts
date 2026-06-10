@@ -1,6 +1,6 @@
 import { mockCandidates } from '../../mock/candidates';
 import { mockDigestArticleCandidates, mockDigests } from '../../mock/digests';
-import type { AdminCandidate, CandidateStatus, ReportAsset } from '../types/candidate';
+import type { AdminCandidate, AdminCandidateUpdateInput, CandidateStatus, ReportAsset } from '../types/candidate';
 import type {
   AdminDigest,
   AdminDigestArticleCandidate,
@@ -17,6 +17,7 @@ export interface AdminApiClient {
   getInitialCandidates: () => AdminCandidate[];
   listCandidates: (status?: CandidateStatus | 'ALL') => Promise<AdminCandidate[]>;
   getCandidate: (id: number) => Promise<AdminCandidate>;
+  updateCandidate: (id: number, input: AdminCandidateUpdateInput) => Promise<AdminCandidate>;
   publishCandidate: (id: number) => Promise<AdminCandidate>;
   rejectCandidate: (id: number, reviewNote?: string) => Promise<AdminCandidate>;
   getInitialDigests: () => AdminDigest[];
@@ -177,6 +178,10 @@ export function getCandidate(id: number): Promise<AdminCandidate> {
   return defaultClient.getCandidate(id);
 }
 
+export function updateCandidate(id: number, input: AdminCandidateUpdateInput): Promise<AdminCandidate> {
+  return defaultClient.updateCandidate(id, input);
+}
+
 export function publishCandidate(id: number): Promise<AdminCandidate> {
   return defaultClient.publishCandidate(id);
 }
@@ -243,6 +248,19 @@ function createMockAdminApiClient(): MutableAdminApiClient {
     return findCandidate(id);
   }
 
+  function updateCandidate(id: number, input: AdminCandidateUpdateInput) {
+    localCandidates = localCandidates.map((candidate) =>
+      candidate.id === id
+        ? {
+            ...candidate,
+            ...input,
+            categoryName: categoryNameByCode[input.categoryCode] ?? input.categoryCode
+          }
+        : candidate
+    );
+    return findCandidate(id);
+  }
+
   return {
     getInitialCandidates: () => localCandidates.map(cloneCandidate),
     listCandidates: async (status) => {
@@ -252,6 +270,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
       return localCandidates.filter((candidate) => candidate.status === status).map(cloneCandidate);
     },
     getCandidate: async (id) => findCandidate(id),
+    updateCandidate: async (id, input) => updateCandidate(id, input),
     publishCandidate: async (id) => updateStatus(id, 'PUBLISHED'),
     rejectCandidate: async (id) => updateStatus(id, 'REJECTED'),
     getInitialDigests: () => localDigests.map(cloneDigest),
@@ -409,6 +428,13 @@ function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): Admin
     getCandidate: async (id) => {
       const detail = await request<BackendCandidateDetailResponse>(`/api/admin/candidates/${id}`);
       return mapCandidateDetail(detail);
+    },
+    updateCandidate: async (id, input) => {
+      const candidate = await request<BackendCandidateResponse>(`/api/admin/candidates/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(input)
+      });
+      return mapCandidate(candidate);
     },
     publishCandidate: async (id) => {
       const candidate = await request<BackendCandidateResponse>(`/api/admin/candidates/${id}/publish`, {

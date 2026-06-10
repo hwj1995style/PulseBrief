@@ -1,11 +1,12 @@
-import { CheckCircle2, ExternalLink, FileText, RefreshCw, Search, XCircle } from 'lucide-react';
+import { CheckCircle2, ExternalLink, FileText, RefreshCw, Save, Search, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   getCandidate,
   getInitialCandidates,
   listCandidates,
   publishCandidate,
-  rejectCandidate
+  rejectCandidate,
+  updateCandidate
 } from '../../shared/api/adminApi';
 import type { AdminCandidate, CandidateStatus } from '../../shared/types/candidate';
 import { candidateStatusText, candidateStatusTone } from './candidateUtils';
@@ -17,6 +18,17 @@ const filters: Array<{ label: string; ariaLabel: string; value: CandidateStatus 
   { label: '拒绝', ariaLabel: '已拒绝', value: 'REJECTED' }
 ];
 
+const categoryOptions = [
+  { label: '全球热点', value: 'global' },
+  { label: '财经市场', value: 'finance' },
+  { label: '科技趋势', value: 'technology' },
+  { label: 'AI 前沿', value: 'ai' },
+  { label: '宏观政策', value: 'macro' },
+  { label: '投行观点', value: 'investment_view' },
+  { label: '产业观察', value: 'industry' },
+  { label: '公司动态', value: 'company' }
+];
+
 export function CandidateReviewPage() {
   const [filter, setFilter] = useState<CandidateStatus | 'ALL'>('PENDING_REVIEW');
   const [candidates, setCandidates] = useState<AdminCandidate[]>(() => getInitialCandidates());
@@ -24,6 +36,11 @@ export function CandidateReviewPage() {
   const [isLoading, setIsLoading] = useState(() => getInitialCandidates().length === 0);
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [draftTitle, setDraftTitle] = useState('');
+  const [draftSummary, setDraftSummary] = useState('');
+  const [draftCategoryCode, setDraftCategoryCode] = useState('global');
+  const [draftSourceName, setDraftSourceName] = useState('');
 
   useEffect(() => {
     void refreshCandidates();
@@ -49,12 +66,27 @@ export function CandidateReviewPage() {
     [candidates]
   );
 
+  useEffect(() => {
+    if (!selectedCandidate) {
+      setDraftTitle('');
+      setDraftSummary('');
+      setDraftCategoryCode('global');
+      setDraftSourceName('');
+      return;
+    }
+    setDraftTitle(selectedCandidate.title);
+    setDraftSummary(selectedCandidate.summary);
+    setDraftCategoryCode(selectedCandidate.categoryCode);
+    setDraftSourceName(selectedCandidate.sourceName);
+  }, [selectedCandidate?.id, selectedCandidate?.title, selectedCandidate?.summary, selectedCandidate?.categoryCode, selectedCandidate?.sourceName]);
+
   async function updateStatus(status: CandidateStatus) {
     if (!selectedCandidate) {
       return;
     }
     setActionLoading(true);
     setErrorMessage('');
+    setSuccessMessage('');
     try {
       const updated =
         status === 'PUBLISHED'
@@ -72,6 +104,7 @@ export function CandidateReviewPage() {
   async function refreshCandidates() {
     setIsLoading(true);
     setErrorMessage('');
+    setSuccessMessage('');
     try {
       const items = await listCandidates('ALL');
       setCandidates(items);
@@ -86,11 +119,41 @@ export function CandidateReviewPage() {
   async function selectCandidate(candidate: AdminCandidate) {
     setSelectedId(candidate.id);
     setErrorMessage('');
+    setSuccessMessage('');
     try {
       const detail = await getCandidate(candidate.id);
       setCandidates((items) => items.map((item) => (item.id === detail.id ? { ...item, ...detail } : item)));
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '候选详情加载失败，已展示列表摘要。');
+    }
+  }
+
+  async function saveCandidateDraft() {
+    if (!selectedCandidate) {
+      return;
+    }
+    const title = draftTitle.trim();
+    if (!title) {
+      setErrorMessage('候选标题不能为空。');
+      return;
+    }
+    setActionLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+    try {
+      const updated = await updateCandidate(selectedCandidate.id, {
+        title,
+        summary: draftSummary.trim(),
+        categoryCode: draftCategoryCode,
+        sourceName: draftSourceName.trim()
+      });
+      setCandidates((items) => items.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));
+      setSelectedId(updated.id);
+      setSuccessMessage('候选内容已保存');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '候选内容保存失败，请稍后重试。');
+    } finally {
+      setActionLoading(false);
     }
   }
 
@@ -174,6 +237,7 @@ export function CandidateReviewPage() {
           </div>
         </div>
         {errorMessage ? <p className="inline-error">{errorMessage}</p> : null}
+        {successMessage ? <p className="inline-success">{successMessage}</p> : null}
       </section>
 
       <aside className="detail-panel" aria-label="候选详情">
@@ -189,6 +253,60 @@ export function CandidateReviewPage() {
             <p className="detail-meta">
               {selectedCandidate.sourceName} · {selectedCandidate.categoryName} · {selectedCandidate.fetchedAt}
             </p>
+
+            <section className="detail-section">
+              <h3>审核编辑</h3>
+              <div className="digest-form-grid candidate-form-grid">
+                <label className="field-label">
+                  候选标题
+                  <input
+                    value={draftTitle}
+                    onChange={(event) => setDraftTitle(event.target.value)}
+                    disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
+                  />
+                </label>
+                <label className="field-label">
+                  候选分类
+                  <select
+                    value={draftCategoryCode}
+                    onChange={(event) => setDraftCategoryCode(event.target.value)}
+                    disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
+                  >
+                    {categoryOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="field-label">
+                  候选来源
+                  <input
+                    value={draftSourceName}
+                    onChange={(event) => setDraftSourceName(event.target.value)}
+                    disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
+                  />
+                </label>
+                <label className="field-label wide">
+                  候选摘要
+                  <textarea
+                    value={draftSummary}
+                    onChange={(event) => setDraftSummary(event.target.value)}
+                    disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
+                    rows={4}
+                  />
+                </label>
+              </div>
+              <button
+                className="secondary-action"
+                disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
+                onClick={saveCandidateDraft}
+                type="button"
+              >
+                <Save size={18} />
+                保存候选内容
+              </button>
+            </section>
 
             <section className="detail-section">
               <h3>AI 摘要草稿</h3>

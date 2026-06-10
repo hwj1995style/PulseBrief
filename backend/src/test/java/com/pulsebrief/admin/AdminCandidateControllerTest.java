@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -92,6 +93,34 @@ class AdminCandidateControllerTest {
         assertThat(updated.getRawNewsItem().getItemStatus()).isEqualTo("REJECTED");
         assertThat(articleService.listArticles("all", 1, 50))
                 .noneMatch(article -> article.title().equals(candidate.getTitle()));
+    }
+
+    @Test
+    void updatesPendingCandidateDraftBeforePublish() throws Exception {
+        CandidateArticle candidate = createPendingCandidate("admin-update");
+
+        mockMvc.perform(put("/api/admin/candidates/" + candidate.getId())
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "运营修订后的候选标题",
+                                  "summary": "运营修订后的候选摘要",
+                                  "categoryCode": "ai",
+                                  "sourceName": "Updated Source"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("运营修订后的候选标题"))
+                .andExpect(jsonPath("$.data.summary").value("运营修订后的候选摘要"))
+                .andExpect(jsonPath("$.data.categoryCode").value("ai"))
+                .andExpect(jsonPath("$.data.sourceName").value("Updated Source"));
+
+        CandidateArticle updated = candidateArticleRepository.findById(candidate.getId()).orElseThrow();
+        assertThat(updated.getTitle()).isEqualTo("运营修订后的候选标题");
+        assertThat(updated.getSummary()).isEqualTo("运营修订后的候选摘要");
+        assertThat(updated.getCategoryCode()).isEqualTo("ai");
+        assertThat(updated.getSourceName()).isEqualTo("Updated Source");
     }
 
     @Test

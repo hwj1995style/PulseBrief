@@ -211,6 +211,62 @@ describe('adminApi HTTP client', () => {
     );
   });
 
+  it('sends candidate update requests with editable review fields', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      await mockFetchResponse({
+        code: 'OK',
+        data: {
+          id: 15,
+          rawNewsItemId: 11,
+          title: '运营修订后的候选标题',
+          summary: '运营修订后的候选摘要',
+          categoryCode: 'ai',
+          sourceName: 'Updated Source',
+          originalUrl: 'https://example.com/updated',
+          publishedAt: null,
+          status: 'PENDING_REVIEW',
+          createdAt: '2026-06-10T09:00:00+08:00',
+          publishedArticleId: null,
+          reviewNote: null
+        }
+      })
+    );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const updated = await client.updateCandidate(15, {
+      title: '运营修订后的候选标题',
+      summary: '运营修订后的候选摘要',
+      categoryCode: 'ai',
+      sourceName: 'Updated Source'
+    });
+
+    expect(updated).toEqual(
+      expect.objectContaining({
+        id: 15,
+        title: '运营修订后的候选标题',
+        categoryCode: 'ai',
+        categoryName: 'AI 前沿',
+        sourceName: 'Updated Source'
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/admin/candidates/15',
+      expect.objectContaining({
+        method: 'PUT',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer dev-admin-token',
+          'Content-Type': 'application/json'
+        }),
+        body: JSON.stringify({
+          title: '运营修订后的候选标题',
+          summary: '运营修订后的候选摘要',
+          categoryCode: 'ai',
+          sourceName: 'Updated Source'
+        })
+      })
+    );
+  });
+
   it('maps digest APIs and sends create and publish requests', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch');
     fetchMock

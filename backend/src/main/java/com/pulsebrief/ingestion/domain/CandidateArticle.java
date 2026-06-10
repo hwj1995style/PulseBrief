@@ -118,10 +118,11 @@ public class CandidateArticle {
         return createdAt;
     }
 
-    public void updateDraft(String title, String summary, String categoryCode) {
+    public void updateDraft(String title, String summary, String categoryCode, String sourceName) {
         this.title = title.trim();
         this.summary = summary;
         this.categoryCode = categoryCode;
+        this.sourceName = sourceName;
         this.updatedAt = LocalDateTime.now();
     }
 

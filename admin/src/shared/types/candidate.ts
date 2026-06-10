@@ -23,3 +23,10 @@ export interface AdminCandidate {
   status: CandidateStatus;
   reportAssets: ReportAsset[];
 }
+
+export interface AdminCandidateUpdateInput {
+  title: string;
+  summary: string;
+  categoryCode: string;
+  sourceName: string;
+}

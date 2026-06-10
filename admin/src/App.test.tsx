@@ -35,6 +35,28 @@ describe('PulseBrief Admin shell', () => {
     expect(screen.getByText('高盛：AI 基建投资仍将持续')).toBeInTheDocument();
   });
 
+  it('edits candidate review fields before publishing', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(await screen.findByText('高盛：AI 基建投资仍将持续')).toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText('候选标题'));
+    await user.type(screen.getByLabelText('候选标题'), '运营修订后的 AI 基建标题');
+    await user.clear(screen.getByLabelText('候选摘要'));
+    await user.type(screen.getByLabelText('候选摘要'), '运营修订后的摘要内容');
+    await user.selectOptions(screen.getByLabelText('候选分类'), 'ai');
+    await user.clear(screen.getByLabelText('候选来源'));
+    await user.type(screen.getByLabelText('候选来源'), 'Updated Source');
+    await user.click(screen.getByRole('button', { name: '保存候选内容' }));
+
+    expect(await screen.findByText('候选内容已保存')).toBeInTheDocument();
+    const detail = screen.getByRole('complementary', { name: '候选详情' });
+    expect(within(detail).getByRole('heading', { name: '运营修订后的 AI 基建标题 · 详情' })).toBeInTheDocument();
+    expect(within(detail).getByText(/Updated Source · AI 前沿/)).toBeInTheDocument();
+    expect(within(detail).getAllByText('运营修订后的摘要内容')).toHaveLength(2);
+  });
+
   it('creates and publishes a daily digest from selected articles', async () => {
     const user = userEvent.setup();
     window.location.hash = '#/digests';

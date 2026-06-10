@@ -628,11 +628,13 @@ button {
   font-weight: 800;
 }
 
-.field-label.full {
+.field-label.full,
+.field-label.wide {
   grid-column: 1 / -1;
 }
 
 .field-label input,
+.field-label select,
 .field-label textarea {
   width: 100%;
   border: 1px solid #dbe4f0;
@@ -652,9 +654,16 @@ button {
 }
 
 .field-label input:focus,
+.field-label select:focus,
 .field-label textarea:focus {
   border-color: #0f4fd8;
   box-shadow: 0 0 0 3px rgba(15, 79, 216, 0.1);
+}
+
+.candidate-form-grid {
+  grid-template-columns: 1fr;
+  margin-top: 8px;
+  margin-bottom: 12px;
 }
 
 .digest-list-panel,

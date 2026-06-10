@@ -93,7 +93,12 @@ public class AdminCandidateApplicationService {
         if (summary != null && summary.length() > 2000) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Candidate summary is too long");
         }
-        candidate.updateDraft(title, summary, blankToDefault(request.categoryCode(), candidate.getCategoryCode()));
+        candidate.updateDraft(
+                title,
+                summary,
+                blankToDefault(request.categoryCode(), candidate.getCategoryCode()),
+                blankToDefault(request.sourceName(), candidate.getSourceName())
+        );
         return mapper.toCandidateResponse(candidate);
     }
 
