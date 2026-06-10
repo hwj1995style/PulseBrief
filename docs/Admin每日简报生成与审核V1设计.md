@@ -420,3 +420,21 @@ npm run build
 2. 第二轮实现 React Admin 简报管理页面。
 3. 第三轮补 Flutter 简报页真实发布截图验收。
 4. 后续再考虑 AI 辅助生成、TTS 音频、推送和版本回滚。
+
+## 阶段实现记录
+
+第一批后端闭环已完成：
+
+1. 新增 `daily_digest_article` 关联表，记录简报热点与已发布文章的来源关系和排序。
+2. 新增 Admin Digest API 第一批接口：文章候选池、简报列表、简报详情、创建草稿、发布草稿。
+3. 创建草稿时只允许选择已发布文章，热点清单写入 `daily_digest_article.highlight_text`，并同步生成用户端可读的 `daily_digest.content`。
+4. 发布后复用现有用户端 `/api/digests/today` 和 `/api/digests/{id}`，Flutter APP 可读取最新发布简报。
+5. 已补充 `AdminDigestControllerTest`，覆盖 Admin Token、文章候选、创建草稿、发布、用户端今日简报读取、详情读取和重复发布冲突。
+
+仍待后续批次完成：
+
+1. `PUT /api/admin/digests/{id}` 编辑草稿。
+2. `POST /api/admin/digests/{id}/offline` 下线已发布简报。
+3. React Admin 简报管理页面。
+4. Flutter API 模式截图回归。
+5. OpenAPI 文档补充 Admin Digest 接口示例。

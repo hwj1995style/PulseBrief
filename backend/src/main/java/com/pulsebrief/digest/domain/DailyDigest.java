@@ -2,6 +2,8 @@ package com.pulsebrief.digest.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
@@ -11,6 +13,7 @@ import java.time.LocalDateTime;
 @Table(name = "daily_digest")
 public class DailyDigest {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "digest_date")
@@ -18,6 +21,9 @@ public class DailyDigest {
 
     @Column(name = "digest_type")
     private String digestType;
+
+    @Column(name = "category_code")
+    private String categoryCode;
 
     private String title;
 
@@ -36,7 +42,34 @@ public class DailyDigest {
     @Column(name = "publish_time")
     private LocalDateTime publishTime;
 
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     protected DailyDigest() {
+    }
+
+    public DailyDigest(
+            LocalDate digestDate,
+            String digestType,
+            String categoryCode,
+            String title,
+            String summary,
+            String content,
+            String audioText
+    ) {
+        this.digestDate = digestDate;
+        this.digestType = digestType;
+        this.categoryCode = categoryCode;
+        this.title = title;
+        this.summary = summary;
+        this.content = content;
+        this.audioText = audioText;
+        this.digestStatus = "DRAFT";
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
     }
 
     public Long getId() {
@@ -49,6 +82,10 @@ public class DailyDigest {
 
     public String getDigestType() {
         return digestType;
+    }
+
+    public String getCategoryCode() {
+        return categoryCode;
     }
 
     public String getTitle() {
@@ -69,5 +106,35 @@ public class DailyDigest {
 
     public LocalDateTime getPublishTime() {
         return publishTime;
+    }
+
+    public String getDigestStatus() {
+        return digestStatus;
+    }
+
+    public void updateDraft(
+            String title,
+            String summary,
+            String content,
+            String audioText,
+            String categoryCode
+    ) {
+        this.title = title;
+        this.summary = summary;
+        this.content = content;
+        this.audioText = audioText;
+        this.categoryCode = categoryCode;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void publish(LocalDateTime publishTime) {
+        this.digestStatus = "PUBLISHED";
+        this.publishTime = publishTime;
+        this.updatedAt = publishTime;
+    }
+
+    public void offline() {
+        this.digestStatus = "OFFLINE";
+        this.updatedAt = LocalDateTime.now();
     }
 }
