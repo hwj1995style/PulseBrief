@@ -2,6 +2,7 @@ import { Bell, ShieldCheck } from 'lucide-react';
 import { HashRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { navigationItems } from './app/navigation';
 import { CandidateReviewPage } from './features/candidates/CandidateReviewPage';
+import { DigestManagementPage } from './features/digests/DigestManagementPage';
 import { adminApiConfig } from './shared/api/adminApi';
 import './styles.css';
 
@@ -59,7 +60,7 @@ function App() {
             <Route path="/ingestion" element={<PlaceholderPage title="采集任务" />} />
             <Route path="/articles" element={<PlaceholderPage title="文章管理" />} />
             <Route path="/categories" element={<PlaceholderPage title="分类管理" />} />
-            <Route path="/digests" element={<PlaceholderPage title="简报管理" />} />
+            <Route path="/digests" element={<DigestManagementPage />} />
           </Routes>
         </div>
       </div>

@@ -210,4 +210,156 @@ describe('adminApi HTTP client', () => {
       })
     );
   });
+
+  it('maps digest APIs and sends create and publish requests', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    fetchMock
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: {
+            items: [
+              {
+                id: 31,
+                digestDate: '2026-06-10',
+                digestType: 'MORNING',
+                categoryCode: 'global',
+                title: '今日全球早报',
+                summary: '精选 10 条重点资讯',
+                content: '英伟达 Blackwell Ultra 发布',
+                audioText: '欢迎收听今日全球早报。',
+                status: 'DRAFT',
+                publishTime: null,
+                articleCount: 1,
+                articles: [
+                  {
+                    articleId: 501,
+                    sortNo: 1,
+                    highlightText: '英伟达 Blackwell Ultra 发布',
+                    title: '英伟达推出新一代 AI 芯片',
+                    sourceName: 'Tech Brief'
+                  }
+                ],
+                availableActions: ['EDIT', 'PUBLISH']
+              }
+            ],
+            page: 1,
+            pageSize: 50,
+            total: 1,
+            hasMore: false
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: {
+            items: [
+              {
+                id: 501,
+                title: '英伟达推出新一代 AI 芯片',
+                sourceName: 'Tech Brief',
+                publishTime: '2小时前',
+                categoryName: 'AI 前沿',
+                summary: 'Blackwell Ultra 性能提升显著。',
+                isHot: true,
+                isBreaking: false
+              }
+            ],
+            page: 1,
+            pageSize: 50,
+            total: 1,
+            hasMore: false
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: {
+            id: 32,
+            digestDate: '2026-06-10',
+            digestType: 'MORNING',
+            categoryCode: 'global',
+            title: '今日全球早报',
+            summary: '精选 1 条重点资讯',
+            content: '英伟达 Blackwell Ultra 发布',
+            audioText: '欢迎收听今日全球早报。',
+            status: 'DRAFT',
+            publishTime: null,
+            articleCount: 1,
+            articles: [],
+            availableActions: ['EDIT', 'PUBLISH']
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: {
+            id: 32,
+            digestDate: '2026-06-10',
+            digestType: 'MORNING',
+            categoryCode: 'global',
+            title: '今日全球早报',
+            summary: '精选 1 条重点资讯',
+            content: '英伟达 Blackwell Ultra 发布',
+            audioText: '欢迎收听今日全球早报。',
+            status: 'PUBLISHED',
+            publishTime: '2026-06-10T08:30:00+08:00',
+            articleCount: 1,
+            articles: [],
+            availableActions: ['OFFLINE']
+          }
+        })
+      );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const digests = await client.listDigests('DRAFT');
+    const articles = await client.listDigestArticleCandidates('英伟达');
+    const created = await client.createDigest({
+      digestDate: '2026-06-10',
+      digestType: 'MORNING',
+      categoryCode: 'global',
+      title: '今日全球早报',
+      summary: '精选 1 条重点资讯',
+      content: '英伟达 Blackwell Ultra 发布',
+      audioText: '欢迎收听今日全球早报。',
+      articles: [{ articleId: 501, sortNo: 1, highlightText: '英伟达 Blackwell Ultra 发布' }]
+    });
+    const published = await client.publishDigest(created.id);
+
+    expect(digests[0]).toEqual(expect.objectContaining({ id: 31, status: 'DRAFT', articleCount: 1 }));
+    expect(articles[0]).toEqual(expect.objectContaining({ id: 501, categoryName: 'AI 前沿' }));
+    expect(published.status).toBe('PUBLISHED');
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:8080/api/admin/digests?status=DRAFT&page=1&pageSize=50',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer dev-admin-token' })
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:8080/api/admin/digests',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          digestDate: '2026-06-10',
+          digestType: 'MORNING',
+          categoryCode: 'global',
+          title: '今日全球早报',
+          summary: '精选 1 条重点资讯',
+          content: '英伟达 Blackwell Ultra 发布',
+          audioText: '欢迎收听今日全球早报。',
+          articles: [{ articleId: 501, sortNo: 1, highlightText: '英伟达 Blackwell Ultra 发布' }]
+        })
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'http://localhost:8080/api/admin/digests/32/publish',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
 });

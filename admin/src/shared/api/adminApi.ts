@@ -1,5 +1,12 @@
 import { mockCandidates } from '../../mock/candidates';
+import { mockDigestArticleCandidates, mockDigests } from '../../mock/digests';
 import type { AdminCandidate, CandidateStatus, ReportAsset } from '../types/candidate';
+import type {
+  AdminDigest,
+  AdminDigestArticleCandidate,
+  AdminDigestCreateInput,
+  AdminDigestStatus
+} from '../types/digest';
 
 export interface AdminApiClientConfig {
   apiBaseUrl?: string;
@@ -12,6 +19,11 @@ export interface AdminApiClient {
   getCandidate: (id: number) => Promise<AdminCandidate>;
   publishCandidate: (id: number) => Promise<AdminCandidate>;
   rejectCandidate: (id: number, reviewNote?: string) => Promise<AdminCandidate>;
+  getInitialDigests: () => AdminDigest[];
+  listDigests: (status?: AdminDigestStatus | 'ALL') => Promise<AdminDigest[]>;
+  listDigestArticleCandidates: (keyword?: string) => Promise<AdminDigestArticleCandidate[]>;
+  createDigest: (input: AdminDigestCreateInput) => Promise<AdminDigest>;
+  publishDigest: (id: number) => Promise<AdminDigest>;
 }
 
 interface BackendApiResponse<T> {
@@ -78,6 +90,39 @@ interface BackendCandidateDetailResponse {
   availableActions: string[];
 }
 
+interface BackendDigestArticleResponse {
+  articleId: number;
+  sortNo: number;
+  highlightText: string;
+  title: string;
+  sourceName: string;
+}
+
+interface BackendDigestResponse {
+  id: number;
+  digestDate: string;
+  digestType: string;
+  categoryCode: string;
+  title: string;
+  summary: string;
+  content: string;
+  audioText: string;
+  status: AdminDigestStatus;
+  publishTime: string | null;
+  articleCount: number;
+  articles: BackendDigestArticleResponse[];
+  availableActions: string[];
+}
+
+interface BackendDigestArticleCandidateResponse {
+  id: number;
+  title: string;
+  sourceName: string;
+  publishTime: string;
+  categoryName: string;
+  summary: string;
+}
+
 interface MutableAdminApiClient extends AdminApiClient {
   resetMockData?: () => void;
 }
@@ -138,15 +183,39 @@ export function rejectCandidate(id: number, reviewNote?: string): Promise<AdminC
   return defaultClient.rejectCandidate(id, reviewNote);
 }
 
+export function getInitialDigests(): AdminDigest[] {
+  return defaultClient.getInitialDigests();
+}
+
+export function listDigests(status?: AdminDigestStatus | 'ALL'): Promise<AdminDigest[]> {
+  return defaultClient.listDigests(status);
+}
+
+export function listDigestArticleCandidates(keyword?: string): Promise<AdminDigestArticleCandidate[]> {
+  return defaultClient.listDigestArticleCandidates(keyword);
+}
+
+export function createDigest(input: AdminDigestCreateInput): Promise<AdminDigest> {
+  return defaultClient.createDigest(input);
+}
+
+export function publishDigest(id: number): Promise<AdminDigest> {
+  return defaultClient.publishDigest(id);
+}
+
 export function resetAdminApiMock() {
   defaultClient.resetMockData?.();
 }
 
 function createMockAdminApiClient(): MutableAdminApiClient {
   let localCandidates = mockCandidates.map(cloneCandidate);
+  let localDigests = mockDigests.map(cloneDigest);
+  let nextDigestId = 900;
 
   function resetMockData() {
     localCandidates = mockCandidates.map(cloneCandidate);
+    localDigests = mockDigests.map(cloneDigest);
+    nextDigestId = 900;
   }
 
   function findCandidate(id: number) {
@@ -175,6 +244,62 @@ function createMockAdminApiClient(): MutableAdminApiClient {
     getCandidate: async (id) => findCandidate(id),
     publishCandidate: async (id) => updateStatus(id, 'PUBLISHED'),
     rejectCandidate: async (id) => updateStatus(id, 'REJECTED'),
+    getInitialDigests: () => localDigests.map(cloneDigest),
+    listDigests: async (status) => {
+      if (!status || status === 'ALL') {
+        return localDigests.map(cloneDigest);
+      }
+      return localDigests.filter((digest) => digest.status === status).map(cloneDigest);
+    },
+    listDigestArticleCandidates: async (keyword) => {
+      const safeKeyword = keyword?.trim();
+      if (!safeKeyword) {
+        return mockDigestArticleCandidates.map((article) => ({ ...article }));
+      }
+      return mockDigestArticleCandidates
+        .filter((article) => `${article.title}${article.summary}${article.sourceName}`.includes(safeKeyword))
+        .map((article) => ({ ...article }));
+    },
+    createDigest: async (input) => {
+      const articles = input.articles.map((article) => {
+        const source = mockDigestArticleCandidates.find((candidate) => candidate.id === article.articleId);
+        return {
+          articleId: article.articleId,
+          sortNo: article.sortNo,
+          highlightText: article.highlightText,
+          title: source?.title ?? '',
+          sourceName: source?.sourceName ?? ''
+        };
+      });
+      const digest: AdminDigest = {
+        id: nextDigestId++,
+        ...input,
+        status: 'DRAFT',
+        publishTime: null,
+        articleCount: articles.length,
+        articles,
+        availableActions: ['EDIT', 'PUBLISH']
+      };
+      localDigests = [digest, ...localDigests];
+      return cloneDigest(digest);
+    },
+    publishDigest: async (id) => {
+      localDigests = localDigests.map((digest) =>
+        digest.id === id
+          ? {
+              ...digest,
+              status: 'PUBLISHED',
+              publishTime: new Date().toISOString(),
+              availableActions: ['OFFLINE']
+            }
+          : digest
+      );
+      const digest = localDigests.find((item) => item.id === id);
+      if (!digest) {
+        throw new Error('Digest not found');
+      }
+      return cloneDigest(digest);
+    },
     resetMockData
   };
 }
@@ -242,8 +367,55 @@ function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): Admin
         body: JSON.stringify(reviewNote ? { reviewNote } : {})
       });
       return mapCandidate(candidate);
+    },
+    getInitialDigests: () => [],
+    listDigests: async (status) => {
+      if (!status || status === 'ALL') {
+        const groups = await Promise.all([fetchDigestPage('DRAFT'), fetchDigestPage('PUBLISHED')]);
+        return groups.flat();
+      }
+      return fetchDigestPage(status);
+    },
+    listDigestArticleCandidates: async (keyword) => {
+      const query = new URLSearchParams({
+        page: '1',
+        pageSize: '50'
+      });
+      if (keyword?.trim()) {
+        query.set('keyword', keyword.trim());
+      }
+      const data = await request<BackendPageResponse<BackendDigestArticleCandidateResponse>>(
+        `/api/admin/digests/article-candidates?${query.toString()}`
+      );
+      return data.items.map(mapDigestArticleCandidate);
+    },
+    createDigest: async (input) => {
+      const digest = await request<BackendDigestResponse>('/api/admin/digests', {
+        method: 'POST',
+        body: JSON.stringify(input)
+      });
+      return mapDigest(digest);
+    },
+    publishDigest: async (id) => {
+      const digest = await request<BackendDigestResponse>(`/api/admin/digests/${id}/publish`, {
+        method: 'POST',
+        body: JSON.stringify({ publishNow: true })
+      });
+      return mapDigest(digest);
     }
   };
+
+  async function fetchDigestPage(status: AdminDigestStatus): Promise<AdminDigest[]> {
+    const query = new URLSearchParams({
+      status,
+      page: '1',
+      pageSize: '50'
+    });
+    const data = await request<BackendPageResponse<BackendDigestResponse>>(
+      `/api/admin/digests?${query.toString()}`
+    );
+    return data.items.map(mapDigest);
+  }
 }
 
 function mapCandidate(candidate: BackendCandidateResponse): AdminCandidate {
@@ -293,5 +465,42 @@ function cloneCandidate(candidate: AdminCandidate): AdminCandidate {
   return {
     ...candidate,
     reportAssets: candidate.reportAssets.map((asset) => ({ ...asset }))
+  };
+}
+
+function mapDigest(digest: BackendDigestResponse): AdminDigest {
+  return {
+    id: digest.id,
+    digestDate: digest.digestDate,
+    digestType: digest.digestType,
+    categoryCode: digest.categoryCode,
+    title: digest.title,
+    summary: digest.summary,
+    content: digest.content,
+    audioText: digest.audioText,
+    status: digest.status,
+    publishTime: digest.publishTime,
+    articleCount: digest.articleCount,
+    articles: digest.articles.map((article) => ({ ...article })),
+    availableActions: digest.availableActions
+  };
+}
+
+function mapDigestArticleCandidate(article: BackendDigestArticleCandidateResponse): AdminDigestArticleCandidate {
+  return {
+    id: article.id,
+    title: article.title,
+    sourceName: article.sourceName,
+    publishTime: article.publishTime,
+    categoryName: article.categoryName,
+    summary: article.summary
+  };
+}
+
+function cloneDigest(digest: AdminDigest): AdminDigest {
+  return {
+    ...digest,
+    articles: digest.articles.map((article) => ({ ...article })),
+    availableActions: [...digest.availableActions]
   };
 }

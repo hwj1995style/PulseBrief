@@ -6,6 +6,7 @@ import { resetAdminApiMock } from './shared/api/adminApi';
 describe('PulseBrief Admin shell', () => {
   beforeEach(() => {
     resetAdminApiMock();
+    window.location.hash = '';
   });
 
   it('renders the candidate review workspace', async () => {
@@ -32,5 +33,24 @@ describe('PulseBrief Admin shell', () => {
 
     await user.click(screen.getByRole('button', { name: '已发布' }));
     expect(screen.getByText('高盛：AI 基建投资仍将持续')).toBeInTheDocument();
+  });
+
+  it('creates and publishes a daily digest from selected articles', async () => {
+    const user = userEvent.setup();
+    window.location.hash = '#/digests';
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '简报管理' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /选择 高盛：AI 基建投资仍将持续/ }));
+    expect(screen.getByText('已选 1 条')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '创建草稿' }));
+    expect(await screen.findByText('草稿已创建，可发布到 APP')).toBeInTheDocument();
+
+    const detail = screen.getByRole('complementary', { name: '简报详情' });
+    expect(within(detail).getByText('今日全球早报')).toBeInTheDocument();
+
+    await user.click(within(detail).getByRole('button', { name: '发布简报' }));
+    expect(await screen.findByText('已发布到 APP')).toBeInTheDocument();
   });
 });
