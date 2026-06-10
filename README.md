@@ -33,13 +33,15 @@ Flutter 用户端 APP
 14. 已补充 Flutter 本机预览、APK 构建和透明插图资产生成说明。
 15. 已完成 Spring Boot V1 用户端 API、Flutter API 模式联调、用户中心真实数据、历史列表、分页规范和列表管理。
 16. 已接入 OpenAPI/Swagger 在线接口文档。
+17. 已完成真实资讯采集基础链路、候选资讯生成、Admin 审核发布、每日简报管理和运营监控。
+18. 已完成 React Admin 独立后台：候选审核、简报管理、采集任务监控、采集源启停、发布操作日志和异常数据检测。
 
 下一阶段：
 
-1. 精修 Swagger 接口注解与请求/响应示例。
-2. 新建正式 React Admin 工程。
-3. 设计后台管理 API 与权限边界。
-4. 补充 CI 验证流水线。
+1. 补充 CI 验证流水线。
+2. 接入第一批真实公开 RSS / API Provider。
+3. 补充真实 AI 摘要服务抽象和人工审核前预览。
+4. 做发布前环境变量、密钥和部署脚本检查。
 
 ## 正式技术路线
 
@@ -149,6 +151,30 @@ cd mobile
 flutter test
 ```
 
+Admin 测试与构建：
+
+```powershell
+cd admin
+npm test -- --run
+npm run lint
+npm run build
+```
+
+启动后端并查看 Swagger：
+
+```powershell
+.\scripts\use-jdk17.ps1
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+
+访问：
+
+```text
+http://localhost:8080/swagger-ui.html
+http://localhost:8080/v3/api-docs
+```
+
 Flutter 本机预览：
 
 ```powershell
@@ -204,11 +230,11 @@ mobile\build\app\outputs\flutter-apk\app-debug.apk
 
 第四阶段：后台管理。
 
-1. 数据看板。
-2. 资讯源管理。
-3. 文章管理。
-4. 简报管理。
-5. 推送任务管理。
+1. 数据看板占位。
+2. 候选资讯审核。已完成。
+3. 每日简报管理。已完成。
+4. 采集任务监控、采集源启停、发布操作日志和异常数据检测。已完成。
+5. 文章管理、分类管理和推送任务管理仍保留为后续增强入口。
 
 第五阶段：内容链路。
 
@@ -236,6 +262,7 @@ mobile\build\app\outputs\flutter-apk\app-debug.apk
 8. [Flutter 高保真 UI 逐页精修设计](./docs/Flutter高保真UI逐页精修设计.md)
 9. [Flutter 高保真 UI 截图验收记录](./docs/Flutter高保真UI截图验收记录.md)
 10. [下一阶段任务清单](./docs/下一阶段任务清单.md)
+11. [阶段 20 三端收口与发布前检查记录](./docs/阶段20三端收口与发布前检查记录.md)
 
 ## 合规边界
 

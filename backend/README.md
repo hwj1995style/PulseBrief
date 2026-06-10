@@ -76,6 +76,19 @@ PULSEBRIEF_INGESTION_ENABLED=false
 
 Admin 审核发布 API 设计见 `docs/Admin审核发布V1设计.md`。当前已实现 `/api/admin/candidates` 候选列表、详情、编辑、拒绝和发布接口；Admin Token 与用户端 Token 隔离，候选发布后会写入 `news_article`，用户端只读取已发布文章。
 
+Admin 运营监控已实现以下接口：
+
+```text
+GET /api/admin/ingestion/jobs
+GET /api/admin/ingestion/metrics/today
+GET /api/admin/ingestion/sources
+PUT /api/admin/ingestion/sources/{id}/enabled
+GET /api/admin/operation-logs
+GET /api/admin/ingestion/anomalies
+```
+
+其中异常数据检测首批覆盖原始资讯缺来源、缺原文链接、缺发布时间和未来发布时间。
+
 最新内容与授权全文/PDF 采集设计见 `docs/最新内容与授权全文PDF采集V1设计.md`。真实 Provider 必须默认只采集最新内容：新闻默认 24 小时窗口，公开报告和授权 PDF 默认 72 小时窗口；付费研报、登录后 PDF、历史研报库和未授权全文不进入 V1。当前后端已支持采集源许可字段、最新窗口过滤、`report_asset` 授权 PDF 元数据入库和文件哈希去重；授权全文字段与 PDF 文件缓存后续分阶段实现。
 
 后续接入真实公开 API 或 RSS 时，密钥、关键词、语言、国家/市场和请求频率必须通过环境变量或本地未提交配置注入，不提交到 Git。
@@ -132,4 +145,5 @@ Authorization: Bearer dev-token-1
 Invoke-RestMethod http://localhost:8080/api/categories
 Invoke-RestMethod http://localhost:8080/api/articles/home
 Invoke-RestMethod http://localhost:8080/api/digests/today
+Invoke-RestMethod http://localhost:8080/v3/api-docs
 ```

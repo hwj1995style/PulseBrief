@@ -210,12 +210,12 @@
 
 ## 阶段 20：收口与发布前检查
 
-- [ ] 后端全量测试。
-- [ ] Flutter analyze / test。
-- [ ] Admin lint / test / build。
-- [ ] OpenAPI 文档可访问。
-- [ ] README 更新完整运行方式。
-- [ ] 输出联调记录。
+- [x] 后端全量测试。
+- [x] Flutter analyze / test。
+- [x] Admin lint / test / build。
+- [x] OpenAPI 文档可访问。
+- [x] README 更新完整运行方式。
+- [x] 输出联调记录。
 - [ ] 提交并推送 GitHub。
 
 验收标准：
