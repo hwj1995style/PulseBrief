@@ -113,12 +113,16 @@ public class DailyDigest {
     }
 
     public void updateDraft(
+            LocalDate digestDate,
+            String digestType,
             String title,
             String summary,
             String content,
             String audioText,
             String categoryCode
     ) {
+        this.digestDate = digestDate;
+        this.digestType = digestType;
         this.title = title;
         this.summary = summary;
         this.content = content;

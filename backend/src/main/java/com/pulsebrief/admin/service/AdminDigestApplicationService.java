@@ -4,6 +4,7 @@ import com.pulsebrief.admin.api.AdminDigestArticleRequest;
 import com.pulsebrief.admin.api.AdminDigestArticleResponse;
 import com.pulsebrief.admin.api.AdminDigestCreateRequest;
 import com.pulsebrief.admin.api.AdminDigestResponse;
+import com.pulsebrief.admin.api.AdminDigestUpdateRequest;
 import com.pulsebrief.article.api.ArticleCardResponse;
 import com.pulsebrief.article.domain.NewsArticle;
 import com.pulsebrief.article.repository.ArticleRepository;
@@ -36,6 +37,7 @@ import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 public class AdminDigestApplicationService {
     private static final String DRAFT = "DRAFT";
     private static final String PUBLISHED = "PUBLISHED";
+    private static final String OFFLINE = "OFFLINE";
     private static final DateTimeFormatter API_TIME = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     private final DigestRepository digestRepository;
@@ -125,6 +127,29 @@ public class AdminDigestApplicationService {
     }
 
     @Transactional
+    public AdminDigestResponse updateDigest(Long id, AdminDigestUpdateRequest request) {
+        DailyDigest digest = requireDigest(id);
+        if (!DRAFT.equals(digest.getDigestStatus())) {
+            throw new ResponseStatusException(CONFLICT, "Digest is not draft");
+        }
+        validateRequest(request);
+        List<AdminDigestArticleRequest> articleRequests = normalizedArticles(request.articles());
+        assertArticlesPublished(articleRequests);
+        String content = blankToDefault(request.content(), contentFromArticles(articleRequests));
+        digest.updateDraft(
+                LocalDate.parse(request.digestDate()),
+                request.digestType(),
+                request.title().trim(),
+                request.summary(),
+                content,
+                request.audioText(),
+                request.categoryCode()
+        );
+        replaceDigestArticles(digest.getId(), articleRequests);
+        return toResponse(digest);
+    }
+
+    @Transactional
     public AdminDigestResponse publishDigest(Long id) {
         DailyDigest digest = requireDigest(id);
         if (!DRAFT.equals(digest.getDigestStatus())) {
@@ -141,7 +166,32 @@ public class AdminDigestApplicationService {
         return toResponse(digest);
     }
 
+    @Transactional
+    public AdminDigestResponse offlineDigest(Long id) {
+        DailyDigest digest = requireDigest(id);
+        if (!PUBLISHED.equals(digest.getDigestStatus())) {
+            throw new ResponseStatusException(CONFLICT, "Digest is not published");
+        }
+        digest.offline();
+        return toResponse(digest);
+    }
+
     private void validateRequest(AdminDigestCreateRequest request) {
+        if (request == null) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Digest request is required");
+        }
+        if (request.digestDate() == null || request.digestDate().isBlank()) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Digest date is required");
+        }
+        if (request.digestType() == null || request.digestType().isBlank()) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Digest type is required");
+        }
+        if (request.title() == null || request.title().isBlank()) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Digest title is required");
+        }
+    }
+
+    private void validateRequest(AdminDigestUpdateRequest request) {
         if (request == null) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Digest request is required");
         }
@@ -263,6 +313,9 @@ public class AdminDigestApplicationService {
         }
         if (PUBLISHED.equals(digest.getDigestStatus())) {
             return List.of("OFFLINE");
+        }
+        if (OFFLINE.equals(digest.getDigestStatus())) {
+            return List.of();
         }
         return List.of();
     }

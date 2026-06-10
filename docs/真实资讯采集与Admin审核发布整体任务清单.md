@@ -179,7 +179,7 @@
 - [x] 发布为 `daily_digest`。
 - [x] Flutter 简报页读取真实发布结果。
 - [ ] 播放器继续使用现有播报 UI。
-- [ ] 后端 Admin Digest API：文章池、列表、详情、创建、编辑、发布、下线。
+- [x] 后端 Admin Digest API：文章池、列表、详情、创建、编辑、发布、下线。
 - [x] React Admin 简报管理页面。
 - [ ] Flutter Repository 和用户端简报 API 回归。
 
@@ -189,7 +189,7 @@
 2. 简报发布后用户端今日简报可更新。
 3. 不实现真实 TTS 音频文件生成，仍使用客户端播报能力。
 
-阶段结果：已完成每日简报生成与审核第一批后端闭环和 React Admin 简报管理页面。V1 通过 Admin 人工选择已发布文章创建简报草稿，发布后复用现有用户端简报 API；简报与文章已通过 `daily_digest_article` 关联，保留热点来源和排序。React Admin 现已支持 mock/API 双模式选择文章、创建草稿并发布到 APP。下一批继续补编辑/下线 API 和 Flutter API 模式回归。
+阶段结果：已完成每日简报生成与审核后端闭环和 React Admin 简报管理页面。V1 通过 Admin 人工选择已发布文章创建简报草稿，支持草稿编辑、发布和已发布简报下线，发布后复用现有用户端简报 API；简报与文章已通过 `daily_digest_article` 关联，保留热点来源和排序。React Admin 现已支持 mock/API 双模式选择文章、创建草稿并发布到 APP。下一批继续补 React Admin 编辑态和 Flutter API 模式回归。
 
 ## 阶段 19：运营质量与监控
 

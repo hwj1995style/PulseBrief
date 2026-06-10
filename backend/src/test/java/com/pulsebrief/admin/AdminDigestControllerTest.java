@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -39,7 +40,7 @@ class AdminDigestControllerTest {
     @Test
     void createsPublishesDigestAndExposesItToMobileApi() throws Exception {
         NewsArticle article = createPublishedArticle();
-        LocalDate digestDate = LocalDate.now().plusDays(ThreadLocalRandom.current().nextInt(1000, 20000));
+        LocalDate digestDate = futureDigestDate();
 
         mockMvc.perform(get("/api/admin/digests/article-candidates")
                         .header("Authorization", ADMIN_TOKEN)
@@ -104,6 +105,86 @@ class AdminDigestControllerTest {
                 .andExpect(status().isConflict());
     }
 
+    @Test
+    void updatesDraftDigestAndReplacesArticleHighlights() throws Exception {
+        NewsArticle firstArticle = createPublishedArticle();
+        NewsArticle secondArticle = createPublishedArticle();
+        LocalDate digestDate = futureDigestDate();
+        Long digestId = createDraftDigest(digestDate, firstArticle.getId());
+
+        String updatePayload = """
+                {
+                  "digestDate": "%s",
+                  "digestType": "MORNING",
+                  "categoryCode": "finance",
+                  "title": "午前市场简报：更新后标题",
+                  "summary": "运营手动更新后的摘要",
+                  "audioText": "这是更新后的播报文案。",
+                  "articles": [
+                    {
+                      "articleId": %d,
+                      "sortNo": 1,
+                      "highlightText": "第二条文章进入简报"
+                    }
+                  ]
+                }
+                """.formatted(digestDate, secondArticle.getId());
+
+        mockMvc.perform(put("/api/admin/digests/" + digestId)
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatePayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("DRAFT"))
+                .andExpect(jsonPath("$.data.categoryCode").value("finance"))
+                .andExpect(jsonPath("$.data.title").value("午前市场简报：更新后标题"))
+                .andExpect(jsonPath("$.data.audioText").value("这是更新后的播报文案。"))
+                .andExpect(jsonPath("$.data.content").value("第二条文章进入简报"))
+                .andExpect(jsonPath("$.data.articles.length()").value(1))
+                .andExpect(jsonPath("$.data.articles[0].articleId").value(secondArticle.getId()))
+                .andExpect(jsonPath("$.data.articles[0].highlightText").value("第二条文章进入简报"));
+
+        mockMvc.perform(post("/api/admin/digests/" + digestId + "/publish")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"publishNow\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
+
+        mockMvc.perform(put("/api/admin/digests/" + digestId)
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatePayload))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void offlinesPublishedDigestAndHidesItFromMobileDetail() throws Exception {
+        NewsArticle article = createPublishedArticle();
+        LocalDate digestDate = futureDigestDate();
+        Long digestId = createDraftDigest(digestDate, article.getId());
+
+        mockMvc.perform(post("/api/admin/digests/" + digestId + "/publish")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"publishNow\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
+
+        mockMvc.perform(post("/api/admin/digests/" + digestId + "/offline")
+                        .header("Authorization", ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("OFFLINE"))
+                .andExpect(jsonPath("$.data.availableActions.length()").value(0));
+
+        mockMvc.perform(get("/api/digests/" + digestId))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(post("/api/admin/digests/" + digestId + "/offline")
+                        .header("Authorization", ADMIN_TOKEN))
+                .andExpect(status().isConflict());
+    }
+
     private NewsArticle createPublishedArticle() {
         String unique = UUID.randomUUID().toString();
         return articleRepository.save(new NewsArticle(
@@ -118,6 +199,40 @@ class AdminDigestControllerTest {
                 LocalDateTime.now().minusHours(1),
                 "admin-digest-" + unique
         ));
+    }
+
+    private Long createDraftDigest(LocalDate digestDate, Long articleId) throws Exception {
+        String createPayload = """
+                {
+                  "digestDate": "%s",
+                  "digestType": "MORNING",
+                  "categoryCode": "global",
+                  "title": "今日全球早报：草稿",
+                  "summary": "创建后等待编辑",
+                  "audioText": "初始播报文案。",
+                  "articles": [
+                    {
+                      "articleId": %d,
+                      "sortNo": 1,
+                      "highlightText": "初始热点"
+                    }
+                  ]
+                }
+                """.formatted(digestDate, articleId);
+        String content = mockMvc.perform(post("/api/admin/digests")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("DRAFT"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        return extractId(content);
+    }
+
+    private LocalDate futureDigestDate() {
+        return LocalDate.now().plusDays(ThreadLocalRandom.current().nextInt(400000, 800000));
     }
 
     private Long extractId(String content) {

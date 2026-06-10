@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,11 +53,24 @@ public class AdminDigestController {
         return ApiResponse.ok(digestService.getDigest(id));
     }
 
+    @PutMapping("/{id}")
+    public ApiResponse<AdminDigestResponse> updateDigest(
+            @PathVariable Long id,
+            @RequestBody AdminDigestUpdateRequest request
+    ) {
+        return ApiResponse.ok(digestService.updateDigest(id, request));
+    }
+
     @PostMapping("/{id}/publish")
     public ApiResponse<AdminDigestResponse> publishDigest(
             @PathVariable Long id,
             @RequestBody(required = false) AdminDigestPublishRequest request
     ) {
         return ApiResponse.ok(digestService.publishDigest(id));
+    }
+
+    @PostMapping("/{id}/offline")
+    public ApiResponse<AdminDigestResponse> offlineDigest(@PathVariable Long id) {
+        return ApiResponse.ok(digestService.offlineDigest(id));
     }
 }
