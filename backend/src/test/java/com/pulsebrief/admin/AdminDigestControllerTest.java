@@ -90,6 +90,14 @@ class AdminDigestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
 
+        mockMvc.perform(get("/api/admin/operation-logs")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .param("module", "PUBLISH"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[?(@.actionType == 'PUBLISH_DIGEST' && @.targetId == "
+                        + digestId + ")].targetTitle")
+                        .value("今日全球早报：Admin 发布链路验证"));
+
         mockMvc.perform(get("/api/digests/today"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.date").value(digestDate.toString()))
@@ -179,6 +187,14 @@ class AdminDigestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("OFFLINE"))
                 .andExpect(jsonPath("$.data.availableActions.length()").value(0));
+
+        mockMvc.perform(get("/api/admin/operation-logs")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .param("module", "PUBLISH"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[?(@.actionType == 'OFFLINE_DIGEST' && @.targetId == "
+                        + digestId + ")].targetTitle")
+                        .value("今日全球早报：草稿"));
 
         mockMvc.perform(get("/api/digests/" + digestId))
                 .andExpect(status().isNotFound());

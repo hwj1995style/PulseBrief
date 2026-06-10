@@ -120,6 +120,9 @@ describe('PulseBrief Admin shell', () => {
     expect(screen.getByText('Provider timeout')).toBeInTheDocument();
     expect(screen.getByText('Fixture Global')).toBeInTheDocument();
     expect(screen.getByText('SUMMARY_ONLY · 最新 24 小时')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '发布操作日志' })).toBeInTheDocument();
+    expect(screen.getByText('文章发布')).toBeInTheDocument();
+    expect(screen.getByText('高盛：AI 基建投资仍将持续')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '停用 Fixture Global' }));
     expect(await screen.findByRole('button', { name: '启用 Fixture Global' })).toBeInTheDocument();

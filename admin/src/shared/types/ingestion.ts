@@ -33,3 +33,18 @@ export interface AdminIngestionSource {
   allowPdfDownload: boolean;
   allowFullText: boolean;
 }
+
+export type AdminOperationLogAction = 'PUBLISH_ARTICLE' | 'PUBLISH_DIGEST' | 'OFFLINE_DIGEST' | string;
+
+export interface AdminOperationLog {
+  id: number;
+  module: string;
+  actionType: AdminOperationLogAction;
+  targetType: string;
+  targetId: number;
+  targetTitle: string;
+  status: string;
+  operatorName: string;
+  detail: string;
+  createdAt: string;
+}

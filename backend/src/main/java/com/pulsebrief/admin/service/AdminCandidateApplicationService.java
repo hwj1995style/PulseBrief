@@ -40,17 +40,20 @@ public class AdminCandidateApplicationService {
     private final ReportAssetRepository reportAssetRepository;
     private final ArticleRepository articleRepository;
     private final AdminCandidateMapper mapper;
+    private final AdminOperationLogService operationLogService;
 
     public AdminCandidateApplicationService(
             CandidateArticleRepository candidateArticleRepository,
             ReportAssetRepository reportAssetRepository,
             ArticleRepository articleRepository,
-            AdminCandidateMapper mapper
+            AdminCandidateMapper mapper,
+            AdminOperationLogService operationLogService
     ) {
         this.candidateArticleRepository = candidateArticleRepository;
         this.reportAssetRepository = reportAssetRepository;
         this.articleRepository = articleRepository;
         this.mapper = mapper;
+        this.operationLogService = operationLogService;
     }
 
     @Transactional(readOnly = true)
@@ -142,6 +145,7 @@ public class AdminCandidateApplicationService {
                 candidate.getTagNames()
         ));
         candidate.publish(article.getId());
+        operationLogService.recordArticlePublish(article.getId(), article.getTitle());
         return mapper.toCandidateResponse(candidate);
     }
 

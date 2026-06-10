@@ -1,13 +1,20 @@
-import { AlertTriangle, CheckCircle2, DatabaseZap, RefreshCw, RadioTower } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ClipboardList, DatabaseZap, RefreshCw, RadioTower } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   getTodayIngestionMetrics,
   listIngestionJobs,
+  listOperationLogs,
   listIngestionSources,
   updateIngestionSourceEnabled
 } from '../../shared/api/adminApi';
-import type { AdminIngestionJob, AdminIngestionMetrics, AdminIngestionSource, IngestionJobStatus } from '../../shared/types/ingestion';
+import type {
+  AdminIngestionJob,
+  AdminIngestionMetrics,
+  AdminIngestionSource,
+  AdminOperationLog,
+  IngestionJobStatus
+} from '../../shared/types/ingestion';
 
 const emptyMetrics: AdminIngestionMetrics = {
   fetchedCount: 0,
@@ -23,11 +30,18 @@ const statusLabels: Record<IngestionJobStatus, string> = {
   FAILED: '失败'
 };
 
+const operationActionLabels: Record<string, string> = {
+  PUBLISH_ARTICLE: '文章发布',
+  PUBLISH_DIGEST: '简报发布',
+  OFFLINE_DIGEST: '简报下线'
+};
+
 export function IngestionMonitorPage() {
   const [statusFilter, setStatusFilter] = useState<IngestionJobStatus | 'ALL'>('ALL');
   const [jobs, setJobs] = useState<AdminIngestionJob[]>([]);
   const [metrics, setMetrics] = useState<AdminIngestionMetrics>(emptyMetrics);
   const [sources, setSources] = useState<AdminIngestionSource[]>([]);
+  const [operationLogs, setOperationLogs] = useState<AdminOperationLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -40,15 +54,17 @@ export function IngestionMonitorPage() {
     Promise.all([
       listIngestionJobs(statusFilter),
       getTodayIngestionMetrics(),
-      listIngestionSources()
+      listIngestionSources(),
+      listOperationLogs('PUBLISH')
     ])
-      .then(([nextJobs, nextMetrics, nextSources]) => {
+      .then(([nextJobs, nextMetrics, nextSources, nextOperationLogs]) => {
         if (cancelled) {
           return;
         }
         setJobs(nextJobs);
         setMetrics(nextMetrics);
         setSources(nextSources);
+        setOperationLogs(nextOperationLogs);
       })
       .catch((nextError: Error) => {
         if (!cancelled) {
@@ -163,6 +179,41 @@ export function IngestionMonitorPage() {
                       {job.errorMessage || '无'}
                     </span>
                   </div>
+                ))
+              : null}
+          </div>
+        </section>
+
+        <section className="panel operation-log-panel" aria-label="发布操作日志">
+          <div className="section-title-row">
+            <div>
+              <p className="page-kicker">Publish Audit</p>
+              <h2>
+                <ClipboardList size={18} />
+                发布操作日志
+              </h2>
+            </div>
+            <span className="muted">最近 {operationLogs.length} 条</span>
+          </div>
+
+          <div className="operation-log-list">
+            {loading ? <p className="table-state compact">正在加载发布操作日志...</p> : null}
+            {!loading && operationLogs.length === 0 ? <p className="table-state compact">暂无发布操作记录</p> : null}
+            {!loading
+              ? operationLogs.map((log) => (
+                  <article className="operation-log-row" key={log.id}>
+                    <div>
+                      <strong>{operationActionLabels[log.actionType] ?? log.actionType}</strong>
+                      <span>{log.targetTitle}</span>
+                    </div>
+                    <span className={log.status === 'SUCCESS' ? 'status-chip success' : 'status-chip danger'}>
+                      {log.status === 'SUCCESS' ? '成功' : log.status}
+                    </span>
+                    <p>{log.detail}</p>
+                    <small>
+                      {log.operatorName} · {formatTime(log.createdAt)}
+                    </small>
+                  </article>
                 ))
               : null}
           </div>

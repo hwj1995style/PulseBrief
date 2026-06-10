@@ -656,4 +656,51 @@ describe('adminApi HTTP client', () => {
       })
     );
   });
+
+  it('maps publish operation logs API', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      await mockFetchResponse({
+        code: 'OK',
+        data: {
+          items: [
+            {
+              id: 91,
+              module: 'PUBLISH',
+              actionType: 'PUBLISH_ARTICLE',
+              targetType: 'ARTICLE',
+              targetId: 501,
+              targetTitle: '高盛：AI 基建投资仍将持续',
+              status: 'SUCCESS',
+              operatorName: 'dev-admin',
+              detail: '文章发布成功',
+              createdAt: '2026-06-10T09:10:00'
+            }
+          ],
+          page: 1,
+          pageSize: 20,
+          total: 1,
+          hasMore: false
+        }
+      })
+    );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const logs = await client.listOperationLogs('PUBLISH');
+
+    expect(logs[0]).toEqual(
+      expect.objectContaining({
+        id: 91,
+        actionType: 'PUBLISH_ARTICLE',
+        targetType: 'ARTICLE',
+        targetTitle: '高盛：AI 基建投资仍将持续',
+        operatorName: 'dev-admin'
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/admin/operation-logs?module=PUBLISH&page=1&pageSize=20',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer dev-admin-token' })
+      })
+    );
+  });
 });

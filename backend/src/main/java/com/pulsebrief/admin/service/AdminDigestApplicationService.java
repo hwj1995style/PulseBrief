@@ -44,17 +44,20 @@ public class AdminDigestApplicationService {
     private final DailyDigestArticleRepository digestArticleRepository;
     private final ArticleRepository articleRepository;
     private final ArticleCardMapper articleCardMapper;
+    private final AdminOperationLogService operationLogService;
 
     public AdminDigestApplicationService(
             DigestRepository digestRepository,
             DailyDigestArticleRepository digestArticleRepository,
             ArticleRepository articleRepository,
-            ArticleCardMapper articleCardMapper
+            ArticleCardMapper articleCardMapper,
+            AdminOperationLogService operationLogService
     ) {
         this.digestRepository = digestRepository;
         this.digestArticleRepository = digestArticleRepository;
         this.articleRepository = articleRepository;
         this.articleCardMapper = articleCardMapper;
+        this.operationLogService = operationLogService;
     }
 
     @Transactional(readOnly = true)
@@ -163,6 +166,7 @@ public class AdminDigestApplicationService {
             throw new ResponseStatusException(CONFLICT, "Published digest already exists for date and type");
         }
         digest.publish(LocalDateTime.now());
+        operationLogService.recordDigestPublish(digest.getId(), digest.getTitle());
         return toResponse(digest);
     }
 
@@ -173,6 +177,7 @@ public class AdminDigestApplicationService {
             throw new ResponseStatusException(CONFLICT, "Digest is not published");
         }
         digest.offline();
+        operationLogService.recordDigestOffline(digest.getId(), digest.getTitle());
         return toResponse(digest);
     }
 

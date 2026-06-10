@@ -187,6 +187,14 @@ class AdminCandidateControllerTest {
                 .andExpect(jsonPath("$.data.keyPoints[0]").value("要点一"))
                 .andExpect(jsonPath("$.data.impactAnalysis").value("发布后进入用户端资讯流。"));
 
+        mockMvc.perform(get("/api/admin/operation-logs")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .param("module", "PUBLISH"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[?(@.actionType == 'PUBLISH_ARTICLE' && @.targetId == "
+                        + publishedArticleId + ")].targetTitle")
+                        .value(candidate.getTitle()));
+
         mockMvc.perform(post("/api/admin/candidates/" + candidate.getId() + "/publish")
                         .header("Authorization", ADMIN_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)

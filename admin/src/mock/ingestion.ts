@@ -1,4 +1,9 @@
-import type { AdminIngestionJob, AdminIngestionMetrics, AdminIngestionSource } from '../shared/types/ingestion';
+import type {
+  AdminIngestionJob,
+  AdminIngestionMetrics,
+  AdminIngestionSource,
+  AdminOperationLog
+} from '../shared/types/ingestion';
 
 export const mockIngestionMetrics: AdminIngestionMetrics = {
   fetchedCount: 42,
@@ -73,5 +78,44 @@ export const mockIngestionSources: AdminIngestionSource[] = [
     maxAgeHours: 72,
     allowPdfDownload: true,
     allowFullText: false
+  }
+];
+
+export const mockOperationLogs: AdminOperationLog[] = [
+  {
+    id: 2003,
+    module: 'PUBLISH',
+    actionType: 'PUBLISH_ARTICLE',
+    targetType: 'ARTICLE',
+    targetId: 501,
+    targetTitle: '高盛：AI 基建投资仍将持续',
+    status: 'SUCCESS',
+    operatorName: 'dev-admin',
+    detail: '候选资讯审核通过，已发布到 APP 文章流。',
+    createdAt: '2026-06-10T09:10:00'
+  },
+  {
+    id: 2002,
+    module: 'PUBLISH',
+    actionType: 'PUBLISH_DIGEST',
+    targetType: 'DIGEST',
+    targetId: 31,
+    targetTitle: '今日全球早报',
+    status: 'SUCCESS',
+    operatorName: 'dev-admin',
+    detail: '每日早报已发布，移动端简报入口可见。',
+    createdAt: '2026-06-10T08:30:00'
+  },
+  {
+    id: 2001,
+    module: 'PUBLISH',
+    actionType: 'OFFLINE_DIGEST',
+    targetType: 'DIGEST',
+    targetId: 30,
+    targetTitle: '昨日晚间复盘',
+    status: 'SUCCESS',
+    operatorName: 'dev-admin',
+    detail: '旧版简报下线，用户端不再展示。',
+    createdAt: '2026-06-10T07:50:00'
   }
 ];
