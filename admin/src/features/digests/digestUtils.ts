@@ -6,17 +6,18 @@ export function todayIsoDate() {
 
 export function buildDigestInput(
   selectedArticles: AdminDigestArticleCandidate[],
-  digestDate = todayIsoDate()
+  digestDate = todayIsoDate(),
+  overrides: Partial<Pick<AdminDigestCreateInput, 'title' | 'summary' | 'audioText' | 'categoryCode'>> = {}
 ): AdminDigestCreateInput {
   const highlights = selectedArticles.map((article) => article.title);
   return {
     digestDate,
     digestType: 'MORNING',
-    categoryCode: 'global',
-    title: '今日全球早报',
-    summary: `精选 ${selectedArticles.length} 条重点资讯`,
+    categoryCode: overrides.categoryCode ?? 'global',
+    title: overrides.title ?? '今日全球早报',
+    summary: overrides.summary ?? `精选 ${selectedArticles.length} 条重点资讯`,
     content: highlights.join('\n'),
-    audioText: `欢迎收听脉闻今日全球早报。本期重点包括：${highlights.join('；')}。`,
+    audioText: overrides.audioText ?? `欢迎收听脉闻今日全球早报。本期重点包括：${highlights.join('；')}。`,
     articles: selectedArticles.map((article, index) => ({
       articleId: article.id,
       sortNo: index + 1,

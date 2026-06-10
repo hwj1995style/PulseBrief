@@ -53,4 +53,33 @@ describe('PulseBrief Admin shell', () => {
     await user.click(within(detail).getByRole('button', { name: '发布简报' }));
     expect(await screen.findByText('已发布到 APP')).toBeInTheDocument();
   });
+
+  it('edits draft digest and offlines published digest', async () => {
+    const user = userEvent.setup();
+    window.location.hash = '#/digests';
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '简报管理' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /选择 高盛：AI 基建投资仍将持续/ }));
+    await user.click(screen.getByRole('button', { name: '创建草稿' }));
+    expect(await screen.findByText('草稿已创建，可发布到 APP')).toBeInTheDocument();
+
+    await user.clear(screen.getByLabelText('简报标题'));
+    await user.type(screen.getByLabelText('简报标题'), '更新后的每日早报');
+    await user.clear(screen.getByLabelText('简报摘要'));
+    await user.type(screen.getByLabelText('简报摘要'), '运营更新后的摘要');
+    await user.click(screen.getByRole('button', { name: '保存草稿' }));
+    expect(await screen.findByText('草稿已保存')).toBeInTheDocument();
+
+    const detail = screen.getByRole('complementary', { name: '简报详情' });
+    expect(within(detail).getByText('更新后的每日早报')).toBeInTheDocument();
+    expect(within(detail).getByText('运营更新后的摘要')).toBeInTheDocument();
+
+    await user.click(within(detail).getByRole('button', { name: '发布简报' }));
+    expect(await screen.findByText('已发布到 APP')).toBeInTheDocument();
+
+    await user.click(within(detail).getByRole('button', { name: '下线简报' }));
+    expect(await screen.findByText('已下线，用户端不可见')).toBeInTheDocument();
+    expect(within(detail).getByText('已下线')).toBeInTheDocument();
+  });
 });

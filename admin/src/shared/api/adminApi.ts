@@ -23,7 +23,9 @@ export interface AdminApiClient {
   listDigests: (status?: AdminDigestStatus | 'ALL') => Promise<AdminDigest[]>;
   listDigestArticleCandidates: (keyword?: string) => Promise<AdminDigestArticleCandidate[]>;
   createDigest: (input: AdminDigestCreateInput) => Promise<AdminDigest>;
+  updateDigest: (id: number, input: AdminDigestCreateInput) => Promise<AdminDigest>;
   publishDigest: (id: number) => Promise<AdminDigest>;
+  offlineDigest: (id: number) => Promise<AdminDigest>;
 }
 
 interface BackendApiResponse<T> {
@@ -199,8 +201,16 @@ export function createDigest(input: AdminDigestCreateInput): Promise<AdminDigest
   return defaultClient.createDigest(input);
 }
 
+export function updateDigest(id: number, input: AdminDigestCreateInput): Promise<AdminDigest> {
+  return defaultClient.updateDigest(id, input);
+}
+
 export function publishDigest(id: number): Promise<AdminDigest> {
   return defaultClient.publishDigest(id);
+}
+
+export function offlineDigest(id: number): Promise<AdminDigest> {
+  return defaultClient.offlineDigest(id);
 }
 
 export function resetAdminApiMock() {
@@ -283,6 +293,36 @@ function createMockAdminApiClient(): MutableAdminApiClient {
       localDigests = [digest, ...localDigests];
       return cloneDigest(digest);
     },
+    updateDigest: async (id, input) => {
+      const articles = input.articles.map((article) => {
+        const source = mockDigestArticleCandidates.find((candidate) => candidate.id === article.articleId);
+        return {
+          articleId: article.articleId,
+          sortNo: article.sortNo,
+          highlightText: article.highlightText,
+          title: source?.title ?? '',
+          sourceName: source?.sourceName ?? ''
+        };
+      });
+      localDigests = localDigests.map((digest) =>
+        digest.id === id
+          ? {
+              ...digest,
+              ...input,
+              status: 'DRAFT',
+              publishTime: null,
+              articleCount: articles.length,
+              articles,
+              availableActions: ['EDIT', 'PUBLISH']
+            }
+          : digest
+      );
+      const digest = localDigests.find((item) => item.id === id);
+      if (!digest) {
+        throw new Error('Digest not found');
+      }
+      return cloneDigest(digest);
+    },
     publishDigest: async (id) => {
       localDigests = localDigests.map((digest) =>
         digest.id === id
@@ -291,6 +331,22 @@ function createMockAdminApiClient(): MutableAdminApiClient {
               status: 'PUBLISHED',
               publishTime: new Date().toISOString(),
               availableActions: ['OFFLINE']
+            }
+          : digest
+      );
+      const digest = localDigests.find((item) => item.id === id);
+      if (!digest) {
+        throw new Error('Digest not found');
+      }
+      return cloneDigest(digest);
+    },
+    offlineDigest: async (id) => {
+      localDigests = localDigests.map((digest) =>
+        digest.id === id
+          ? {
+              ...digest,
+              status: 'OFFLINE',
+              availableActions: []
             }
           : digest
       );
@@ -396,10 +452,23 @@ function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): Admin
       });
       return mapDigest(digest);
     },
+    updateDigest: async (id, input) => {
+      const digest = await request<BackendDigestResponse>(`/api/admin/digests/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(input)
+      });
+      return mapDigest(digest);
+    },
     publishDigest: async (id) => {
       const digest = await request<BackendDigestResponse>(`/api/admin/digests/${id}/publish`, {
         method: 'POST',
         body: JSON.stringify({ publishNow: true })
+      });
+      return mapDigest(digest);
+    },
+    offlineDigest: async (id) => {
+      const digest = await request<BackendDigestResponse>(`/api/admin/digests/${id}/offline`, {
+        method: 'POST'
       });
       return mapDigest(digest);
     }

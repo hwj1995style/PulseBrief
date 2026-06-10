@@ -1,11 +1,13 @@
-import { Check, FileAudio, PlayCircle, RefreshCw, Send, Sparkles } from 'lucide-react';
+import { ArchiveX, Check, FileAudio, PlayCircle, RefreshCw, Save, Send, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   createDigest,
   getInitialDigests,
   listDigestArticleCandidates,
   listDigests,
-  publishDigest
+  offlineDigest,
+  publishDigest,
+  updateDigest
 } from '../../shared/api/adminApi';
 import type { AdminDigest, AdminDigestArticleCandidate } from '../../shared/types/digest';
 import { buildDigestInput, digestStatusClass, digestStatusLabel } from './digestUtils';
@@ -19,6 +21,9 @@ export function DigestManagementPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [draftTitle, setDraftTitle] = useState('今日全球早报');
+  const [draftSummary, setDraftSummary] = useState('精选 0 条重点资讯');
+  const [draftAudioText, setDraftAudioText] = useState('欢迎收听脉闻今日全球早报。');
 
   useEffect(() => {
     void refreshDigests();
@@ -36,6 +41,7 @@ export function DigestManagementPage() {
 
   const draftCount = digests.filter((digest) => digest.status === 'DRAFT').length;
   const publishedCount = digests.filter((digest) => digest.status === 'PUBLISHED').length;
+  const isEditingDraft = selectedDigest?.status === 'DRAFT';
 
   async function refreshDigests() {
     setIsLoading(true);
@@ -61,7 +67,54 @@ export function DigestManagementPage() {
     );
   }
 
+  function selectDigest(digest: AdminDigest) {
+    setSelectedDigestId(digest.id);
+    if (digest.status === 'DRAFT') {
+      loadDigestIntoForm(digest);
+    }
+  }
+
+  function loadDigestIntoForm(digest: AdminDigest) {
+    setDraftTitle(digest.title);
+    setDraftSummary(digest.summary);
+    setDraftAudioText(digest.audioText);
+    setSelectedArticleIds(digest.articles.map((article) => article.articleId));
+    setSuccessMessage('');
+  }
+
+  function currentDigestInput() {
+    return buildDigestInput(selectedArticles, undefined, {
+      title: draftTitle.trim() || '今日全球早报',
+      summary: draftSummary.trim() || `精选 ${selectedArticles.length} 条重点资讯`,
+      audioText: draftAudioText.trim() || '欢迎收听脉闻今日全球早报。'
+    });
+  }
+
   async function handleCreateDraft() {
+    if (selectedArticles.length === 0) {
+      setErrorMessage('请先选择至少 1 条已发布文章。');
+      return;
+    }
+    setIsSaving(true);
+      setErrorMessage('');
+    try {
+      const digest = await createDigest(currentDigestInput());
+      setDigests((current) => [digest, ...current]);
+      setSelectedDigestId(digest.id);
+      loadDigestIntoForm(digest);
+      setSuccessMessage('草稿已创建，可发布到 APP');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '简报草稿创建失败。');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleSaveDraft() {
+    if (!selectedDigest || selectedDigest.status !== 'DRAFT') {
+      setErrorMessage('请选择草稿后再保存。');
+      return;
+    }
     if (selectedArticles.length === 0) {
       setErrorMessage('请先选择至少 1 条已发布文章。');
       return;
@@ -69,12 +122,13 @@ export function DigestManagementPage() {
     setIsSaving(true);
     setErrorMessage('');
     try {
-      const digest = await createDigest(buildDigestInput(selectedArticles));
-      setDigests((current) => [digest, ...current]);
+      const digest = await updateDigest(selectedDigest.id, currentDigestInput());
+      setDigests((current) => current.map((item) => (item.id === digest.id ? digest : item)));
       setSelectedDigestId(digest.id);
-      setSuccessMessage('草稿已创建，可发布到 APP');
+      loadDigestIntoForm(digest);
+      setSuccessMessage('草稿已保存');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '简报草稿创建失败。');
+      setErrorMessage(error instanceof Error ? error.message : '简报草稿保存失败。');
     } finally {
       setIsSaving(false);
     }
@@ -93,6 +147,24 @@ export function DigestManagementPage() {
       setSuccessMessage('已发布到 APP');
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '简报发布失败。');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleOfflineDigest() {
+    if (!selectedDigest || selectedDigest.status !== 'PUBLISHED') {
+      return;
+    }
+    setIsSaving(true);
+    setErrorMessage('');
+    try {
+      const digest = await offlineDigest(selectedDigest.id);
+      setDigests((current) => current.map((item) => (item.id === digest.id ? digest : item)));
+      setSelectedDigestId(digest.id);
+      setSuccessMessage('已下线，用户端不可见');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '简报下线失败。');
     } finally {
       setIsSaving(false);
     }
@@ -125,17 +197,32 @@ export function DigestManagementPage() {
         <section className="panel digest-builder" aria-label="创建每日简报">
           <div className="builder-header">
             <div>
-              <strong>今日全球早报</strong>
-              <span>默认创建 MORNING 类型，后续编辑接口完成后开放更多类型。</span>
+              <strong>{isEditingDraft ? '编辑每日简报草稿' : '今日全球早报'}</strong>
+              <span>编辑标题、摘要、播报文案，并通过文章池维护热点清单。</span>
             </div>
             <button
               className="primary-action compact"
               disabled={isSaving || selectedArticles.length === 0}
-              onClick={handleCreateDraft}
+              onClick={isEditingDraft ? handleSaveDraft : handleCreateDraft}
             >
-              <Sparkles size={16} />
-              创建草稿
+              {isEditingDraft ? <Save size={16} /> : <Sparkles size={16} />}
+              {isEditingDraft ? '保存草稿' : '创建草稿'}
             </button>
+          </div>
+
+          <div className="digest-form-grid">
+            <label className="field-label">
+              <span>简报标题</span>
+              <input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} />
+            </label>
+            <label className="field-label">
+              <span>简报摘要</span>
+              <input value={draftSummary} onChange={(event) => setDraftSummary(event.target.value)} />
+            </label>
+            <label className="field-label full">
+              <span>播报文案</span>
+              <textarea value={draftAudioText} onChange={(event) => setDraftAudioText(event.target.value)} />
+            </label>
           </div>
 
           <div className="selection-strip">
@@ -157,7 +244,7 @@ export function DigestManagementPage() {
                 <button
                   className={selectedDigest?.id === digest.id ? 'digest-row selected' : 'digest-row'}
                   key={digest.id}
-                  onClick={() => setSelectedDigestId(digest.id)}
+                  onClick={() => selectDigest(digest)}
                 >
                   <span className={`status-chip ${digestStatusClass(digest.status)}`}>
                     {digestStatusLabel(digest.status)}
@@ -240,6 +327,14 @@ export function DigestManagementPage() {
 
             <div className="detail-actions">
               <button
+                className="secondary-action"
+                disabled={selectedDigest.status !== 'DRAFT'}
+                onClick={() => loadDigestIntoForm(selectedDigest)}
+              >
+                <Save size={16} />
+                编辑草稿
+              </button>
+              <button
                 className="primary-action"
                 disabled={isSaving || selectedDigest.status !== 'DRAFT'}
                 onClick={handlePublishDigest}
@@ -250,6 +345,14 @@ export function DigestManagementPage() {
               <button className="secondary-action" disabled>
                 <PlayCircle size={16} />
                 预览播报
+              </button>
+              <button
+                className="secondary-action danger"
+                disabled={isSaving || selectedDigest.status !== 'PUBLISHED'}
+                onClick={handleOfflineDigest}
+              >
+                <ArchiveX size={16} />
+                下线简报
               </button>
             </div>
           </>

@@ -432,9 +432,9 @@ npm run build
 5. 已补充 `AdminDigestControllerTest`，覆盖 Admin Token、文章候选、创建草稿、发布、用户端今日简报读取、详情读取和重复发布冲突。
 6. 已补充 `PUT /api/admin/digests/{id}`，仅允许编辑 `DRAFT` 草稿，并会替换文章关联、排序和热点文案。
 7. 已补充 `POST /api/admin/digests/{id}/offline`，仅允许下线 `PUBLISHED` 简报，下线后用户端详情接口返回 `404`。
+8. React Admin 简报管理页面已支持 mock/API 双模式创建草稿、编辑草稿、发布草稿和下线已发布简报。
 
 仍待后续批次完成：
 
-1. React Admin 简报管理页面补充草稿编辑态和下线操作。
-2. Flutter API 模式截图回归。
-3. OpenAPI 文档补充 Admin Digest 接口示例。
+1. Flutter API 模式截图回归。
+2. OpenAPI 文档补充 Admin Digest 接口示例。

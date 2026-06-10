@@ -362,4 +362,87 @@ describe('adminApi HTTP client', () => {
       expect.objectContaining({ method: 'POST' })
     );
   });
+
+  it('sends digest update and offline requests', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    fetchMock
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: {
+            id: 41,
+            digestDate: '2026-06-10',
+            digestType: 'MORNING',
+            categoryCode: 'finance',
+            title: '更新后的市场早报',
+            summary: '更新后的摘要',
+            content: '更新后的热点',
+            audioText: '更新后的播报文案。',
+            status: 'DRAFT',
+            publishTime: null,
+            articleCount: 1,
+            articles: [],
+            availableActions: ['EDIT', 'PUBLISH']
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: {
+            id: 42,
+            digestDate: '2026-06-10',
+            digestType: 'MORNING',
+            categoryCode: 'global',
+            title: '今日全球早报',
+            summary: '摘要',
+            content: '热点',
+            audioText: '播报文案',
+            status: 'OFFLINE',
+            publishTime: '2026-06-10T08:30:00+08:00',
+            articleCount: 1,
+            articles: [],
+            availableActions: []
+          }
+        })
+      );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const updated = await client.updateDigest(41, {
+      digestDate: '2026-06-10',
+      digestType: 'MORNING',
+      categoryCode: 'finance',
+      title: '更新后的市场早报',
+      summary: '更新后的摘要',
+      content: '更新后的热点',
+      audioText: '更新后的播报文案。',
+      articles: [{ articleId: 501, sortNo: 1, highlightText: '更新后的热点' }]
+    });
+    const offlined = await client.offlineDigest(42);
+
+    expect(updated).toEqual(expect.objectContaining({ id: 41, title: '更新后的市场早报' }));
+    expect(offlined.status).toBe('OFFLINE');
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:8080/api/admin/digests/41',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({
+          digestDate: '2026-06-10',
+          digestType: 'MORNING',
+          categoryCode: 'finance',
+          title: '更新后的市场早报',
+          summary: '更新后的摘要',
+          content: '更新后的热点',
+          audioText: '更新后的播报文案。',
+          articles: [{ articleId: 501, sortNo: 1, highlightText: '更新后的热点' }]
+        })
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8080/api/admin/digests/42/offline',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
 });

@@ -613,6 +613,50 @@ button {
   padding: 12px;
 }
 
+.digest-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.field-label {
+  display: grid;
+  gap: 7px;
+  color: #526075;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.field-label.full {
+  grid-column: 1 / -1;
+}
+
+.field-label input,
+.field-label textarea {
+  width: 100%;
+  border: 1px solid #dbe4f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #091735;
+  font-size: 14px;
+  font-weight: 600;
+  outline: 0;
+  padding: 10px 12px;
+}
+
+.field-label textarea {
+  min-height: 76px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.field-label input:focus,
+.field-label textarea:focus {
+  border-color: #0f4fd8;
+  box-shadow: 0 0 0 3px rgba(15, 79, 216, 0.1);
+}
+
 .digest-list-panel,
 .article-pool {
   margin-top: 16px;
@@ -673,6 +717,11 @@ button {
 
 .digest-detail .detail-header {
   color: #0f4fd8;
+}
+
+.digest-detail .detail-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .digest-points {
@@ -765,6 +814,10 @@ button {
   .selection-strip {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .digest-form-grid {
+    grid-template-columns: 1fr;
   }
 
   .search-box {
