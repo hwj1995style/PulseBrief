@@ -191,6 +191,20 @@ void main() {
             'highlights': ['英伟达 Blackwell Ultra 发布'],
           },
         },
+        'GET /digests/1': {
+          'code': 'OK',
+          'data': {
+            'id': 1,
+            'title': '今日全球早报：AI 与市场热点',
+            'sourceName': '脉闻语音简报',
+            'digestType': 'MORNING',
+            'duration': '08:12',
+            'updatedAt': '2026-06-08T08:30:00+08:00',
+            'summary': 'Admin 发布后的今日简报摘要',
+            'audioText': '欢迎收听脉闻今日全球早报。',
+            'points': ['英伟达 Blackwell Ultra 发布', '美联储维持谨慎表态'],
+          },
+        },
       }),
     );
 
@@ -210,6 +224,7 @@ void main() {
     final homeFeed = await repository.getHomeFeed();
     final articleDetail = await repository.getArticleDetail('101');
     final digestFeed = await repository.getTodayDigest();
+    final digestDetail = await repository.getDigestDetail('1');
 
     expect(session.accessToken, 'dev-token-1');
     expect(profile.favoriteCount, 2);
@@ -232,6 +247,12 @@ void main() {
     expect(articleDetail.impact, '发布后进入用户端资讯流。');
     expect(articleDetail.publishTime, contains('09:30'));
     expect(digestFeed.highlights.single, contains('Blackwell'));
+    expect(digestDetail.subtitle, '脉闻语音简报');
+    expect(digestDetail.summary, 'Admin 发布后的今日简报摘要');
+    expect(digestDetail.updateTime, contains('08:30'));
+    expect(digestDetail.updateTime, isNot(contains('T')));
+    expect(digestDetail.audioText, contains('今日全球早报'));
+    expect(digestDetail.points, ['英伟达 Blackwell Ultra 发布', '美联储维持谨慎表态']);
   });
 }
 

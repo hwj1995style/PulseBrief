@@ -433,6 +433,7 @@ npm run build
 6. 已补充 `PUT /api/admin/digests/{id}`，仅允许编辑 `DRAFT` 草稿，并会替换文章关联、排序和热点文案。
 7. 已补充 `POST /api/admin/digests/{id}/offline`，仅允许下线 `PUBLISHED` 简报，下线后用户端详情接口返回 `404`。
 8. React Admin 简报管理页面已支持 mock/API 双模式创建草稿、编辑草稿、发布草稿和下线已发布简报。
+9. Flutter Repository 已补充用户端简报 API 回归，覆盖 `/api/digests/today` 和 `/api/digests/{id}` 的简报标题、摘要、播报文案、热点要点和更新时间映射。
 
 仍待后续批次完成：
 

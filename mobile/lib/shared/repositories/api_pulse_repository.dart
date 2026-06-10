@@ -169,10 +169,12 @@ class ApiPulseRepository implements PulseRepository {
       id: _string(data['id']),
       title: _string(data['title']),
       subtitle: _string(data['sourceName']),
-      updateTime: _string(data['updatedAt']),
+      updateTime: _formatDisplayTime(_string(data['updatedAt'])),
       summary: _string(data['summary']),
       iconLabel: 'AI',
       duration: _string(data['duration']),
+      audioText: _string(data['audioText']),
+      points: _list(data['points']).map(_string).toList(),
     );
   }
 

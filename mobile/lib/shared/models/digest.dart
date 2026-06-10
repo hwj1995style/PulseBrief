@@ -7,6 +7,8 @@ class Digest {
     required this.summary,
     required this.iconLabel,
     required this.duration,
+    this.audioText = '',
+    this.points = const [],
   });
 
   final String id;
@@ -16,4 +18,6 @@ class Digest {
   final String summary;
   final String iconLabel;
   final String duration;
+  final String audioText;
+  final List<String> points;
 }
