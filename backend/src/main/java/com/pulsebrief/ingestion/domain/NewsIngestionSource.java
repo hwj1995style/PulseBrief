@@ -86,6 +86,30 @@ public class NewsIngestionSource {
         return contentAccessPolicy;
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getProviderType() {
+        return providerType;
+    }
+
+    public String getDefaultCategoryCode() {
+        return defaultCategoryCode;
+    }
+
+    public boolean isEnabled() {
+        return enabled != null && enabled == 1;
+    }
+
     public Integer getMaxAgeHours() {
         return maxAgeHours;
     }

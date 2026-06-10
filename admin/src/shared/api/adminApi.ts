@@ -1,5 +1,6 @@
 import { mockCandidates } from '../../mock/candidates';
 import { mockDigestArticleCandidates, mockDigests } from '../../mock/digests';
+import { mockIngestionJobs, mockIngestionMetrics, mockIngestionSources } from '../../mock/ingestion';
 import type { AdminCandidate, AdminCandidateUpdateInput, CandidateStatus, ReportAsset } from '../types/candidate';
 import type {
   AdminDigest,
@@ -7,6 +8,12 @@ import type {
   AdminDigestCreateInput,
   AdminDigestStatus
 } from '../types/digest';
+import type {
+  AdminIngestionJob,
+  AdminIngestionMetrics,
+  AdminIngestionSource,
+  IngestionJobStatus
+} from '../types/ingestion';
 
 export interface AdminApiClientConfig {
   apiBaseUrl?: string;
@@ -27,6 +34,9 @@ export interface AdminApiClient {
   updateDigest: (id: number, input: AdminDigestCreateInput) => Promise<AdminDigest>;
   publishDigest: (id: number) => Promise<AdminDigest>;
   offlineDigest: (id: number) => Promise<AdminDigest>;
+  listIngestionJobs: (status?: IngestionJobStatus | 'ALL') => Promise<AdminIngestionJob[]>;
+  getTodayIngestionMetrics: () => Promise<AdminIngestionMetrics>;
+  listIngestionSources: () => Promise<AdminIngestionSource[]>;
 }
 
 interface BackendApiResponse<T> {
@@ -127,6 +137,40 @@ interface BackendDigestArticleCandidateResponse {
   summary: string;
 }
 
+interface BackendIngestionJobResponse {
+  id: number;
+  sourceCode: string;
+  triggerType: string;
+  status: IngestionJobStatus;
+  startedAt: string;
+  finishedAt: string | null;
+  fetchedCount: number;
+  newCount: number;
+  duplicateCount: number;
+  candidateCount: number;
+  errorMessage: string | null;
+}
+
+interface BackendIngestionMetricsResponse {
+  fetchedCount: number;
+  candidateCount: number;
+  publishedCount: number;
+  failedCount: number;
+}
+
+interface BackendIngestionSourceResponse {
+  id: number;
+  code: string;
+  name: string;
+  providerType: string;
+  defaultCategoryCode: string | null;
+  enabled: boolean;
+  contentAccessPolicy: string;
+  maxAgeHours: number | null;
+  allowPdfDownload: boolean;
+  allowFullText: boolean;
+}
+
 interface MutableAdminApiClient extends AdminApiClient {
   resetMockData?: () => void;
 }
@@ -219,6 +263,18 @@ export function offlineDigest(id: number): Promise<AdminDigest> {
   return defaultClient.offlineDigest(id);
 }
 
+export function listIngestionJobs(status?: IngestionJobStatus | 'ALL'): Promise<AdminIngestionJob[]> {
+  return defaultClient.listIngestionJobs(status);
+}
+
+export function getTodayIngestionMetrics(): Promise<AdminIngestionMetrics> {
+  return defaultClient.getTodayIngestionMetrics();
+}
+
+export function listIngestionSources(): Promise<AdminIngestionSource[]> {
+  return defaultClient.listIngestionSources();
+}
+
 export function resetAdminApiMock() {
   defaultClient.resetMockData?.();
 }
@@ -226,11 +282,15 @@ export function resetAdminApiMock() {
 function createMockAdminApiClient(): MutableAdminApiClient {
   let localCandidates = mockCandidates.map(cloneCandidate);
   let localDigests = mockDigests.map(cloneDigest);
+  let localIngestionJobs = mockIngestionJobs.map(cloneIngestionJob);
+  let localIngestionSources = mockIngestionSources.map(cloneIngestionSource);
   let nextDigestId = 900;
 
   function resetMockData() {
     localCandidates = mockCandidates.map(cloneCandidate);
     localDigests = mockDigests.map(cloneDigest);
+    localIngestionJobs = mockIngestionJobs.map(cloneIngestionJob);
+    localIngestionSources = mockIngestionSources.map(cloneIngestionSource);
     nextDigestId = 900;
   }
 
@@ -376,6 +436,14 @@ function createMockAdminApiClient(): MutableAdminApiClient {
       }
       return cloneDigest(digest);
     },
+    listIngestionJobs: async (status) => {
+      if (!status || status === 'ALL') {
+        return localIngestionJobs.map(cloneIngestionJob);
+      }
+      return localIngestionJobs.filter((job) => job.status === status).map(cloneIngestionJob);
+    },
+    getTodayIngestionMetrics: async () => ({ ...mockIngestionMetrics }),
+    listIngestionSources: async () => localIngestionSources.map(cloneIngestionSource),
     resetMockData
   };
 }
@@ -498,6 +566,26 @@ function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): Admin
         method: 'POST'
       });
       return mapDigest(digest);
+    },
+    listIngestionJobs: async (status) => {
+      const query = new URLSearchParams();
+      if (status && status !== 'ALL') {
+        query.set('status', status);
+      }
+      query.set('page', '1');
+      query.set('pageSize', '20');
+      const data = await request<BackendPageResponse<BackendIngestionJobResponse>>(
+        `/api/admin/ingestion/jobs?${query.toString()}`
+      );
+      return data.items.map(mapIngestionJob);
+    },
+    getTodayIngestionMetrics: async () => {
+      const data = await request<BackendIngestionMetricsResponse>('/api/admin/ingestion/metrics/today');
+      return { ...data };
+    },
+    listIngestionSources: async () => {
+      const data = await request<BackendIngestionSourceResponse[]>('/api/admin/ingestion/sources');
+      return data.map(mapIngestionSource);
     }
   };
 
@@ -601,4 +689,20 @@ function cloneDigest(digest: AdminDigest): AdminDigest {
     articles: digest.articles.map((article) => ({ ...article })),
     availableActions: [...digest.availableActions]
   };
+}
+
+function mapIngestionJob(job: BackendIngestionJobResponse): AdminIngestionJob {
+  return { ...job };
+}
+
+function mapIngestionSource(source: BackendIngestionSourceResponse): AdminIngestionSource {
+  return { ...source };
+}
+
+function cloneIngestionJob(job: AdminIngestionJob): AdminIngestionJob {
+  return { ...job };
+}
+
+function cloneIngestionSource(source: AdminIngestionSource): AdminIngestionSource {
+  return { ...source };
 }

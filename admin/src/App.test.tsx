@@ -108,4 +108,16 @@ describe('PulseBrief Admin shell', () => {
     expect(await screen.findByText('已下线，用户端不可见')).toBeInTheDocument();
     expect(within(detail).getByText('已下线')).toBeInTheDocument();
   });
+
+  it('renders ingestion monitor metrics and failure logs', async () => {
+    window.location.hash = '#/ingestion';
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '采集任务' })).toBeInTheDocument();
+    expect(screen.getByText('今日采集')).toBeInTheDocument();
+    expect(screen.getAllByText('失败任务').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Provider timeout')).toBeInTheDocument();
+    expect(screen.getByText('Fixture Global')).toBeInTheDocument();
+    expect(screen.getByText('SUMMARY_ONLY · 最新 24 小时')).toBeInTheDocument();
+  });
 });

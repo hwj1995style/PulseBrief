@@ -505,4 +505,113 @@ describe('adminApi HTTP client', () => {
       expect.objectContaining({ method: 'POST' })
     );
   });
+
+  it('maps ingestion jobs, metrics and sources APIs', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    fetchMock
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: {
+            items: [
+              {
+                id: 71,
+                sourceCode: 'fixture-global',
+                triggerType: 'SCHEDULED',
+                status: 'FAILED',
+                startedAt: '2026-06-10T08:00:00',
+                finishedAt: '2026-06-10T08:01:00',
+                fetchedCount: 0,
+                newCount: 0,
+                duplicateCount: 0,
+                candidateCount: 0,
+                errorMessage: 'Provider timeout'
+              }
+            ],
+            page: 1,
+            pageSize: 20,
+            total: 1,
+            hasMore: false
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: {
+            fetchedCount: 42,
+            candidateCount: 18,
+            publishedCount: 6,
+            failedCount: 1
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: [
+            {
+              id: 1,
+              code: 'fixture-global',
+              name: 'Fixture Global',
+              providerType: 'FIXTURE',
+              defaultCategoryCode: 'global',
+              enabled: true,
+              contentAccessPolicy: 'SUMMARY_ONLY',
+              maxAgeHours: 24,
+              allowPdfDownload: false,
+              allowFullText: false
+            }
+          ]
+        })
+      );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const jobs = await client.listIngestionJobs('FAILED');
+    const metrics = await client.getTodayIngestionMetrics();
+    const sources = await client.listIngestionSources();
+
+    expect(jobs[0]).toEqual(
+      expect.objectContaining({
+        id: 71,
+        sourceCode: 'fixture-global',
+        status: 'FAILED',
+        errorMessage: 'Provider timeout'
+      })
+    );
+    expect(metrics).toEqual({
+      fetchedCount: 42,
+      candidateCount: 18,
+      publishedCount: 6,
+      failedCount: 1
+    });
+    expect(sources[0]).toEqual(
+      expect.objectContaining({
+        code: 'fixture-global',
+        enabled: true,
+        maxAgeHours: 24
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:8080/api/admin/ingestion/jobs?status=FAILED&page=1&pageSize=20',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer dev-admin-token' })
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8080/api/admin/ingestion/metrics/today',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer dev-admin-token' })
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:8080/api/admin/ingestion/sources',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer dev-admin-token' })
+      })
+    );
+  });
 });

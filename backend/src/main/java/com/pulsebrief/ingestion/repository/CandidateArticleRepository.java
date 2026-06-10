@@ -1,6 +1,7 @@
 package com.pulsebrief.ingestion.repository;
 
 import com.pulsebrief.ingestion.domain.CandidateArticle;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,8 @@ public interface CandidateArticleRepository extends JpaRepository<CandidateArtic
     Optional<CandidateArticle> findByTitle(String title);
 
     long countByOriginalUrl(String originalUrl);
+
+    long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(LocalDateTime start, LocalDateTime end);
 
     Page<CandidateArticle> findByStatusOrderByCreatedAtDesc(String status, Pageable pageable);
 }

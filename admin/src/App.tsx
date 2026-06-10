@@ -3,6 +3,7 @@ import { HashRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { navigationItems } from './app/navigation';
 import { CandidateReviewPage } from './features/candidates/CandidateReviewPage';
 import { DigestManagementPage } from './features/digests/DigestManagementPage';
+import { IngestionMonitorPage } from './features/ingestion/IngestionMonitorPage';
 import { adminApiConfig } from './shared/api/adminApi';
 import './styles.css';
 
@@ -57,7 +58,7 @@ function App() {
             <Route path="/" element={<Navigate replace to="/candidates" />} />
             <Route path="/candidates" element={<CandidateReviewPage />} />
             <Route path="/dashboard" element={<PlaceholderPage title="仪表盘" />} />
-            <Route path="/ingestion" element={<PlaceholderPage title="采集任务" />} />
+            <Route path="/ingestion" element={<IngestionMonitorPage />} />
             <Route path="/articles" element={<PlaceholderPage title="文章管理" />} />
             <Route path="/categories" element={<PlaceholderPage title="分类管理" />} />
             <Route path="/digests" element={<DigestManagementPage />} />

@@ -78,12 +78,31 @@ public class NewsIngestionJob {
         this.updatedAt = this.finishedAt;
     }
 
+    public void fail(String errorMessage) {
+        this.jobStatus = "FAILED";
+        this.errorMessage = errorMessage;
+        this.finishedAt = LocalDateTime.now();
+        this.updatedAt = this.finishedAt;
+    }
+
     public Long getId() {
         return id;
     }
 
+    public String getSourceCode() {
+        return sourceCode;
+    }
+
+    public String getTriggerType() {
+        return triggerType;
+    }
+
     public String getJobStatus() {
         return jobStatus;
+    }
+
+    public LocalDateTime getStartedAt() {
+        return startedAt;
     }
 
     public LocalDateTime getFinishedAt() {
@@ -100,5 +119,13 @@ public class NewsIngestionJob {
 
     public Integer getDuplicateCount() {
         return duplicateCount;
+    }
+
+    public Integer getCandidateCount() {
+        return candidateCount;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
     }
 }

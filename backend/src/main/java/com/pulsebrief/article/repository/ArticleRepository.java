@@ -1,6 +1,7 @@
 package com.pulsebrief.article.repository;
 
 import com.pulsebrief.article.domain.NewsArticle;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
@@ -20,5 +21,11 @@ public interface ArticleRepository extends JpaRepository<NewsArticle, Long> {
     Optional<NewsArticle> findFirstByArticleStatusAndCategoryCodeOrderByHotScoreDescPublishTimeDesc(
             String status,
             String categoryCode
+    );
+
+    long countByArticleStatusAndPublishTimeGreaterThanEqualAndPublishTimeLessThan(
+            String articleStatus,
+            LocalDateTime start,
+            LocalDateTime end
     );
 }
