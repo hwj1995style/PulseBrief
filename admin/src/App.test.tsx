@@ -123,6 +123,9 @@ describe('PulseBrief Admin shell', () => {
     expect(screen.getByRole('heading', { name: '发布操作日志' })).toBeInTheDocument();
     expect(screen.getByText('文章发布')).toBeInTheDocument();
     expect(screen.getByText('高盛：AI 基建投资仍将持续')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '异常数据检测' })).toBeInTheDocument();
+    expect(screen.getByText('缺链接资讯样本')).toBeInTheDocument();
+    expect(screen.getByText(/MISSING_ORIGINAL_URL/)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '停用 Fixture Global' }));
     expect(await screen.findByRole('button', { name: '启用 Fixture Global' })).toBeInTheDocument();

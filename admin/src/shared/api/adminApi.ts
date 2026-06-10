@@ -4,6 +4,7 @@ import {
   mockIngestionJobs,
   mockIngestionMetrics,
   mockIngestionSources,
+  mockIngestionAnomalies,
   mockOperationLogs
 } from '../../mock/ingestion';
 import type { AdminCandidate, AdminCandidateUpdateInput, CandidateStatus, ReportAsset } from '../types/candidate';
@@ -17,6 +18,7 @@ import type {
   AdminIngestionJob,
   AdminIngestionMetrics,
   AdminIngestionSource,
+  AdminIngestionAnomaly,
   AdminOperationLog,
   IngestionJobStatus
 } from '../types/ingestion';
@@ -44,6 +46,7 @@ export interface AdminApiClient {
   getTodayIngestionMetrics: () => Promise<AdminIngestionMetrics>;
   listIngestionSources: () => Promise<AdminIngestionSource[]>;
   updateIngestionSourceEnabled: (id: number, enabled: boolean) => Promise<AdminIngestionSource>;
+  listIngestionAnomalies: () => Promise<AdminIngestionAnomaly[]>;
   listOperationLogs: (module?: string) => Promise<AdminOperationLog[]>;
 }
 
@@ -179,6 +182,20 @@ interface BackendIngestionSourceResponse {
   allowFullText: boolean;
 }
 
+interface BackendIngestionAnomalyResponse {
+  id: number;
+  rawNewsItemId: number;
+  title: string;
+  sourceCode: string;
+  sourceName: string;
+  originalUrl: string;
+  publishedAt: string | null;
+  fetchedAt: string | null;
+  issueType: string;
+  severity: string;
+  description: string;
+}
+
 interface BackendOperationLogResponse {
   id: number;
   module: string;
@@ -300,6 +317,10 @@ export function updateIngestionSourceEnabled(id: number, enabled: boolean): Prom
   return defaultClient.updateIngestionSourceEnabled(id, enabled);
 }
 
+export function listIngestionAnomalies(): Promise<AdminIngestionAnomaly[]> {
+  return defaultClient.listIngestionAnomalies();
+}
+
 export function listOperationLogs(module?: string): Promise<AdminOperationLog[]> {
   return defaultClient.listOperationLogs(module);
 }
@@ -313,6 +334,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
   let localDigests = mockDigests.map(cloneDigest);
   let localIngestionJobs = mockIngestionJobs.map(cloneIngestionJob);
   let localIngestionSources = mockIngestionSources.map(cloneIngestionSource);
+  let localIngestionAnomalies = mockIngestionAnomalies.map(cloneIngestionAnomaly);
   let localOperationLogs = mockOperationLogs.map(cloneOperationLog);
   let nextDigestId = 900;
 
@@ -321,6 +343,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
     localDigests = mockDigests.map(cloneDigest);
     localIngestionJobs = mockIngestionJobs.map(cloneIngestionJob);
     localIngestionSources = mockIngestionSources.map(cloneIngestionSource);
+    localIngestionAnomalies = mockIngestionAnomalies.map(cloneIngestionAnomaly);
     localOperationLogs = mockOperationLogs.map(cloneOperationLog);
     nextDigestId = 900;
   }
@@ -485,6 +508,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
       }
       return cloneIngestionSource(source);
     },
+    listIngestionAnomalies: async () => localIngestionAnomalies.map(cloneIngestionAnomaly),
     listOperationLogs: async (module) => {
       if (!module) {
         return localOperationLogs.map(cloneOperationLog);
@@ -644,6 +668,16 @@ function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): Admin
       );
       return mapIngestionSource(source);
     },
+    listIngestionAnomalies: async () => {
+      const query = new URLSearchParams({
+        page: '1',
+        pageSize: '20'
+      });
+      const data = await request<BackendPageResponse<BackendIngestionAnomalyResponse>>(
+        `/api/admin/ingestion/anomalies?${query.toString()}`
+      );
+      return data.items.map(mapIngestionAnomaly);
+    },
     listOperationLogs: async (module) => {
       const query = new URLSearchParams();
       if (module) {
@@ -768,6 +802,10 @@ function mapIngestionSource(source: BackendIngestionSourceResponse): AdminIngest
   return { ...source };
 }
 
+function mapIngestionAnomaly(anomaly: BackendIngestionAnomalyResponse): AdminIngestionAnomaly {
+  return { ...anomaly };
+}
+
 function mapOperationLog(log: BackendOperationLogResponse): AdminOperationLog {
   return { ...log };
 }
@@ -778,6 +816,10 @@ function cloneIngestionJob(job: AdminIngestionJob): AdminIngestionJob {
 
 function cloneIngestionSource(source: AdminIngestionSource): AdminIngestionSource {
   return { ...source };
+}
+
+function cloneIngestionAnomaly(anomaly: AdminIngestionAnomaly): AdminIngestionAnomaly {
+  return { ...anomaly };
 }
 
 function cloneOperationLog(log: AdminOperationLog): AdminOperationLog {

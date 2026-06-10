@@ -2,6 +2,7 @@ import type {
   AdminIngestionJob,
   AdminIngestionMetrics,
   AdminIngestionSource,
+  AdminIngestionAnomaly,
   AdminOperationLog
 } from '../shared/types/ingestion';
 
@@ -117,5 +118,34 @@ export const mockOperationLogs: AdminOperationLog[] = [
     operatorName: 'dev-admin',
     detail: '旧版简报下线，用户端不再展示。',
     createdAt: '2026-06-10T07:50:00'
+  }
+];
+
+export const mockIngestionAnomalies: AdminIngestionAnomaly[] = [
+  {
+    id: 3002,
+    rawNewsItemId: 3002,
+    title: '缺链接资讯样本',
+    sourceCode: 'fixture-global',
+    sourceName: 'Fixture Global',
+    originalUrl: '',
+    publishedAt: '2026-06-10T08:00:00',
+    fetchedAt: '2026-06-10T08:10:00',
+    issueType: 'MISSING_ORIGINAL_URL',
+    severity: 'HIGH',
+    description: '原始资讯缺少原文链接，无法满足可追溯要求'
+  },
+  {
+    id: 3001,
+    rawNewsItemId: 3001,
+    title: '未来发布时间样本',
+    sourceCode: 'fixture-markets',
+    sourceName: 'Fixture Markets',
+    originalUrl: 'https://example.com/future-market',
+    publishedAt: '2026-06-10T16:00:00',
+    fetchedAt: '2026-06-10T08:20:00',
+    issueType: 'PUBLISHED_AT_IN_FUTURE',
+    severity: 'HIGH',
+    description: '原始资讯发布时间晚于当前时间，可能来自来源时区或解析错误'
   }
 ];

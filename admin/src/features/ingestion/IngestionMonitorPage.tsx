@@ -1,8 +1,9 @@
-import { AlertTriangle, CheckCircle2, ClipboardList, DatabaseZap, RefreshCw, RadioTower } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ClipboardList, DatabaseZap, RefreshCw, RadioTower, ShieldAlert } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   getTodayIngestionMetrics,
+  listIngestionAnomalies,
   listIngestionJobs,
   listOperationLogs,
   listIngestionSources,
@@ -12,6 +13,7 @@ import type {
   AdminIngestionJob,
   AdminIngestionMetrics,
   AdminIngestionSource,
+  AdminIngestionAnomaly,
   AdminOperationLog,
   IngestionJobStatus
 } from '../../shared/types/ingestion';
@@ -36,11 +38,19 @@ const operationActionLabels: Record<string, string> = {
   OFFLINE_DIGEST: '简报下线'
 };
 
+const anomalyIssueLabels: Record<string, string> = {
+  MISSING_SOURCE: '缺少来源',
+  MISSING_ORIGINAL_URL: '缺少原文链接',
+  PUBLISHED_AT_MISSING: '缺少发布时间',
+  PUBLISHED_AT_IN_FUTURE: '发布时间异常'
+};
+
 export function IngestionMonitorPage() {
   const [statusFilter, setStatusFilter] = useState<IngestionJobStatus | 'ALL'>('ALL');
   const [jobs, setJobs] = useState<AdminIngestionJob[]>([]);
   const [metrics, setMetrics] = useState<AdminIngestionMetrics>(emptyMetrics);
   const [sources, setSources] = useState<AdminIngestionSource[]>([]);
+  const [anomalies, setAnomalies] = useState<AdminIngestionAnomaly[]>([]);
   const [operationLogs, setOperationLogs] = useState<AdminOperationLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,15 +65,17 @@ export function IngestionMonitorPage() {
       listIngestionJobs(statusFilter),
       getTodayIngestionMetrics(),
       listIngestionSources(),
+      listIngestionAnomalies(),
       listOperationLogs('PUBLISH')
     ])
-      .then(([nextJobs, nextMetrics, nextSources, nextOperationLogs]) => {
+      .then(([nextJobs, nextMetrics, nextSources, nextAnomalies, nextOperationLogs]) => {
         if (cancelled) {
           return;
         }
         setJobs(nextJobs);
         setMetrics(nextMetrics);
         setSources(nextSources);
+        setAnomalies(nextAnomalies);
         setOperationLogs(nextOperationLogs);
       })
       .catch((nextError: Error) => {
@@ -212,6 +224,41 @@ export function IngestionMonitorPage() {
                     <p>{log.detail}</p>
                     <small>
                       {log.operatorName} · {formatTime(log.createdAt)}
+                    </small>
+                  </article>
+                ))
+              : null}
+          </div>
+        </section>
+
+        <section className="panel operation-log-panel anomaly-panel" aria-label="异常数据检测">
+          <div className="section-title-row">
+            <div>
+              <p className="page-kicker">Quality Signals</p>
+              <h2>
+                <ShieldAlert size={18} />
+                异常数据检测
+              </h2>
+            </div>
+            <span className="muted">待处理 {anomalies.length} 条</span>
+          </div>
+
+          <div className="operation-log-list">
+            {loading ? <p className="table-state compact">正在加载异常数据...</p> : null}
+            {!loading && anomalies.length === 0 ? <p className="table-state compact">暂无异常数据</p> : null}
+            {!loading
+              ? anomalies.map((anomaly) => (
+                  <article className="operation-log-row anomaly-row" key={`${anomaly.rawNewsItemId}-${anomaly.issueType}`}>
+                    <div>
+                      <strong>{anomaly.title}</strong>
+                      <span>{anomalyIssueLabels[anomaly.issueType] ?? anomaly.issueType}</span>
+                    </div>
+                    <span className={anomaly.severity === 'HIGH' ? 'status-chip danger' : 'status-chip warning'}>
+                      {anomaly.severity === 'HIGH' ? '高危' : '中等'}
+                    </span>
+                    <p>{anomaly.description}</p>
+                    <small>
+                      {anomaly.issueType} · {anomaly.sourceCode} · {formatTime(anomaly.fetchedAt ?? '')}
                     </small>
                   </article>
                 ))

@@ -703,4 +703,51 @@ describe('adminApi HTTP client', () => {
       })
     );
   });
+
+  it('maps ingestion quality anomalies API', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      await mockFetchResponse({
+        code: 'OK',
+        data: {
+          items: [
+            {
+              id: 301,
+              rawNewsItemId: 301,
+              title: '缺链接样本',
+              sourceCode: 'fixture-global',
+              sourceName: 'Fixture Global',
+              originalUrl: '',
+              publishedAt: '2026-06-10T08:00:00',
+              fetchedAt: '2026-06-10T08:10:00',
+              issueType: 'MISSING_ORIGINAL_URL',
+              severity: 'HIGH',
+              description: '原始资讯缺少原文链接，无法满足可追溯要求'
+            }
+          ],
+          page: 1,
+          pageSize: 20,
+          total: 1,
+          hasMore: false
+        }
+      })
+    );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const anomalies = await client.listIngestionAnomalies();
+
+    expect(anomalies[0]).toEqual(
+      expect.objectContaining({
+        rawNewsItemId: 301,
+        title: '缺链接样本',
+        issueType: 'MISSING_ORIGINAL_URL',
+        severity: 'HIGH'
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/admin/ingestion/anomalies?page=1&pageSize=20',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer dev-admin-token' })
+      })
+    );
+  });
 });

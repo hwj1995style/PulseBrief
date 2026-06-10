@@ -37,6 +37,14 @@ public class AdminIngestionController {
         return ApiResponse.ok(ingestionService.todayMetrics());
     }
 
+    @GetMapping("/anomalies")
+    public ApiResponse<PageResponse<AdminIngestionAnomalyResponse>> listAnomalies(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize
+    ) {
+        return ApiResponse.ok(ingestionService.listAnomalies(page, pageSize));
+    }
+
     @GetMapping("/sources")
     public ApiResponse<List<AdminIngestionSourceResponse>> listSources() {
         return ApiResponse.ok(ingestionService.listSources());

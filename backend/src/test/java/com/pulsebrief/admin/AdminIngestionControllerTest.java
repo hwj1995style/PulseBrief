@@ -6,11 +6,13 @@ import com.pulsebrief.ingestion.domain.NewsIngestionJob;
 import com.pulsebrief.ingestion.domain.NewsIngestionSource;
 import com.pulsebrief.ingestion.repository.NewsIngestionJobRepository;
 import com.pulsebrief.ingestion.repository.NewsIngestionSourceRepository;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +37,9 @@ class AdminIngestionControllerTest {
 
     @Autowired
     private NewsIngestionSourceRepository sourceRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Test
     void requiresAdminTokenForIngestionJobs() throws Exception {
@@ -136,5 +141,108 @@ class AdminIngestionControllerTest {
                 .andExpect(jsonPath("$.data.enabled").value(true));
 
         assertThat(sourceRepository.findByCode(sourceCode).orElseThrow().isEnabled()).isTrue();
+    }
+
+    @Test
+    void returnsRawNewsQualityAnomaliesForAdmin() throws Exception {
+        String suffix = UUID.randomUUID().toString();
+        insertRawNewsItem(
+                "quality-" + suffix,
+                "缺来源样本 " + suffix,
+                "   ",
+                "https://example.com/missing-source-" + suffix,
+                LocalDateTime.now().minusHours(1),
+                "missing-source-" + suffix
+        );
+        insertRawNewsItem(
+                "quality-" + suffix,
+                "缺链接样本 " + suffix,
+                "Quality Source",
+                "   ",
+                LocalDateTime.now().minusHours(1),
+                "missing-url-" + suffix
+        );
+        insertRawNewsItem(
+                "quality-" + suffix,
+                "缺发布时间样本 " + suffix,
+                "Quality Source",
+                "https://example.com/missing-published-at-" + suffix,
+                null,
+                "missing-published-at-" + suffix
+        );
+        insertRawNewsItem(
+                "quality-" + suffix,
+                "未来发布时间样本 " + suffix,
+                "Quality Source",
+                "https://example.com/future-published-at-" + suffix,
+                LocalDateTime.now().plusHours(2),
+                "future-published-at-" + suffix
+        );
+
+        mockMvc.perform(get("/api/admin/ingestion/anomalies")
+                        .header("Authorization", ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[?(@.title == '缺来源样本 " + suffix + "')].issueType")
+                        .value("MISSING_SOURCE"))
+                .andExpect(jsonPath("$.data.items[?(@.title == '缺链接样本 " + suffix + "')].issueType")
+                        .value("MISSING_ORIGINAL_URL"))
+                .andExpect(jsonPath("$.data.items[?(@.title == '缺发布时间样本 " + suffix + "')].issueType")
+                        .value("PUBLISHED_AT_MISSING"))
+                .andExpect(jsonPath("$.data.items[?(@.title == '未来发布时间样本 " + suffix + "')].issueType")
+                        .value("PUBLISHED_AT_IN_FUTURE"))
+                .andExpect(jsonPath("$.data.items[?(@.title == '缺链接样本 " + suffix + "')].severity")
+                        .value("HIGH"));
+    }
+
+    private void insertRawNewsItem(
+            String sourceCode,
+            String title,
+            String sourceName,
+            String originalUrl,
+            LocalDateTime publishedAt,
+            String uniqueKey
+    ) {
+        LocalDateTime now = LocalDateTime.now();
+        jdbcTemplate.update("""
+                insert into raw_news_item (
+                    source_code,
+                    provider_item_id,
+                    title,
+                    summary,
+                    source_name,
+                    original_url,
+                    original_url_hash,
+                    image_url,
+                    published_at,
+                    fetched_at,
+                    language,
+                    country,
+                    raw_payload,
+                    content_hash,
+                    item_status,
+                    duplicate_of_id,
+                    created_at,
+                    updated_at
+                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, cast(? as json), ?, ?, ?, ?, ?)
+                """,
+                sourceCode,
+                uniqueKey,
+                title,
+                "异常检测测试摘要",
+                sourceName,
+                originalUrl,
+                "hash-" + uniqueKey,
+                null,
+                publishedAt,
+                now,
+                "zh",
+                "CN",
+                "{}",
+                "content-" + uniqueKey,
+                "NEW",
+                null,
+                now,
+                now
+        );
     }
 }

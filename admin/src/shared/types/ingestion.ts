@@ -34,6 +34,20 @@ export interface AdminIngestionSource {
   allowFullText: boolean;
 }
 
+export interface AdminIngestionAnomaly {
+  id: number;
+  rawNewsItemId: number;
+  title: string;
+  sourceCode: string;
+  sourceName: string;
+  originalUrl: string;
+  publishedAt: string | null;
+  fetchedAt: string | null;
+  issueType: string;
+  severity: 'HIGH' | 'MEDIUM' | string;
+  description: string;
+}
+
 export type AdminOperationLogAction = 'PUBLISH_ARTICLE' | 'PUBLISH_DIGEST' | 'OFFLINE_DIGEST' | string;
 
 export interface AdminOperationLog {
