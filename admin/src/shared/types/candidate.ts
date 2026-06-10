@@ -17,6 +17,7 @@ export interface AdminCandidate {
   categoryCode: string;
   categoryName: string;
   sourceName: string;
+  tagNames: string[];
   originalUrl: string;
   publishedAt: string;
   fetchedAt: string;
@@ -29,4 +30,5 @@ export interface AdminCandidateUpdateInput {
   summary: string;
   categoryCode: string;
   sourceName: string;
+  tagNames: string[];
 }

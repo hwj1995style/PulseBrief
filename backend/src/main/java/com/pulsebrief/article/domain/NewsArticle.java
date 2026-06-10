@@ -54,6 +54,9 @@ public class NewsArticle {
     @Column(name = "article_hash")
     private String articleHash;
 
+    @Column(name = "tag_names")
+    private String tagNames;
+
     protected NewsArticle() {
     }
 
@@ -69,6 +72,34 @@ public class NewsArticle {
             LocalDateTime publishTime,
             String articleHash
     ) {
+        this(
+                title,
+                summary,
+                aiSummary,
+                keyPoints,
+                impactAnalysis,
+                sourceName,
+                originalUrl,
+                categoryCode,
+                publishTime,
+                articleHash,
+                null
+        );
+    }
+
+    public NewsArticle(
+            String title,
+            String summary,
+            String aiSummary,
+            String keyPoints,
+            String impactAnalysis,
+            String sourceName,
+            String originalUrl,
+            String categoryCode,
+            LocalDateTime publishTime,
+            String articleHash,
+            String tagNames
+    ) {
         this.title = title;
         this.summary = summary;
         this.aiSummary = aiSummary;
@@ -82,6 +113,7 @@ public class NewsArticle {
         this.articleStatus = "PUBLISHED";
         this.top = 0;
         this.articleHash = articleHash;
+        this.tagNames = tagNames;
     }
 
     public Long getId() {
@@ -134,5 +166,9 @@ public class NewsArticle {
 
     public String getArticleStatus() {
         return articleStatus;
+    }
+
+    public String getTagNames() {
+        return tagNames;
     }
 }

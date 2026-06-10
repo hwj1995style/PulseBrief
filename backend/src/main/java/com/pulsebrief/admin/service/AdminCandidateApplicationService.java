@@ -17,7 +17,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,8 @@ import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 @Service
 public class AdminCandidateApplicationService {
     private static final String PENDING_REVIEW = "PENDING_REVIEW";
+    private static final int MAX_TAG_COUNT = 8;
+    private static final int MAX_TAG_LENGTH = 24;
 
     private final CandidateArticleRepository candidateArticleRepository;
     private final ReportAssetRepository reportAssetRepository;
@@ -97,7 +101,8 @@ public class AdminCandidateApplicationService {
                 title,
                 summary,
                 blankToDefault(request.categoryCode(), candidate.getCategoryCode()),
-                blankToDefault(request.sourceName(), candidate.getSourceName())
+                blankToDefault(request.sourceName(), candidate.getSourceName()),
+                normalizeTags(request.tagNames())
         );
         return mapper.toCandidateResponse(candidate);
     }
@@ -133,7 +138,8 @@ public class AdminCandidateApplicationService {
                 candidate.getOriginalUrl(),
                 categoryCode,
                 LocalDateTime.now(),
-                articleHash(candidate)
+                articleHash(candidate),
+                candidate.getTagNames()
         ));
         candidate.publish(article.getId());
         return mapper.toCandidateResponse(candidate);
@@ -170,6 +176,27 @@ public class AdminCandidateApplicationService {
 
     private String blankToDefault(String value, String defaultValue) {
         return value == null || value.isBlank() ? defaultValue : value.trim();
+    }
+
+    private String normalizeTags(List<String> tagNames) {
+        if (tagNames == null || tagNames.isEmpty()) {
+            return null;
+        }
+        Set<String> normalizedTags = new LinkedHashSet<>();
+        for (String tagName : tagNames) {
+            if (tagName == null || tagName.isBlank()) {
+                continue;
+            }
+            String tag = tagName.trim();
+            if (tag.length() > MAX_TAG_LENGTH) {
+                throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Candidate tag is too long");
+            }
+            normalizedTags.add(tag);
+            if (normalizedTags.size() > MAX_TAG_COUNT) {
+                throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Candidate tags are too many");
+            }
+        }
+        return normalizedTags.isEmpty() ? null : String.join(",", normalizedTags);
     }
 
     private String articleHash(CandidateArticle candidate) {

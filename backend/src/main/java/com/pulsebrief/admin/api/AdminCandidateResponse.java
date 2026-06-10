@@ -1,5 +1,7 @@
 package com.pulsebrief.admin.api;
 
+import java.util.List;
+
 public record AdminCandidateResponse(
         Long id,
         Long rawNewsItemId,
@@ -12,6 +14,7 @@ public record AdminCandidateResponse(
         String status,
         String createdAt,
         Long publishedArticleId,
-        String reviewNote
+        String reviewNote,
+        List<String> tagNames
 ) {
 }

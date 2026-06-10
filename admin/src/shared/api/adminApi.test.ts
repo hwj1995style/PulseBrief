@@ -222,6 +222,7 @@ describe('adminApi HTTP client', () => {
           summary: '运营修订后的候选摘要',
           categoryCode: 'ai',
           sourceName: 'Updated Source',
+          tagNames: ['AI 基建', '算力'],
           originalUrl: 'https://example.com/updated',
           publishedAt: null,
           status: 'PENDING_REVIEW',
@@ -237,7 +238,8 @@ describe('adminApi HTTP client', () => {
       title: '运营修订后的候选标题',
       summary: '运营修订后的候选摘要',
       categoryCode: 'ai',
-      sourceName: 'Updated Source'
+      sourceName: 'Updated Source',
+      tagNames: ['AI 基建', '算力']
     });
 
     expect(updated).toEqual(
@@ -246,7 +248,8 @@ describe('adminApi HTTP client', () => {
         title: '运营修订后的候选标题',
         categoryCode: 'ai',
         categoryName: 'AI 前沿',
-        sourceName: 'Updated Source'
+        sourceName: 'Updated Source',
+        tagNames: ['AI 基建', '算力']
       })
     );
     expect(fetchMock).toHaveBeenCalledWith(
@@ -261,7 +264,8 @@ describe('adminApi HTTP client', () => {
           title: '运营修订后的候选标题',
           summary: '运营修订后的候选摘要',
           categoryCode: 'ai',
-          sourceName: 'Updated Source'
+          sourceName: 'Updated Source',
+          tagNames: ['AI 基建', '算力']
         })
       })
     );

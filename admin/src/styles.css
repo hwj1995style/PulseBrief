@@ -433,6 +433,22 @@ button {
   color: #c93036;
 }
 
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-chip {
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #0f4fd8;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .detail-panel {
   position: sticky;
   top: 86px;

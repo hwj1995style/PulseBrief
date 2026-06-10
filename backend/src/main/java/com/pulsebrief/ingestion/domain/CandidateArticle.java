@@ -44,6 +44,9 @@ public class CandidateArticle {
     @Column(name = "review_note")
     private String reviewNote;
 
+    @Column(name = "tag_names")
+    private String tagNames;
+
     @Column(name = "published_article_id")
     private Long publishedArticleId;
 
@@ -110,6 +113,10 @@ public class CandidateArticle {
         return reviewNote;
     }
 
+    public String getTagNames() {
+        return tagNames;
+    }
+
     public Long getPublishedArticleId() {
         return publishedArticleId;
     }
@@ -118,11 +125,12 @@ public class CandidateArticle {
         return createdAt;
     }
 
-    public void updateDraft(String title, String summary, String categoryCode, String sourceName) {
+    public void updateDraft(String title, String summary, String categoryCode, String sourceName, String tagNames) {
         this.title = title.trim();
         this.summary = summary;
         this.categoryCode = categoryCode;
         this.sourceName = sourceName;
+        this.tagNames = tagNames;
         this.updatedAt = LocalDateTime.now();
     }
 

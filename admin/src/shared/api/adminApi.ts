@@ -51,6 +51,7 @@ interface BackendCandidateResponse {
   summary: string;
   categoryCode: string;
   sourceName: string;
+  tagNames?: string[];
   originalUrl: string;
   publishedAt: string | null;
   status: CandidateStatus;
@@ -523,6 +524,7 @@ function mapCandidate(candidate: BackendCandidateResponse): AdminCandidate {
     categoryCode: candidate.categoryCode,
     categoryName: categoryNameByCode[candidate.categoryCode] ?? candidate.categoryCode,
     sourceName: candidate.sourceName,
+    tagNames: candidate.tagNames ?? [],
     originalUrl: candidate.originalUrl,
     publishedAt: candidate.publishedAt ?? '',
     fetchedAt: candidate.createdAt,
@@ -559,6 +561,7 @@ function mapReportAsset(asset: BackendReportAssetResponse): ReportAsset {
 function cloneCandidate(candidate: AdminCandidate): AdminCandidate {
   return {
     ...candidate,
+    tagNames: [...(candidate.tagNames ?? [])],
     reportAssets: candidate.reportAssets.map((asset) => ({ ...asset }))
   };
 }

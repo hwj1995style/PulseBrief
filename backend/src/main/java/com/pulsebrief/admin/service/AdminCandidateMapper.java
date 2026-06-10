@@ -9,6 +9,8 @@ import com.pulsebrief.ingestion.domain.ReportAsset;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -28,7 +30,8 @@ public class AdminCandidateMapper {
                 candidate.getStatus(),
                 formatTime(candidate.getCreatedAt()),
                 candidate.getPublishedArticleId(),
-                candidate.getReviewNote()
+                candidate.getReviewNote(),
+                parseTags(candidate.getTagNames())
         );
     }
 
@@ -64,5 +67,15 @@ public class AdminCandidateMapper {
 
     private String formatTime(LocalDateTime value) {
         return value == null ? null : value.atOffset(ZoneOffset.ofHours(8)).format(API_TIME);
+    }
+
+    private List<String> parseTags(String tagNames) {
+        if (tagNames == null || tagNames.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(tagNames.split(","))
+                .map(String::trim)
+                .filter(tag -> !tag.isEmpty())
+                .toList();
     }
 }

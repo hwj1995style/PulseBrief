@@ -41,6 +41,7 @@ export function CandidateReviewPage() {
   const [draftSummary, setDraftSummary] = useState('');
   const [draftCategoryCode, setDraftCategoryCode] = useState('global');
   const [draftSourceName, setDraftSourceName] = useState('');
+  const [draftTagText, setDraftTagText] = useState('');
 
   useEffect(() => {
     void refreshCandidates();
@@ -72,13 +73,22 @@ export function CandidateReviewPage() {
       setDraftSummary('');
       setDraftCategoryCode('global');
       setDraftSourceName('');
+      setDraftTagText('');
       return;
     }
     setDraftTitle(selectedCandidate.title);
     setDraftSummary(selectedCandidate.summary);
     setDraftCategoryCode(selectedCandidate.categoryCode);
     setDraftSourceName(selectedCandidate.sourceName);
-  }, [selectedCandidate?.id, selectedCandidate?.title, selectedCandidate?.summary, selectedCandidate?.categoryCode, selectedCandidate?.sourceName]);
+    setDraftTagText(selectedCandidate.tagNames.join('，'));
+  }, [
+    selectedCandidate?.id,
+    selectedCandidate?.title,
+    selectedCandidate?.summary,
+    selectedCandidate?.categoryCode,
+    selectedCandidate?.sourceName,
+    selectedCandidate?.tagNames
+  ]);
 
   async function updateStatus(status: CandidateStatus) {
     if (!selectedCandidate) {
@@ -145,7 +155,8 @@ export function CandidateReviewPage() {
         title,
         summary: draftSummary.trim(),
         categoryCode: draftCategoryCode,
-        sourceName: draftSourceName.trim()
+        sourceName: draftSourceName.trim(),
+        tagNames: parseTagText(draftTagText)
       });
       setCandidates((items) => items.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));
       setSelectedId(updated.id);
@@ -287,6 +298,15 @@ export function CandidateReviewPage() {
                     disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
                   />
                 </label>
+                <label className="field-label">
+                  候选标签
+                  <input
+                    value={draftTagText}
+                    onChange={(event) => setDraftTagText(event.target.value)}
+                    disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
+                    placeholder="用逗号分隔，如 AI 基建，算力"
+                  />
+                </label>
                 <label className="field-label wide">
                   候选摘要
                   <textarea
@@ -306,6 +326,21 @@ export function CandidateReviewPage() {
                 <Save size={18} />
                 保存候选内容
               </button>
+            </section>
+
+            <section className="detail-section">
+              <h3>运营标签</h3>
+              {selectedCandidate.tagNames.length > 0 ? (
+                <div className="tag-list" aria-label="候选运营标签">
+                  {selectedCandidate.tagNames.map((tagName) => (
+                    <span className="tag-chip" key={tagName}>
+                      {tagName}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="muted">暂无运营标签。</p>
+              )}
             </section>
 
             <section className="detail-section">
@@ -360,6 +395,14 @@ export function CandidateReviewPage() {
       </aside>
     </main>
   );
+}
+
+function parseTagText(value: string): string[] {
+  const tags = value
+    .split(/[,，、;\n]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return Array.from(new Set(tags));
 }
 
 function Metric({ label, value, tone }: { label: string; value: number; tone?: string }) {

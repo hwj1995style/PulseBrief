@@ -1,5 +1,7 @@
 package com.pulsebrief.admin;
 
+import com.pulsebrief.article.domain.NewsArticle;
+import com.pulsebrief.article.repository.ArticleRepository;
 import com.pulsebrief.article.service.ArticleService;
 import com.pulsebrief.ingestion.domain.CandidateArticle;
 import com.pulsebrief.ingestion.provider.RawNewsPayload;
@@ -41,6 +43,9 @@ class AdminCandidateControllerTest {
 
     @Autowired
     private CandidateArticleRepository candidateArticleRepository;
+
+    @Autowired
+    private ArticleRepository articleRepository;
 
     @Autowired
     private ArticleService articleService;
@@ -107,20 +112,37 @@ class AdminCandidateControllerTest {
                                   "title": "运营修订后的候选标题",
                                   "summary": "运营修订后的候选摘要",
                                   "categoryCode": "ai",
-                                  "sourceName": "Updated Source"
+                                  "sourceName": "Updated Source",
+                                  "tagNames": ["AI 基建", "算力", "AI 基建"]
                                 }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.title").value("运营修订后的候选标题"))
                 .andExpect(jsonPath("$.data.summary").value("运营修订后的候选摘要"))
                 .andExpect(jsonPath("$.data.categoryCode").value("ai"))
-                .andExpect(jsonPath("$.data.sourceName").value("Updated Source"));
+                .andExpect(jsonPath("$.data.sourceName").value("Updated Source"))
+                .andExpect(jsonPath("$.data.tagNames[0]").value("AI 基建"))
+                .andExpect(jsonPath("$.data.tagNames[1]").value("算力"));
 
         CandidateArticle updated = candidateArticleRepository.findById(candidate.getId()).orElseThrow();
         assertThat(updated.getTitle()).isEqualTo("运营修订后的候选标题");
         assertThat(updated.getSummary()).isEqualTo("运营修订后的候选摘要");
         assertThat(updated.getCategoryCode()).isEqualTo("ai");
         assertThat(updated.getSourceName()).isEqualTo("Updated Source");
+        assertThat(updated.getTagNames()).isEqualTo("AI 基建,算力");
+
+        mockMvc.perform(post("/api/admin/candidates/" + candidate.getId() + "/publish")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"publishNow\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
+
+        Long publishedArticleId = candidateArticleRepository.findById(candidate.getId()).orElseThrow().getPublishedArticleId();
+        assertThat(publishedArticleId).isNotNull();
+        NewsArticle publishedArticle = articleRepository.findById(publishedArticleId).orElseThrow();
+        assertThat(publishedArticle.getTitle()).isEqualTo("运营修订后的候选标题");
+        assertThat(publishedArticle.getTagNames()).isEqualTo("AI 基建,算力");
     }
 
     @Test

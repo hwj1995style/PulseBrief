@@ -156,7 +156,7 @@
 - [x] 实现状态筛选：待审核、已拒绝、已发布。
 - [x] 实现候选详情预览。
 - [x] 实现编辑标题、摘要、分类、来源。
-- [ ] 实现候选标签编辑。
+- [x] 实现候选标签编辑。
 - [x] 实现拒绝候选。
 - [x] 实现发布为文章。
 - [x] 补充前端 API client 测试。
@@ -170,7 +170,7 @@
 2. 发布后 Flutter 用户端能读取到新文章。
 3. 拒绝内容不会出现在用户端。
 
-阶段结果：已完成候选审核页基础可运营闭环。React Admin 支持 mock/API 双模式，真实 API 模式覆盖候选列表、候选详情、编辑、发布和拒绝；后端 Admin API 继续保留 Token 校验，并支持本地 Vite CORS 预检。已补齐 Admin 发布到 Flutter APP 展示的数据链路回归：发布后 `/api/articles` 和 `/api/articles/{id}` 可读，Flutter `ApiPulseRepository` 可映射详情模型。候选标题、摘要、分类和来源已支持发布前编辑；候选标签、重复状态展示、批量审核和操作日志留到后续增强。
+阶段结果：已完成候选审核页基础可运营闭环。React Admin 支持 mock/API 双模式，真实 API 模式覆盖候选列表、候选详情、编辑、发布和拒绝；后端 Admin API 继续保留 Token 校验，并支持本地 Vite CORS 预检。已补齐 Admin 发布到 Flutter APP 展示的数据链路回归：发布后 `/api/articles` 和 `/api/articles/{id}` 可读，Flutter `ApiPulseRepository` 可映射详情模型。候选标题、摘要、分类、来源和标签已支持发布前编辑，标签会随候选发布保留到文章表；重复状态展示、批量审核和操作日志留到后续增强。
 
 ## 阶段 18：每日简报生成与审核
 
