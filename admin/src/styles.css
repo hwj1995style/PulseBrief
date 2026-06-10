@@ -156,6 +156,11 @@ button {
   color: #0a2a66;
 }
 
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
@@ -324,6 +329,14 @@ button {
   overflow-x: auto;
 }
 
+.table-state {
+  margin: 0;
+  min-width: 640px;
+  border-bottom: 1px solid #edf1f7;
+  color: #667085;
+  padding: 18px 16px;
+}
+
 .table-row {
   display: grid;
   grid-template-columns: minmax(220px, 1.5fr) minmax(120px, 0.75fr) 88px 84px 52px;
@@ -371,6 +384,27 @@ button {
 
 .status-chip {
   padding: 5px 9px;
+}
+
+.inline-error {
+  margin: 14px 0 0;
+  border: 1px solid #ffd5d5;
+  border-radius: 10px;
+  background: #fff7f7;
+  color: #b42318;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.spin-icon {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .status-chip.warning {

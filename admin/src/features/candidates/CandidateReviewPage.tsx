@@ -1,6 +1,12 @@
 import { CheckCircle2, ExternalLink, FileText, RefreshCw, Search, XCircle } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { getInitialCandidates, updateCandidateStatus } from '../../shared/api/adminApi';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  getCandidate,
+  getInitialCandidates,
+  listCandidates,
+  publishCandidate,
+  rejectCandidate
+} from '../../shared/api/adminApi';
 import type { AdminCandidate, CandidateStatus } from '../../shared/types/candidate';
 import { candidateStatusText, candidateStatusTone } from './candidateUtils';
 
@@ -15,6 +21,13 @@ export function CandidateReviewPage() {
   const [filter, setFilter] = useState<CandidateStatus | 'ALL'>('PENDING_REVIEW');
   const [candidates, setCandidates] = useState<AdminCandidate[]>(() => getInitialCandidates());
   const [selectedId, setSelectedId] = useState<number | null>(() => getInitialCandidates()[0]?.id ?? null);
+  const [isLoading, setIsLoading] = useState(() => getInitialCandidates().length === 0);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    void refreshCandidates();
+  }, []);
 
   const filteredCandidates = useMemo(() => {
     if (filter === 'ALL') {
@@ -40,9 +53,45 @@ export function CandidateReviewPage() {
     if (!selectedCandidate) {
       return;
     }
-    const updated = await updateCandidateStatus(selectedCandidate.id, status);
-    setCandidates((items) => items.map((item) => (item.id === updated.id ? updated : item)));
-    setSelectedId(updated.id);
+    setActionLoading(true);
+    setErrorMessage('');
+    try {
+      const updated =
+        status === 'PUBLISHED'
+          ? await publishCandidate(selectedCandidate.id)
+          : await rejectCandidate(selectedCandidate.id, '运营后台审核拒绝');
+      setCandidates((items) => items.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));
+      setSelectedId(updated.id);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '审核操作失败，请稍后重试。');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function refreshCandidates() {
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      const items = await listCandidates('ALL');
+      setCandidates(items);
+      setSelectedId((current) => current ?? items[0]?.id ?? null);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '候选资讯加载失败，请检查 Admin API 配置。');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function selectCandidate(candidate: AdminCandidate) {
+    setSelectedId(candidate.id);
+    setErrorMessage('');
+    try {
+      const detail = await getCandidate(candidate.id);
+      setCandidates((items) => items.map((item) => (item.id === detail.id ? { ...item, ...detail } : item)));
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '候选详情加载失败，已展示列表摘要。');
+    }
   }
 
   return (
@@ -54,8 +103,8 @@ export function CandidateReviewPage() {
             <h1>候选资讯审核</h1>
             <p>审核真实采集内容，确认摘要、来源和授权边界后发布到 Flutter 用户端。</p>
           </div>
-          <button className="icon-button" aria-label="刷新候选资讯">
-            <RefreshCw size={18} />
+          <button className="icon-button" aria-label="刷新候选资讯" disabled={isLoading} onClick={refreshCandidates}>
+            <RefreshCw size={18} className={isLoading ? 'spin-icon' : undefined} />
           </button>
         </div>
 
@@ -96,11 +145,16 @@ export function CandidateReviewPage() {
               <span role="columnheader">状态</span>
               <span role="columnheader">操作</span>
             </div>
-            {filteredCandidates.map((candidate) => (
+            {isLoading ? (
+              <p className="table-state">正在加载候选资讯...</p>
+            ) : filteredCandidates.length === 0 ? (
+              <p className="table-state">当前筛选暂无候选资讯。</p>
+            ) : (
+              filteredCandidates.map((candidate) => (
               <button
                 className={selectedCandidate?.id === candidate.id ? 'table-row selected' : 'table-row'}
                 key={candidate.id}
-                onClick={() => setSelectedId(candidate.id)}
+                onClick={() => selectCandidate(candidate)}
                 role="row"
                 type="button"
               >
@@ -115,9 +169,11 @@ export function CandidateReviewPage() {
                 </span>
                 <span className="row-action" role="cell">查看</span>
               </button>
-            ))}
+              ))
+            )}
           </div>
         </div>
+        {errorMessage ? <p className="inline-error">{errorMessage}</p> : null}
       </section>
 
       <aside className="detail-panel" aria-label="候选详情">
@@ -162,7 +218,7 @@ export function CandidateReviewPage() {
             <div className="detail-actions">
               <button
                 className="primary-action"
-                disabled={selectedCandidate.status !== 'PENDING_REVIEW'}
+                disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
                 onClick={() => updateStatus('PUBLISHED')}
                 type="button"
               >
@@ -171,7 +227,7 @@ export function CandidateReviewPage() {
               </button>
               <button
                 className="secondary-action danger"
-                disabled={selectedCandidate.status !== 'PENDING_REVIEW'}
+                disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
                 onClick={() => updateStatus('REJECTED')}
                 type="button"
               >

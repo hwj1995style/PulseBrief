@@ -18,7 +18,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,6 +52,16 @@ class AdminCandidateControllerTest {
         mockMvc.perform(get("/api/admin/candidates")
                         .header("Authorization", "Bearer dev-token-1"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void allowsLocalAdminCorsPreflightWithoutAdminToken() throws Exception {
+        mockMvc.perform(options("/api/admin/candidates")
+                        .header("Origin", "http://localhost:5188")
+                        .header("Access-Control-Request-Method", "GET")
+                        .header("Access-Control-Request-Headers", "Authorization, Content-Type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5188"));
     }
 
     @Test
