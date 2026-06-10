@@ -151,6 +151,7 @@
 ## 阶段 17：候选资讯审核 UI
 
 - [x] 补充 React Admin 候选审核 API 联调设计。
+- [x] 补充 Admin 发布到 Flutter APP 展示联调记录。
 - [x] 实现候选资讯列表。
 - [x] 实现状态筛选：待审核、已拒绝、已发布。
 - [x] 实现候选详情预览。
@@ -159,6 +160,8 @@
 - [x] 实现发布为文章。
 - [x] 补充前端 API client 测试。
 - [x] 补充本地 Admin API CORS 预检支持。
+- [x] 补充后端 Controller 回归，验证发布后用户端文章列表和详情接口可读。
+- [x] 补充 Flutter Repository 回归，验证后台发布文章详情可映射为 APP 模型。
 
 验收标准：
 
@@ -166,7 +169,7 @@
 2. 发布后 Flutter 用户端能读取到新文章。
 3. 拒绝内容不会出现在用户端。
 
-阶段结果：已完成候选审核页基础可运营闭环。React Admin 支持 mock/API 双模式，真实 API 模式覆盖候选列表、候选详情、发布和拒绝；后端 Admin API 继续保留 Token 校验，并支持本地 Vite CORS 预检。候选编辑表单、重复状态展示、批量审核和操作日志留到后续增强。
+阶段结果：已完成候选审核页基础可运营闭环。React Admin 支持 mock/API 双模式，真实 API 模式覆盖候选列表、候选详情、发布和拒绝；后端 Admin API 继续保留 Token 校验，并支持本地 Vite CORS 预检。已补齐 Admin 发布到 Flutter APP 展示的数据链路回归：发布后 `/api/articles` 和 `/api/articles/{id}` 可读，Flutter `ApiPulseRepository` 可映射详情模型。候选编辑表单、重复状态展示、批量审核和操作日志留到后续增强。
 
 ## 阶段 18：每日简报生成与审核
 

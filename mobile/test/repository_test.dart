@@ -151,6 +151,23 @@ void main() {
             'articles': [_articleJson(id: 1, categoryName: '投行观点')],
           },
         },
+        'GET /articles/101': {
+          'code': 'OK',
+          'data': {
+            'id': 101,
+            'title': 'Admin 发布后的 AI 基建候选资讯',
+            'sourceName': 'Example Markets',
+            'publishTime': '2026-06-08T09:30:00+08:00',
+            'categoryCode': 'investment_view',
+            'categoryName': '投行观点',
+            'aiSummary': 'Admin 审核后的 AI 摘要',
+            'keyPoints': ['要点一', '要点二'],
+            'impactAnalysis': '发布后进入用户端资讯流。',
+            'originalUrl': 'https://example.com/admin-published',
+            'favorited': false,
+            'relatedArticles': [_articleJson(id: 1, categoryName: '投行观点')],
+          },
+        },
         'GET /digests/today': {
           'code': 'OK',
           'data': {
@@ -191,6 +208,7 @@ void main() {
     final readHistoryCleared = await repository.clearReadHistory();
     final playbackHistoryCleared = await repository.clearPlaybackHistory();
     final homeFeed = await repository.getHomeFeed();
+    final articleDetail = await repository.getArticleDetail('101');
     final digestFeed = await repository.getTodayDigest();
 
     expect(session.accessToken, 'dev-token-1');
@@ -208,6 +226,11 @@ void main() {
     expect(homeFeed.articles.single.id, '1');
     expect(homeFeed.articles.single.publishTime, isNot(contains('T')));
     expect(homeFeed.articles.single.publishTime, contains('09:30'));
+    expect(articleDetail.id, '101');
+    expect(articleDetail.summary, 'Admin 审核后的 AI 摘要');
+    expect(articleDetail.keyPoints, ['要点一', '要点二']);
+    expect(articleDetail.impact, '发布后进入用户端资讯流。');
+    expect(articleDetail.publishTime, contains('09:30'));
     expect(digestFeed.highlights.single, contains('Blackwell'));
   });
 }

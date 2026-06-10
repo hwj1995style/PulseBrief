@@ -116,8 +116,25 @@ class AdminCandidateControllerTest {
         CandidateArticle updated = candidateArticleRepository.findById(candidate.getId()).orElseThrow();
         assertThat(updated.getStatus()).isEqualTo("PUBLISHED");
         assertThat(updated.getRawNewsItem().getItemStatus()).isEqualTo("PUBLISHED");
+        Long publishedArticleId = updated.getPublishedArticleId();
+        assertThat(publishedArticleId).isNotNull();
         assertThat(articleService.listArticles("all", 1, 50))
                 .anyMatch(article -> article.title().equals(candidate.getTitle()));
+
+        mockMvc.perform(get("/api/articles")
+                        .param("categoryCode", "all")
+                        .param("page", "1")
+                        .param("pageSize", "50"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[?(@.id == " + publishedArticleId + ")].title")
+                        .value(candidate.getTitle()));
+
+        mockMvc.perform(get("/api/articles/" + publishedArticleId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value(candidate.getTitle()))
+                .andExpect(jsonPath("$.data.aiSummary").value("Admin 审核后的 AI 摘要"))
+                .andExpect(jsonPath("$.data.keyPoints[0]").value("要点一"))
+                .andExpect(jsonPath("$.data.impactAnalysis").value("发布后进入用户端资讯流。"));
 
         mockMvc.perform(post("/api/admin/candidates/" + candidate.getId() + "/publish")
                         .header("Authorization", ADMIN_TOKEN)
