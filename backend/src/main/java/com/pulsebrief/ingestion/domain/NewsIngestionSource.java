@@ -110,6 +110,11 @@ public class NewsIngestionSource {
         return enabled != null && enabled == 1;
     }
 
+    public void updateEnabled(boolean enabled) {
+        this.enabled = enabled ? (byte) 1 : (byte) 0;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public Integer getMaxAgeHours() {
         return maxAgeHours;
     }

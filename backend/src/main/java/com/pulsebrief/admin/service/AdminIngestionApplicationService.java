@@ -17,6 +17,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 
 @Service
 public class AdminIngestionApplicationService {
@@ -78,6 +82,17 @@ public class AdminIngestionApplicationService {
                 .stream()
                 .map(this::toSourceResponse)
                 .toList();
+    }
+
+    @Transactional
+    public AdminIngestionSourceResponse updateSourceEnabled(Long id, Boolean enabled) {
+        if (enabled == null) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Source enabled value is required");
+        }
+        NewsIngestionSource source = sourceRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Ingestion source not found"));
+        source.updateEnabled(enabled);
+        return toSourceResponse(source);
     }
 
     private AdminIngestionJobResponse toJobResponse(NewsIngestionJob job) {

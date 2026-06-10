@@ -37,6 +37,7 @@ export interface AdminApiClient {
   listIngestionJobs: (status?: IngestionJobStatus | 'ALL') => Promise<AdminIngestionJob[]>;
   getTodayIngestionMetrics: () => Promise<AdminIngestionMetrics>;
   listIngestionSources: () => Promise<AdminIngestionSource[]>;
+  updateIngestionSourceEnabled: (id: number, enabled: boolean) => Promise<AdminIngestionSource>;
 }
 
 interface BackendApiResponse<T> {
@@ -275,6 +276,10 @@ export function listIngestionSources(): Promise<AdminIngestionSource[]> {
   return defaultClient.listIngestionSources();
 }
 
+export function updateIngestionSourceEnabled(id: number, enabled: boolean): Promise<AdminIngestionSource> {
+  return defaultClient.updateIngestionSourceEnabled(id, enabled);
+}
+
 export function resetAdminApiMock() {
   defaultClient.resetMockData?.();
 }
@@ -444,6 +449,16 @@ function createMockAdminApiClient(): MutableAdminApiClient {
     },
     getTodayIngestionMetrics: async () => ({ ...mockIngestionMetrics }),
     listIngestionSources: async () => localIngestionSources.map(cloneIngestionSource),
+    updateIngestionSourceEnabled: async (id, enabled) => {
+      localIngestionSources = localIngestionSources.map((source) =>
+        source.id === id ? { ...source, enabled } : source
+      );
+      const source = localIngestionSources.find((item) => item.id === id);
+      if (!source) {
+        throw new Error('Ingestion source not found');
+      }
+      return cloneIngestionSource(source);
+    },
     resetMockData
   };
 }
@@ -586,6 +601,16 @@ function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): Admin
     listIngestionSources: async () => {
       const data = await request<BackendIngestionSourceResponse[]>('/api/admin/ingestion/sources');
       return data.map(mapIngestionSource);
+    },
+    updateIngestionSourceEnabled: async (id, enabled) => {
+      const source = await request<BackendIngestionSourceResponse>(
+        `/api/admin/ingestion/sources/${id}/enabled`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({ enabled })
+        }
+      );
+      return mapIngestionSource(source);
     }
   };
 

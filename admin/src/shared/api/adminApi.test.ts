@@ -614,4 +614,46 @@ describe('adminApi HTTP client', () => {
       })
     );
   });
+
+  it('updates ingestion source enabled state through API client', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      await mockFetchResponse({
+        code: 'OK',
+        data: {
+          id: 1,
+          code: 'fixture-global',
+          name: 'Fixture Global',
+          providerType: 'FIXTURE',
+          defaultCategoryCode: 'global',
+          enabled: false,
+          contentAccessPolicy: 'SUMMARY_ONLY',
+          maxAgeHours: 24,
+          allowPdfDownload: false,
+          allowFullText: false
+        }
+      })
+    );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const source = await client.updateIngestionSourceEnabled(1, false);
+
+    expect(source).toEqual(
+      expect.objectContaining({
+        id: 1,
+        code: 'fixture-global',
+        enabled: false
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/admin/ingestion/sources/1/enabled',
+      expect.objectContaining({
+        method: 'PUT',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer dev-admin-token',
+          'Content-Type': 'application/json'
+        }),
+        body: JSON.stringify({ enabled: false })
+      })
+    );
+  });
 });

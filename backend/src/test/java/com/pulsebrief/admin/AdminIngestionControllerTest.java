@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -104,5 +105,36 @@ class AdminIngestionControllerTest {
                         .value(72))
                 .andExpect(jsonPath("$.data[?(@.code == '" + sourceCode + "')].allowPdfDownload")
                         .value(true));
+    }
+
+    @Test
+    void updatesIngestionSourceEnabledState() throws Exception {
+        String sourceCode = "toggle-" + UUID.randomUUID();
+        NewsIngestionSource source = sourceRepository.save(NewsIngestionSource.fixture(
+                sourceCode,
+                "Toggle Fixture",
+                "SUMMARY_ONLY",
+                24
+        ));
+
+        mockMvc.perform(put("/api/admin/ingestion/sources/" + source.getId() + "/enabled")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType("application/json")
+                        .content("{\"enabled\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(source.getId()))
+                .andExpect(jsonPath("$.data.code").value(sourceCode))
+                .andExpect(jsonPath("$.data.enabled").value(false));
+
+        assertThat(sourceRepository.findByCode(sourceCode).orElseThrow().isEnabled()).isFalse();
+
+        mockMvc.perform(put("/api/admin/ingestion/sources/" + source.getId() + "/enabled")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType("application/json")
+                        .content("{\"enabled\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.enabled").value(true));
+
+        assertThat(sourceRepository.findByCode(sourceCode).orElseThrow().isEnabled()).isTrue();
     }
 }

@@ -4,7 +4,8 @@ import type { ReactNode } from 'react';
 import {
   getTodayIngestionMetrics,
   listIngestionJobs,
-  listIngestionSources
+  listIngestionSources,
+  updateIngestionSourceEnabled
 } from '../../shared/api/adminApi';
 import type { AdminIngestionJob, AdminIngestionMetrics, AdminIngestionSource, IngestionJobStatus } from '../../shared/types/ingestion';
 
@@ -30,6 +31,7 @@ export function IngestionMonitorPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [updatingSourceId, setUpdatingSourceId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,6 +70,23 @@ export function IngestionMonitorPage() {
     () => sources.filter((source) => source.enabled).length,
     [sources]
   );
+
+  function handleToggleSource(source: AdminIngestionSource) {
+    setUpdatingSourceId(source.id);
+    setError(null);
+    updateIngestionSourceEnabled(source.id, !source.enabled)
+      .then((updatedSource) => {
+        setSources((currentSources) =>
+          currentSources.map((item) => (item.id === updatedSource.id ? updatedSource : item))
+        );
+      })
+      .catch((nextError: Error) => {
+        setError(nextError.message || '采集源状态更新失败');
+      })
+      .finally(() => {
+        setUpdatingSourceId(null);
+      });
+  }
 
   return (
     <main className="workspace ingestion-workspace">
@@ -178,6 +197,15 @@ export function IngestionMonitorPage() {
                 {source.allowPdfDownload ? '允许 PDF' : '不下载 PDF'} ·{' '}
                 {source.allowFullText ? '允许全文' : '摘要优先'}
               </small>
+              <button
+                aria-label={`${source.enabled ? '停用' : '启用'} ${source.name}`}
+                className={source.enabled ? 'secondary-action source-toggle danger' : 'secondary-action source-toggle'}
+                disabled={updatingSourceId === source.id}
+                onClick={() => handleToggleSource(source)}
+                type="button"
+              >
+                {source.enabled ? '停用来源' : '启用来源'}
+              </button>
             </article>
           ))}
         </div>

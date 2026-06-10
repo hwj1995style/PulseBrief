@@ -109,7 +109,8 @@ describe('PulseBrief Admin shell', () => {
     expect(within(detail).getByText('已下线')).toBeInTheDocument();
   });
 
-  it('renders ingestion monitor metrics and failure logs', async () => {
+  it('renders ingestion monitor metrics and toggles source status', async () => {
+    const user = userEvent.setup();
     window.location.hash = '#/ingestion';
     render(<App />);
 
@@ -119,5 +120,9 @@ describe('PulseBrief Admin shell', () => {
     expect(screen.getByText('Provider timeout')).toBeInTheDocument();
     expect(screen.getByText('Fixture Global')).toBeInTheDocument();
     expect(screen.getByText('SUMMARY_ONLY · 最新 24 小时')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '停用 Fixture Global' }));
+    expect(await screen.findByRole('button', { name: '启用 Fixture Global' })).toBeInTheDocument();
+    expect(screen.getByText('1/2 启用')).toBeInTheDocument();
   });
 });
