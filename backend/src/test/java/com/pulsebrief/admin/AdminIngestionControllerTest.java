@@ -146,12 +146,13 @@ class AdminIngestionControllerTest {
     @Test
     void returnsRawNewsQualityAnomaliesForAdmin() throws Exception {
         String suffix = UUID.randomUUID().toString();
+        LocalDateTime databaseNow = databaseNow();
         insertRawNewsItem(
                 "quality-" + suffix,
                 "缺来源样本 " + suffix,
                 "   ",
                 "https://example.com/missing-source-" + suffix,
-                LocalDateTime.now().minusHours(1),
+                databaseNow.minusHours(1),
                 "missing-source-" + suffix
         );
         insertRawNewsItem(
@@ -159,7 +160,7 @@ class AdminIngestionControllerTest {
                 "缺链接样本 " + suffix,
                 "Quality Source",
                 "   ",
-                LocalDateTime.now().minusHours(1),
+                databaseNow.minusHours(1),
                 "missing-url-" + suffix
         );
         insertRawNewsItem(
@@ -175,7 +176,7 @@ class AdminIngestionControllerTest {
                 "未来发布时间样本 " + suffix,
                 "Quality Source",
                 "https://example.com/future-published-at-" + suffix,
-                LocalDateTime.now().plusHours(2),
+                databaseNow.plusHours(2),
                 "future-published-at-" + suffix
         );
 
@@ -202,7 +203,7 @@ class AdminIngestionControllerTest {
             LocalDateTime publishedAt,
             String uniqueKey
     ) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = databaseNow();
         jdbcTemplate.update("""
                 insert into raw_news_item (
                     source_code,
@@ -243,6 +244,13 @@ class AdminIngestionControllerTest {
                 null,
                 now,
                 now
+        );
+    }
+
+    private LocalDateTime databaseNow() {
+        return jdbcTemplate.queryForObject(
+                "select now()",
+                (rs, rowNum) -> rs.getTimestamp(1).toLocalDateTime()
         );
     }
 }
