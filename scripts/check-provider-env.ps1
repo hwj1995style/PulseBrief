@@ -1,0 +1,243 @@
+param(
+    [string]$EnvFile = ""
+)
+
+$ErrorActionPreference = "Stop"
+
+function Read-EnvFile {
+    param([string]$Path)
+
+    $values = @{}
+    if ([string]::IsNullOrWhiteSpace($Path)) {
+        return $values
+    }
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "Env file not found: $Path"
+    }
+
+    foreach ($line in Get-Content -LiteralPath $Path) {
+        $trimmed = $line.Trim()
+        if ($trimmed.Length -eq 0 -or $trimmed.StartsWith("#")) {
+            continue
+        }
+
+        $separator = $trimmed.IndexOf("=")
+        if ($separator -le 0) {
+            throw "Invalid env line: $line"
+        }
+
+        $name = $trimmed.Substring(0, $separator).Trim()
+        $value = $trimmed.Substring($separator + 1).Trim().Trim('"').Trim("'")
+        $values[$name] = $value
+    }
+
+    return $values
+}
+
+function Get-ConfigValue {
+    param(
+        [hashtable]$FileValues,
+        [string]$Name,
+        [string]$Default = ""
+    )
+
+    $envValue = [Environment]::GetEnvironmentVariable($Name)
+    if (-not [string]::IsNullOrWhiteSpace($envValue)) {
+        return $envValue.Trim()
+    }
+
+    if ($FileValues.ContainsKey($Name)) {
+        return [string]$FileValues[$Name]
+    }
+
+    return $Default
+}
+
+function Read-Bool {
+    param(
+        [string]$Name,
+        [string]$Value
+    )
+
+    $normalized = $Value.Trim().ToLowerInvariant()
+    if ($normalized -in @("", "false", "0", "no")) {
+        return $false
+    }
+    if ($normalized -in @("true", "1", "yes")) {
+        return $true
+    }
+
+    throw "$Name must be true or false, got '$Value'"
+}
+
+function Read-IntInRange {
+    param(
+        [string]$Name,
+        [string]$Value,
+        [int]$Default,
+        [int]$Min,
+        [int]$Max
+    )
+
+    $raw = if ([string]::IsNullOrWhiteSpace($Value)) { [string]$Default } else { $Value.Trim() }
+    $parsed = 0
+    if (-not [int]::TryParse($raw, [ref]$parsed)) {
+        throw "$Name must be an integer, got '$Value'"
+    }
+    if ($parsed -lt $Min -or $parsed -gt $Max) {
+        throw "$Name must be between $Min and $Max, got $parsed"
+    }
+
+    return $parsed
+}
+
+function Assert-NotPlaceholder {
+    param(
+        [string]$Name,
+        [string]$Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        throw "$Name is required"
+    }
+
+    $normalized = $Value.Trim().ToLowerInvariant()
+    $placeholderTokens = @("changeme", "placeholder", "your-api-key", "your_api_key", "example.com", "todo")
+    foreach ($token in $placeholderTokens) {
+        if ($normalized.Contains($token)) {
+            throw "$Name contains placeholder value '$token'"
+        }
+    }
+}
+
+function Assert-HttpUrls {
+    param(
+        [string]$Name,
+        [string]$Value
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        throw "$Name is required"
+    }
+
+    $urls = $Value.Split(",", [System.StringSplitOptions]::RemoveEmptyEntries)
+    if ($urls.Count -eq 0) {
+        throw "$Name must contain at least one URL"
+    }
+
+    foreach ($url in $urls) {
+        $candidate = $url.Trim()
+        Assert-NotPlaceholder -Name $Name -Value $candidate
+        $parsed = $null
+        if (-not [Uri]::TryCreate($candidate, [UriKind]::Absolute, [ref]$parsed)) {
+            throw "$Name contains invalid URL '$candidate'"
+        }
+        if ($parsed.Scheme -notin @("http", "https")) {
+            throw "$Name URL must use http or https: '$candidate'"
+        }
+    }
+}
+
+$fileValues = Read-EnvFile -Path $EnvFile
+
+$enabled = Read-Bool `
+    -Name "PULSEBRIEF_INGESTION_ENABLED" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_INGESTION_ENABLED" -Default "false")
+
+Write-Host "PulseBrief provider environment check"
+if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
+    Write-Host "Env file: $EnvFile"
+}
+
+if (-not $enabled) {
+    Write-Host "OK: real ingestion is disabled."
+    Write-Host "Set PULSEBRIEF_INGESTION_ENABLED=true only after provider config passes this check."
+    exit 0
+}
+
+$providerKind = (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_PROVIDER_KIND").Trim().ToUpperInvariant()
+if ($providerKind -notin @("FIXTURE", "RSS", "API")) {
+    throw "PULSEBRIEF_PROVIDER_KIND must be FIXTURE, RSS, or API when ingestion is enabled"
+}
+
+$licensePolicy = (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_PROVIDER_LICENSE_POLICY" -Default "SUMMARY_ONLY").Trim().ToUpperInvariant()
+if ($licensePolicy -notin @("SUMMARY_ONLY", "SNIPPET_ALLOWED", "FULLTEXT_ALLOWED", "PDF_ALLOWED", "LINK_ONLY", "UNKNOWN")) {
+    throw "PULSEBRIEF_PROVIDER_LICENSE_POLICY is invalid: $licensePolicy"
+}
+
+$allowBackfill = Read-Bool `
+    -Name "PULSEBRIEF_INGESTION_ALLOW_BACKFILL" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_INGESTION_ALLOW_BACKFILL" -Default "false")
+if ($allowBackfill) {
+    throw "PULSEBRIEF_INGESTION_ALLOW_BACKFILL must remain false for V1"
+}
+
+$maxAgeHours = Read-IntInRange `
+    -Name "PULSEBRIEF_INGESTION_MAX_AGE_HOURS" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_INGESTION_MAX_AGE_HOURS" -Default "24") `
+    -Default 24 `
+    -Min 1 `
+    -Max 72
+
+$pdfMaxAgeHours = Read-IntInRange `
+    -Name "PULSEBRIEF_INGESTION_PDF_MAX_AGE_HOURS" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_INGESTION_PDF_MAX_AGE_HOURS" -Default "72") `
+    -Default 72 `
+    -Min 1 `
+    -Max 168
+
+$maxItems = Read-IntInRange `
+    -Name "PULSEBRIEF_INGESTION_MAX_ITEMS_PER_SOURCE" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_INGESTION_MAX_ITEMS_PER_SOURCE" -Default "50") `
+    -Default 50 `
+    -Min 1 `
+    -Max 100
+
+$rateLimit = Read-IntInRange `
+    -Name "PULSEBRIEF_PROVIDER_RATE_LIMIT_PER_HOUR" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_PROVIDER_RATE_LIMIT_PER_HOUR" -Default "60") `
+    -Default 60 `
+    -Min 1 `
+    -Max 60
+
+if ($providerKind -eq "RSS") {
+    Assert-HttpUrls `
+        -Name "PULSEBRIEF_RSS_FEED_URLS" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_RSS_FEED_URLS")
+}
+
+if ($providerKind -eq "API") {
+    Assert-HttpUrls `
+        -Name "PULSEBRIEF_PROVIDER_API_BASE_URL" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_PROVIDER_API_BASE_URL")
+    Assert-NotPlaceholder `
+        -Name "PULSEBRIEF_PROVIDER_API_KEY" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_PROVIDER_API_KEY")
+}
+
+$allowFullText = Read-Bool `
+    -Name "PULSEBRIEF_INGESTION_ALLOW_FULL_TEXT" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_INGESTION_ALLOW_FULL_TEXT" -Default "false")
+$allowPdfDownload = Read-Bool `
+    -Name "PULSEBRIEF_INGESTION_ALLOW_PDF_DOWNLOAD" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_INGESTION_ALLOW_PDF_DOWNLOAD" -Default "false")
+
+$licenseNote = Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_PROVIDER_LICENSE_NOTE"
+if ($allowFullText -and $licensePolicy -ne "FULLTEXT_ALLOWED") {
+    throw "PULSEBRIEF_INGESTION_ALLOW_FULL_TEXT=true requires PULSEBRIEF_PROVIDER_LICENSE_POLICY=FULLTEXT_ALLOWED"
+}
+if ($allowPdfDownload -and $licensePolicy -ne "PDF_ALLOWED") {
+    throw "PULSEBRIEF_INGESTION_ALLOW_PDF_DOWNLOAD=true requires PULSEBRIEF_PROVIDER_LICENSE_POLICY=PDF_ALLOWED"
+}
+if (($allowFullText -or $allowPdfDownload) -and $licenseNote.Trim().Length -lt 10) {
+    throw "Full text or PDF collection requires PULSEBRIEF_PROVIDER_LICENSE_NOTE with a concrete authorization note"
+}
+
+Write-Host "OK: provider config is safe to use for manual ingestion checks."
+Write-Host "Provider kind: $providerKind"
+Write-Host "License policy: $licensePolicy"
+Write-Host "Max age hours: $maxAgeHours"
+Write-Host "PDF max age hours: $pdfMaxAgeHours"
+Write-Host "Max items per source: $maxItems"
+Write-Host "Rate limit per hour: $rateLimit"

@@ -41,8 +41,7 @@ Flutter 用户端 APP
 
 1. 接入第一批真实公开 RSS / API Provider。
 2. 补充真实 AI 摘要服务抽象和人工审核前预览。
-3. 做发布前环境变量、密钥和部署脚本检查。
-4. 移动端发布包签名、隐私合规材料和应用商店上架流程。
+3. 移动端发布包签名、隐私合规材料和应用商店上架流程。
 
 ## 正式技术路线
 
@@ -128,6 +127,13 @@ D:\Dev\Gradle
 
 ```powershell
 .\scripts\check-env.ps1
+```
+
+检查真实 Provider 环境变量和密钥配置。默认采集关闭时会通过；启用真实采集前必须先通过该检查：
+
+```powershell
+.\scripts\check-provider-env.ps1
+.\scripts\check-provider-env.ps1 -EnvFile .\.env.example
 ```
 
 启动 PulseBrief MySQL。本项目使用宿主机 `3307` 端口，避免和本机已有 MySQL 的 `3306` 冲突：
@@ -265,6 +271,7 @@ mobile\build\app\outputs\flutter-apk\app-debug.apk
 10. [下一阶段任务清单](./docs/下一阶段任务清单.md)
 11. [阶段 20 三端收口与发布前检查记录](./docs/阶段20三端收口与发布前检查记录.md)
 12. [CI 验证流水线设计](./docs/CI验证流水线设计.md)
+13. [真实 Provider 环境配置与密钥检查设计](./docs/真实Provider环境配置与密钥检查设计.md)
 
 ## 合规边界
 

@@ -93,6 +93,14 @@ GET /api/admin/ingestion/anomalies
 
 后续接入真实公开 API 或 RSS 时，密钥、关键词、语言、国家/市场和请求频率必须通过环境变量或本地未提交配置注入，不提交到 Git。
 
+真实 Provider 接入前先复制根目录 `.env.example` 为本地未提交的 `.env.local`，再运行：
+
+```powershell
+..\scripts\check-provider-env.ps1 -EnvFile ..\.env.local
+```
+
+检查通过后再启用 `PULSEBRIEF_INGESTION_ENABLED=true` 做手动采集验证。设计边界见 `docs/真实Provider环境配置与密钥检查设计.md`。
+
 ## V1 App API
 
 当前已实现用户端 V1 API 骨架：
