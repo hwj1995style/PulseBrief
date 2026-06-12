@@ -35,13 +35,14 @@ Flutter 用户端 APP
 16. 已接入 OpenAPI/Swagger 在线接口文档。
 17. 已完成真实资讯采集基础链路、候选资讯生成、Admin 审核发布、每日简报管理和运营监控。
 18. 已完成 React Admin 独立后台：候选审核、简报管理、采集任务监控、采集源启停、发布操作日志和异常数据检测。
+19. 已补充 GitHub Actions 基础 CI：后端测试、Admin 测试/构建、Flutter analyze/test 和 Docker Compose 配置检查。
 
 下一阶段：
 
-1. 补充 CI 验证流水线。
-2. 接入第一批真实公开 RSS / API Provider。
-3. 补充真实 AI 摘要服务抽象和人工审核前预览。
-4. 做发布前环境变量、密钥和部署脚本检查。
+1. 接入第一批真实公开 RSS / API Provider。
+2. 补充真实 AI 摘要服务抽象和人工审核前预览。
+3. 做发布前环境变量、密钥和部署脚本检查。
+4. 移动端发布包签名、隐私合规材料和应用商店上架流程。
 
 ## 正式技术路线
 
@@ -263,6 +264,7 @@ mobile\build\app\outputs\flutter-apk\app-debug.apk
 9. [Flutter 高保真 UI 截图验收记录](./docs/Flutter高保真UI截图验收记录.md)
 10. [下一阶段任务清单](./docs/下一阶段任务清单.md)
 11. [阶段 20 三端收口与发布前检查记录](./docs/阶段20三端收口与发布前检查记录.md)
+12. [CI 验证流水线设计](./docs/CI验证流水线设计.md)
 
 ## 合规边界
 

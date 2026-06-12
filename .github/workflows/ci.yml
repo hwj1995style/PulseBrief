@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: pulsebrief_root
+          MYSQL_DATABASE: pulsebrief
+          MYSQL_USER: pulsebrief
+          MYSQL_PASSWORD: pulsebrief_dev
+          TZ: Asia/Shanghai
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -upulsebrief -ppulsebrief_dev"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      PULSEBRIEF_DB_URL: "jdbc:mysql://127.0.0.1:3306/pulsebrief?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai"
+      PULSEBRIEF_DB_USERNAME: pulsebrief
+      PULSEBRIEF_DB_PASSWORD: pulsebrief_dev
+      PULSEBRIEF_INGESTION_ENABLED: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Ensure Maven wrapper is executable
+        run: chmod +x ./mvnw
+
+      - name: Run backend tests
+        run: ./mvnw test
+
+  admin:
+    name: Admin Tests And Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run admin tests
+        run: npm test -- --run
+
+      - name: Run admin lint
+        run: npm run lint
+
+      - name: Build admin
+        run: npm run build
+
+  mobile:
+    name: Flutter Analyze And Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze Flutter code
+        run: flutter analyze
+
+      - name: Run Flutter tests
+        run: flutter test
+
+  deploy-config:
+    name: Deploy Config Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose config
+        run: docker compose -f deploy/docker-compose.yml config
