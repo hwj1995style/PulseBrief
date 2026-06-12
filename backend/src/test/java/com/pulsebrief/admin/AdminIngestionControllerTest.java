@@ -248,9 +248,10 @@ class AdminIngestionControllerTest {
     }
 
     private LocalDateTime databaseNow() {
-        return jdbcTemplate.queryForObject(
-                "select now()",
-                (rs, rowNum) -> rs.getTimestamp(1).toLocalDateTime()
+        String databaseNow = jdbcTemplate.queryForObject(
+                "select date_format(now(), '%Y-%m-%dT%H:%i:%s')",
+                String.class
         );
+        return LocalDateTime.parse(databaseNow);
     }
 }
