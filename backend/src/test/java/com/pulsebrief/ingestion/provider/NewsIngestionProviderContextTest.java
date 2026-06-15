@@ -14,9 +14,9 @@ class NewsIngestionProviderContextTest {
     private List<NewsIngestionProvider> providers;
 
     @Test
-    void registersFixtureProviderAsSpringBean() {
+    void registersFixtureAndRssProvidersAsSpringBeans() {
         assertThat(providers)
                 .extracting(NewsIngestionProvider::providerType)
-                .contains("FIXTURE");
+                .contains("FIXTURE", "RSS");
     }
 }

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>PulseBrief Test RSS</title>
+    <link>https://example.org/rss</link>
+    <description>Fixture feed for RSS provider tests.</description>
+    <language>en-us</language>
+    <item>
+      <guid>rss-ai-chip-001</guid>
+      <title>AI chip supply expands</title>
+      <link>https://example.org/news/ai-chip-supply</link>
+      <description><![CDATA[Chip supply news <b>summary</b>.]]></description>
+      <pubDate>Mon, 15 Jun 2026 08:30:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Central bank comments steady markets</title>
+      <link>https://example.org/news/central-bank-comments</link>
+      <description>Policy summary.</description>
+      <pubDate>Mon, 15 Jun 2026 09:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <guid>rss-invalid-date</guid>
+      <title>Invalid date still maps</title>
+      <link>https://example.org/news/invalid-date</link>
+      <description>Invalid date summary.</description>
+      <pubDate>not-a-date</pubDate>
+    </item>
+    <item>
+      <guid>rss-missing-title</guid>
+      <link>https://example.org/news/missing-title</link>
+      <description>This entry must be skipped.</description>
+      <pubDate>Mon, 15 Jun 2026 10:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

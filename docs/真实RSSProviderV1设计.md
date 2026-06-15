@@ -311,3 +311,14 @@ CI 规则：
 5. CI 和自动化测试不访问真实 RSS 外网。
 6. 不新增数据库结构，避免在第一轮 RSS 接入中扩大改动面。
 7. 设计批准后，再进入实现计划和编码。
+
+## 阶段 23 实现记录
+
+实现完成后保留以下交付记录，作为后续阶段 24 接入 Admin 手动触发和单源配置时的基线：
+
+1. 自动化测试：`RssNewsIngestionProviderTest` 使用本地 RSS/Atom fixture 覆盖元数据映射、关键词过滤、page size 限制、缺失字段跳过和无效发布时间容错。
+2. Spring 上下文：`NewsIngestionProviderContextTest` 确认 `FIXTURE` 和 `RSS` Provider 均已注册。
+3. 外网 smoke：`RssNewsIngestionProviderLiveTest` 默认跳过，只有 `PULSEBRIEF_RSS_LIVE_TEST_ENABLED=true` 时才请求真实 RSS。
+4. 本机验证：2026-06-15 使用 `https://rss.nytimes.com/services/xml/rss/nyt/World.xml` 执行 live smoke 通过，成功拉取并解析真实 RSS 元数据。
+5. 网络边界：本机 Java 请求需要读取 `HTTP_PROXY` / `HTTPS_PROXY`；该能力只影响 RSS HTTP 客户端，不改变 CI 默认行为。
+6. 范围确认：阶段 23 仍未实现网页全文、PDF 下载/解析、AI 摘要或复杂分类，这些能力继续作为后续独立阶段推进。

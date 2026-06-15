@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>PulseBrief Test Atom</title>
+  <id>https://example.org/atom</id>
+  <updated>2026-06-15T09:30:00Z</updated>
+  <entry>
+    <id>atom-market-001</id>
+    <title>Markets digest higher infrastructure spending</title>
+    <link href="https://example.org/atom/markets-infra"/>
+    <summary>Atom summary text.</summary>
+    <updated>2026-06-15T09:30:00Z</updated>
+  </entry>
+</feed>
