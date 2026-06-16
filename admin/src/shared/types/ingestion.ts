@@ -34,6 +34,23 @@ export interface AdminIngestionSource {
   allowFullText: boolean;
 }
 
+export interface AdminIngestionRunInput {
+  pageSize?: number;
+  generateCandidates?: boolean;
+}
+
+export interface AdminIngestionRunResult {
+  jobId: number;
+  sourceCode: string;
+  providerType: string;
+  status: IngestionJobStatus;
+  fetchedCount: number;
+  newCount: number;
+  duplicateCount: number;
+  candidateCount: number;
+  errorMessage: string | null;
+}
+
 export interface AdminIngestionAnomaly {
   id: number;
   rawNewsItemId: number;

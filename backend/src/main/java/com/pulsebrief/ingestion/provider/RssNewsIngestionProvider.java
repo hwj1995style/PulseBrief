@@ -1,5 +1,6 @@
 package com.pulsebrief.ingestion.provider;
 
+import com.pulsebrief.ingestion.domain.NewsIngestionSource;
 import com.pulsebrief.ingestion.service.IngestionRequest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,6 +48,11 @@ public class RssNewsIngestionProvider implements NewsIngestionProvider {
             payloads.addAll(fetchFeed(feedUrl, remainingRequest));
         }
         return List.copyOf(payloads);
+    }
+
+    @Override
+    public List<RawNewsPayload> fetch(NewsIngestionSource source, IngestionRequest request) {
+        return fetchFeed(source.getBaseUrl(), request);
     }
 
     public List<RawNewsPayload> fetchFeed(String feedUrl, IngestionRequest request) {

@@ -102,8 +102,16 @@ public class NewsIngestionSource {
         return providerType;
     }
 
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
     public String getDefaultCategoryCode() {
         return defaultCategoryCode;
+    }
+
+    public Integer getRateLimitPerHour() {
+        return rateLimitPerHour;
     }
 
     public boolean isEnabled() {

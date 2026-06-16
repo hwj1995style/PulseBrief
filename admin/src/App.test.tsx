@@ -131,4 +131,17 @@ describe('PulseBrief Admin shell', () => {
     expect(await screen.findByRole('button', { name: '启用 Fixture Global' })).toBeInTheDocument();
     expect(screen.getByText('1/2 启用')).toBeInTheDocument();
   });
+
+  it('runs ingestion source manually from monitor page', async () => {
+    const user = userEvent.setup();
+    window.location.hash = '#/ingestion';
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '采集任务' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '手动采集 Fixture Global' }));
+
+    expect(await screen.findByText('手动采集完成：Fixture Global')).toBeInTheDocument();
+    expect(screen.getAllByText('fixture-global').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('MANUAL').length).toBeGreaterThanOrEqual(1);
+  });
 });

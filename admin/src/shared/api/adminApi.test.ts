@@ -657,6 +657,49 @@ describe('adminApi HTTP client', () => {
     );
   });
 
+  it('runs ingestion source through API client', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      await mockFetchResponse({
+        code: 'OK',
+        data: {
+          jobId: 301,
+          sourceCode: 'fixture-global',
+          providerType: 'FIXTURE',
+          status: 'SUCCESS',
+          fetchedCount: 3,
+          newCount: 2,
+          duplicateCount: 1,
+          candidateCount: 2,
+          errorMessage: null
+        }
+      })
+    );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const result = await client.runIngestionSource(1, { pageSize: 3, generateCandidates: true });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        jobId: 301,
+        sourceCode: 'fixture-global',
+        status: 'SUCCESS',
+        fetchedCount: 3,
+        candidateCount: 2
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/admin/ingestion/sources/1/run',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer dev-admin-token',
+          'Content-Type': 'application/json'
+        }),
+        body: JSON.stringify({ pageSize: 3, generateCandidates: true })
+      })
+    );
+  });
+
   it('maps publish operation logs API', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       await mockFetchResponse({

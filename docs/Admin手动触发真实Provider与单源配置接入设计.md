@@ -252,6 +252,34 @@ cd backend
 
 CI 仍不访问真实外网，真实 RSS 只作为本地手动验证。
 
+## 实现与验证记录
+
+阶段 24 已按本设计完成第一批落地：
+
+1. 后端新增 `POST /api/admin/ingestion/sources/{id}/run`，请求体支持 `pageSize` 和 `generateCandidates`。
+2. 新增 `NewsIngestionRunService` 作为手动运行编排层，在 Provider fetch 之前创建 `MANUAL/RUNNING` job，成功后写入 fetched/new/duplicate/candidate 统计，失败时写入 `FAILED` 和 `errorMessage`。
+3. `NewsIngestionProvider` 增加 source-aware 默认方法；`RssNewsIngestionProvider` 覆盖该方法并读取 `news_ingestion_source.base_url`。
+4. `RawNewsIngestionService` 拆出 `ingestPayloads()`，复用去重、最新窗口过滤和原始资讯入库逻辑，同时避免手动触发链路重复创建 job。
+5. 手动触发支持基础限流：超过 `rate_limit_per_hour` 时拒绝触发，并不新增 job。
+6. React Admin 采集源卡片新增“手动采集”按钮，支持运行中禁用、成功提示、失败提示和刷新任务/指标/异常数据。
+7. Admin API client 和 mock client 已支持 `runIngestionSource()`。
+
+自动化验证：
+
+1. 后端：`AdminIngestionControllerTest` 覆盖成功触发、Provider 未注册失败写 job、source 限流拒绝。
+2. Admin API：`adminApi.test.ts` 覆盖手动触发响应映射。
+3. Admin 页面：`App.test.tsx` 覆盖采集监控页点击“手动采集”并刷新任务。
+4. 全量回归：`backend` 的 `mvnw test`、`admin` 的 `npm test -- --run`、`npm run lint`、`npm run build` 已通过。
+
+本机真实 RSS smoke：
+
+1. 验证时间：2026-06-16。
+2. 本地 source：`codex-stage24-rss`，providerType `RSS`。
+3. 验证 URL：`https://rss.nytimes.com/services/xml/rss/nyt/World.xml`。
+4. 验证接口：`POST http://localhost:8081/api/admin/ingestion/sources/106/run`。
+5. 验证结果：jobId `349`，status `SUCCESS`，fetched `5`，new `5`，duplicate `0`，candidate `5`。
+6. 验证边界：仅采集 RSS 标题、摘要、来源、发布时间和原文链接；未抓取网页全文、未下载 PDF、未调用 AI 摘要、未做复杂分类。
+
 ## 风险与分阶段落地建议
 
 风险：

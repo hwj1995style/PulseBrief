@@ -35,6 +35,20 @@ public class RawNewsIngestionService {
     @Transactional
     public IngestionResult ingest(String sourceCode, String triggerType, List<RawNewsPayload> payloads) {
         NewsIngestionJob job = jobRepository.save(new NewsIngestionJob(sourceCode, triggerType));
+        RawNewsIngestionCounts counts = ingestPayloads(sourceCode, payloads);
+        job.complete(counts.fetchedCount(), counts.newCount(), counts.duplicateCount(), 0);
+        jobRepository.save(job);
+        return new IngestionResult(
+                job.getId(),
+                counts.fetchedCount(),
+                counts.newCount(),
+                counts.duplicateCount(),
+                0
+        );
+    }
+
+    @Transactional
+    public RawNewsIngestionCounts ingestPayloads(String sourceCode, List<RawNewsPayload> payloads) {
         Optional<NewsIngestionSource> source = sourceRepository.findByCode(sourceCode);
         int fetchedCount = payloads.size();
         int newCount = 0;
@@ -60,9 +74,7 @@ public class RawNewsIngestionService {
             newCount++;
         }
 
-        job.complete(fetchedCount, newCount, duplicateCount, 0);
-        jobRepository.save(job);
-        return new IngestionResult(job.getId(), fetchedCount, newCount, duplicateCount, 0);
+        return new RawNewsIngestionCounts(fetchedCount, newCount, duplicateCount);
     }
 
     private boolean isOlderThanConfiguredWindow(Optional<NewsIngestionSource> source, RawNewsPayload payload) {

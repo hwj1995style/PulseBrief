@@ -7,6 +7,7 @@ import {
   listIngestionJobs,
   listOperationLogs,
   listIngestionSources,
+  runIngestionSource,
   updateIngestionSourceEnabled
 } from '../../shared/api/adminApi';
 import type {
@@ -54,8 +55,10 @@ export function IngestionMonitorPage() {
   const [operationLogs, setOperationLogs] = useState<AdminOperationLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [runMessage, setRunMessage] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [updatingSourceId, setUpdatingSourceId] = useState<number | null>(null);
+  const [runningSourceId, setRunningSourceId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,6 +105,7 @@ export function IngestionMonitorPage() {
   function handleToggleSource(source: AdminIngestionSource) {
     setUpdatingSourceId(source.id);
     setError(null);
+    setRunMessage(null);
     updateIngestionSourceEnabled(source.id, !source.enabled)
       .then((updatedSource) => {
         setSources((currentSources) =>
@@ -113,6 +117,24 @@ export function IngestionMonitorPage() {
       })
       .finally(() => {
         setUpdatingSourceId(null);
+      });
+  }
+
+  function handleRunSource(source: AdminIngestionSource) {
+    setRunningSourceId(source.id);
+    setError(null);
+    setRunMessage(null);
+    runIngestionSource(source.id, { pageSize: 5, generateCandidates: true })
+      .then(() => {
+        setRunMessage(`手动采集完成：${source.name}`);
+        setRefreshKey((current) => current + 1);
+      })
+      .catch((nextError: Error) => {
+        setError(nextError.message || '手动采集失败');
+        setRefreshKey((current) => current + 1);
+      })
+      .finally(() => {
+        setRunningSourceId(null);
       });
   }
 
@@ -267,6 +289,7 @@ export function IngestionMonitorPage() {
         </section>
 
         {error ? <p className="inline-error">{error}</p> : null}
+        {runMessage ? <p className="inline-success">{runMessage}</p> : null}
       </section>
 
       <aside className="detail-panel ingestion-sources" aria-label="采集源配置">
@@ -295,6 +318,16 @@ export function IngestionMonitorPage() {
                 {source.allowPdfDownload ? '允许 PDF' : '不下载 PDF'} ·{' '}
                 {source.allowFullText ? '允许全文' : '摘要优先'}
               </small>
+              <button
+                aria-label={`手动采集 ${source.name}`}
+                className="secondary-action source-toggle"
+                disabled={!source.enabled || runningSourceId === source.id}
+                onClick={() => handleRunSource(source)}
+                type="button"
+              >
+                <RefreshCw className={runningSourceId === source.id ? 'spin-icon' : undefined} size={14} />
+                {runningSourceId === source.id ? '采集中' : '手动采集'}
+              </button>
               <button
                 aria-label={`${source.enabled ? '停用' : '启用'} ${source.name}`}
                 className={source.enabled ? 'secondary-action source-toggle danger' : 'secondary-action source-toggle'}

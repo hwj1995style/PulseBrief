@@ -3,6 +3,8 @@ package com.pulsebrief.admin.service;
 import com.pulsebrief.admin.api.AdminIngestionAnomalyResponse;
 import com.pulsebrief.admin.api.AdminIngestionJobResponse;
 import com.pulsebrief.admin.api.AdminIngestionMetricsResponse;
+import com.pulsebrief.admin.api.AdminIngestionRunRequest;
+import com.pulsebrief.admin.api.AdminIngestionRunResponse;
 import com.pulsebrief.admin.api.AdminIngestionSourceResponse;
 import com.pulsebrief.article.repository.ArticleRepository;
 import com.pulsebrief.common.api.PageResponse;
@@ -11,6 +13,7 @@ import com.pulsebrief.ingestion.domain.NewsIngestionSource;
 import com.pulsebrief.ingestion.repository.CandidateArticleRepository;
 import com.pulsebrief.ingestion.repository.NewsIngestionJobRepository;
 import com.pulsebrief.ingestion.repository.NewsIngestionSourceRepository;
+import com.pulsebrief.ingestion.service.NewsIngestionRunService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,6 +37,7 @@ public class AdminIngestionApplicationService {
     private final NewsIngestionSourceRepository sourceRepository;
     private final CandidateArticleRepository candidateArticleRepository;
     private final ArticleRepository articleRepository;
+    private final NewsIngestionRunService newsIngestionRunService;
     private final JdbcTemplate jdbcTemplate;
 
     public AdminIngestionApplicationService(
@@ -41,12 +45,14 @@ public class AdminIngestionApplicationService {
             NewsIngestionSourceRepository sourceRepository,
             CandidateArticleRepository candidateArticleRepository,
             ArticleRepository articleRepository,
+            NewsIngestionRunService newsIngestionRunService,
             JdbcTemplate jdbcTemplate
     ) {
         this.jobRepository = jobRepository;
         this.sourceRepository = sourceRepository;
         this.candidateArticleRepository = candidateArticleRepository;
         this.articleRepository = articleRepository;
+        this.newsIngestionRunService = newsIngestionRunService;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -116,6 +122,16 @@ public class AdminIngestionApplicationService {
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Ingestion source not found"));
         source.updateEnabled(enabled);
         return toSourceResponse(source);
+    }
+
+    public AdminIngestionRunResponse runSource(Long id, AdminIngestionRunRequest request) {
+        NewsIngestionSource source = sourceRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Ingestion source not found"));
+        return newsIngestionRunService.runManual(
+                source,
+                request.pageSizeOrDefault(),
+                request.shouldGenerateCandidates()
+        );
     }
 
     private AdminIngestionJobResponse toJobResponse(NewsIngestionJob job) {

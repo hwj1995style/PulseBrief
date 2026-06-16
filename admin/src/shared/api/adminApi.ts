@@ -18,6 +18,8 @@ import type {
   AdminIngestionJob,
   AdminIngestionMetrics,
   AdminIngestionSource,
+  AdminIngestionRunInput,
+  AdminIngestionRunResult,
   AdminIngestionAnomaly,
   AdminOperationLog,
   IngestionJobStatus
@@ -46,6 +48,7 @@ export interface AdminApiClient {
   getTodayIngestionMetrics: () => Promise<AdminIngestionMetrics>;
   listIngestionSources: () => Promise<AdminIngestionSource[]>;
   updateIngestionSourceEnabled: (id: number, enabled: boolean) => Promise<AdminIngestionSource>;
+  runIngestionSource: (id: number, input?: AdminIngestionRunInput) => Promise<AdminIngestionRunResult>;
   listIngestionAnomalies: () => Promise<AdminIngestionAnomaly[]>;
   listOperationLogs: (module?: string) => Promise<AdminOperationLog[]>;
 }
@@ -180,6 +183,18 @@ interface BackendIngestionSourceResponse {
   maxAgeHours: number | null;
   allowPdfDownload: boolean;
   allowFullText: boolean;
+}
+
+interface BackendIngestionRunResponse {
+  jobId: number;
+  sourceCode: string;
+  providerType: string;
+  status: IngestionJobStatus;
+  fetchedCount: number;
+  newCount: number;
+  duplicateCount: number;
+  candidateCount: number;
+  errorMessage: string | null;
 }
 
 interface BackendIngestionAnomalyResponse {
@@ -317,6 +332,13 @@ export function updateIngestionSourceEnabled(id: number, enabled: boolean): Prom
   return defaultClient.updateIngestionSourceEnabled(id, enabled);
 }
 
+export function runIngestionSource(
+  id: number,
+  input?: AdminIngestionRunInput
+): Promise<AdminIngestionRunResult> {
+  return defaultClient.runIngestionSource(id, input);
+}
+
 export function listIngestionAnomalies(): Promise<AdminIngestionAnomaly[]> {
   return defaultClient.listIngestionAnomalies();
 }
@@ -333,6 +355,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
   let localCandidates = mockCandidates.map(cloneCandidate);
   let localDigests = mockDigests.map(cloneDigest);
   let localIngestionJobs = mockIngestionJobs.map(cloneIngestionJob);
+  let localIngestionMetrics = { ...mockIngestionMetrics };
   let localIngestionSources = mockIngestionSources.map(cloneIngestionSource);
   let localIngestionAnomalies = mockIngestionAnomalies.map(cloneIngestionAnomaly);
   let localOperationLogs = mockOperationLogs.map(cloneOperationLog);
@@ -342,6 +365,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
     localCandidates = mockCandidates.map(cloneCandidate);
     localDigests = mockDigests.map(cloneDigest);
     localIngestionJobs = mockIngestionJobs.map(cloneIngestionJob);
+    localIngestionMetrics = { ...mockIngestionMetrics };
     localIngestionSources = mockIngestionSources.map(cloneIngestionSource);
     localIngestionAnomalies = mockIngestionAnomalies.map(cloneIngestionAnomaly);
     localOperationLogs = mockOperationLogs.map(cloneOperationLog);
@@ -496,7 +520,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
       }
       return localIngestionJobs.filter((job) => job.status === status).map(cloneIngestionJob);
     },
-    getTodayIngestionMetrics: async () => ({ ...mockIngestionMetrics }),
+    getTodayIngestionMetrics: async () => ({ ...localIngestionMetrics }),
     listIngestionSources: async () => localIngestionSources.map(cloneIngestionSource),
     updateIngestionSourceEnabled: async (id, enabled) => {
       localIngestionSources = localIngestionSources.map((source) =>
@@ -507,6 +531,53 @@ function createMockAdminApiClient(): MutableAdminApiClient {
         throw new Error('Ingestion source not found');
       }
       return cloneIngestionSource(source);
+    },
+    runIngestionSource: async (id, input) => {
+      const source = localIngestionSources.find((item) => item.id === id);
+      if (!source) {
+        throw new Error('Ingestion source not found');
+      }
+      if (!source.enabled) {
+        throw new Error('Ingestion source is disabled');
+      }
+      const fetchedCount = input?.pageSize ?? 5;
+      const newCount = Math.max(fetchedCount - 1, 0);
+      const duplicateCount = fetchedCount - newCount;
+      const candidateCount = input?.generateCandidates === false ? 0 : newCount;
+      const result: AdminIngestionRunResult = {
+        jobId: 5000 + localIngestionJobs.length,
+        sourceCode: source.code,
+        providerType: source.providerType,
+        status: 'SUCCESS',
+        fetchedCount,
+        newCount,
+        duplicateCount,
+        candidateCount,
+        errorMessage: null
+      };
+      const now = new Date().toISOString();
+      localIngestionJobs = [
+        {
+          id: result.jobId,
+          sourceCode: result.sourceCode,
+          triggerType: 'MANUAL',
+          status: result.status,
+          startedAt: now,
+          finishedAt: now,
+          fetchedCount,
+          newCount,
+          duplicateCount,
+          candidateCount,
+          errorMessage: null
+        },
+        ...localIngestionJobs
+      ];
+      localIngestionMetrics = {
+        ...localIngestionMetrics,
+        fetchedCount: localIngestionMetrics.fetchedCount + fetchedCount,
+        candidateCount: localIngestionMetrics.candidateCount + candidateCount
+      };
+      return result;
     },
     listIngestionAnomalies: async () => localIngestionAnomalies.map(cloneIngestionAnomaly),
     listOperationLogs: async (module) => {
@@ -668,6 +739,13 @@ function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): Admin
       );
       return mapIngestionSource(source);
     },
+    runIngestionSource: async (id, input = {}) => {
+      const result = await request<BackendIngestionRunResponse>(`/api/admin/ingestion/sources/${id}/run`, {
+        method: 'POST',
+        body: JSON.stringify(input)
+      });
+      return mapIngestionRunResult(result);
+    },
     listIngestionAnomalies: async () => {
       const query = new URLSearchParams({
         page: '1',
@@ -800,6 +878,10 @@ function mapIngestionJob(job: BackendIngestionJobResponse): AdminIngestionJob {
 
 function mapIngestionSource(source: BackendIngestionSourceResponse): AdminIngestionSource {
   return { ...source };
+}
+
+function mapIngestionRunResult(result: BackendIngestionRunResponse): AdminIngestionRunResult {
+  return { ...result };
 }
 
 function mapIngestionAnomaly(anomaly: BackendIngestionAnomalyResponse): AdminIngestionAnomaly {

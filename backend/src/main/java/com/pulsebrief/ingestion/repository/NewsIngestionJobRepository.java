@@ -19,6 +19,8 @@ public interface NewsIngestionJobRepository extends JpaRepository<NewsIngestionJ
             LocalDateTime end
     );
 
+    long countBySourceCodeAndStartedAtGreaterThanEqual(String sourceCode, LocalDateTime start);
+
     @Query("""
             select coalesce(sum(job.fetchedCount), 0)
             from NewsIngestionJob job

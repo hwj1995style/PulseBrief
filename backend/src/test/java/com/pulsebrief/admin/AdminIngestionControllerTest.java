@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -144,6 +145,91 @@ class AdminIngestionControllerTest {
     }
 
     @Test
+    void manuallyRunsEnabledIngestionSourceAndReturnsJobSummary() throws Exception {
+        String sourceCode = "manual-" + UUID.randomUUID();
+        NewsIngestionSource source = sourceRepository.save(NewsIngestionSource.fixture(
+                sourceCode,
+                "Manual Fixture",
+                "SUMMARY_ONLY",
+                24
+        ));
+
+        mockMvc.perform(post("/api/admin/ingestion/sources/" + source.getId() + "/run")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType("application/json")
+                        .content("{\"pageSize\":3,\"generateCandidates\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.sourceCode").value(sourceCode))
+                .andExpect(jsonPath("$.data.providerType").value("FIXTURE"))
+                .andExpect(jsonPath("$.data.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.fetchedCount").value(3))
+                .andExpect(jsonPath("$.data.jobId").isNumber());
+
+        assertThat(jobRepository.findByJobStatusOrderByStartedAtDescIdDesc(
+                "SUCCESS",
+                org.springframework.data.domain.PageRequest.of(0, 20)
+        ).getContent())
+                .anySatisfy(job -> {
+                    assertThat(job.getSourceCode()).isEqualTo(sourceCode);
+                    assertThat(job.getTriggerType()).isEqualTo("MANUAL");
+                    assertThat(job.getFetchedCount()).isEqualTo(3);
+                });
+    }
+
+    @Test
+    void manualRunWritesFailedJobWhenProviderIsNotRegistered() throws Exception {
+        String sourceCode = "missing-provider-" + UUID.randomUUID();
+        Long sourceId = insertIngestionSource(
+                sourceCode,
+                "Missing Provider Source",
+                "MISSING_PROVIDER",
+                "https://example.com/feed.xml",
+                true
+        );
+
+        mockMvc.perform(post("/api/admin/ingestion/sources/" + sourceId + "/run")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType("application/json")
+                        .content("{\"pageSize\":3,\"generateCandidates\":true}"))
+                .andExpect(status().isUnprocessableEntity());
+
+        assertThat(jobRepository.findByJobStatusOrderByStartedAtDescIdDesc(
+                "FAILED",
+                org.springframework.data.domain.PageRequest.of(0, 20)
+        ).getContent())
+                .anySatisfy(job -> {
+                    assertThat(job.getSourceCode()).isEqualTo(sourceCode);
+                    assertThat(job.getTriggerType()).isEqualTo("MANUAL");
+                    assertThat(job.getErrorMessage()).contains("not registered");
+                });
+    }
+
+    @Test
+    void manualRunRejectsSourceWhenHourlyRateLimitIsReached() throws Exception {
+        String sourceCode = "limited-" + UUID.randomUUID();
+        Long sourceId = insertIngestionSource(
+                sourceCode,
+                "Limited Fixture",
+                "FIXTURE",
+                "fixture://" + sourceCode,
+                true,
+                1
+        );
+        NewsIngestionJob existingJob = new NewsIngestionJob(sourceCode, "MANUAL");
+        existingJob.complete(1, 1, 0, 0);
+        jobRepository.save(existingJob);
+        Long beforeCount = countJobsBySourceCode(sourceCode);
+
+        mockMvc.perform(post("/api/admin/ingestion/sources/" + sourceId + "/run")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType("application/json")
+                        .content("{\"pageSize\":3,\"generateCandidates\":true}"))
+                .andExpect(status().isUnprocessableEntity());
+
+        assertThat(countJobsBySourceCode(sourceCode)).isEqualTo(beforeCount);
+    }
+
+    @Test
     void returnsRawNewsQualityAnomaliesForAdmin() throws Exception {
         String suffix = UUID.randomUUID().toString();
         LocalDateTime databaseNow = databaseNow();
@@ -253,5 +339,72 @@ class AdminIngestionControllerTest {
                 String.class
         );
         return LocalDateTime.parse(databaseNow);
+    }
+
+    private Long insertIngestionSource(
+            String sourceCode,
+            String name,
+            String providerType,
+            String baseUrl,
+            boolean enabled
+    ) {
+        return insertIngestionSource(sourceCode, name, providerType, baseUrl, enabled, 60);
+    }
+
+    private Long insertIngestionSource(
+            String sourceCode,
+            String name,
+            String providerType,
+            String baseUrl,
+            boolean enabled,
+            int rateLimitPerHour
+    ) {
+        LocalDateTime now = databaseNow();
+        jdbcTemplate.update("""
+                insert into news_ingestion_source (
+                    code,
+                    name,
+                    provider_type,
+                    base_url,
+                    default_category_code,
+                    enabled,
+                    rate_limit_per_hour,
+                    content_access_policy,
+                    max_age_hours,
+                    allow_pdf_download,
+                    allow_full_text,
+                    license_note,
+                    created_at,
+                    updated_at
+                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                sourceCode,
+                name,
+                providerType,
+                baseUrl,
+                "global",
+                enabled ? 1 : 0,
+                rateLimitPerHour,
+                "SUMMARY_ONLY",
+                24,
+                0,
+                0,
+                "Test source",
+                now,
+                now
+        );
+        return jdbcTemplate.queryForObject(
+                "select id from news_ingestion_source where code = ?",
+                Long.class,
+                sourceCode
+        );
+    }
+
+    private Long countJobsBySourceCode(String sourceCode) {
+        return jdbcTemplate.queryForObject(
+                "select count(*) from news_ingestion_job where source_code = ?",
+                Long.class,
+                sourceCode
+        );
     }
 }
