@@ -224,6 +224,56 @@
 2. 真实资讯采集到发布闭环可演示。
 3. 用户端仍稳定可用。
 
+## 阶段 21：CI 验证流水线
+
+- [x] 新增 GitHub Actions CI workflow。
+- [x] 后端 CI 使用 MySQL 8.4 service container 执行 Maven 测试。
+- [x] Admin CI 执行测试、类型检查和构建。
+- [x] Flutter CI 执行依赖安装、静态分析和测试。
+- [x] Docker Compose 配置纳入 CI 验证。
+
+阶段结果：已完成基础 CI 验证流水线，覆盖后端、Admin、Flutter 和部署配置。CI 默认不访问真实 RSS、网页全文、PDF 或 AI 服务。
+
+## 阶段 22：真实 Provider 环境配置与密钥检查
+
+- [x] 新增真实 Provider 环境配置与密钥检查设计。
+- [x] 新增 `.env.example`。
+- [x] 新增 `scripts/check-provider-env.ps1`。
+- [x] 检查真实 Provider 类型、URL、API Key、许可策略、最新窗口、限流和禁止回溯。
+
+阶段结果：已完成真实 Provider 接入前配置护栏。默认环境不启用真实外部采集，CI 不依赖真实密钥。
+
+## 阶段 23：真实 RSS Provider V1
+
+- [x] 新增真实 RSS Provider V1 设计。
+- [x] 新增 RSS/Atom fixture 自动化测试。
+- [x] 新增 `RSS` Provider Spring Bean。
+- [x] 新增显式开关保护的真实外网 live smoke。
+- [x] 执行并记录本地 live smoke 结果。
+
+阶段结果：已完成真实 RSS Provider V1。RSS Provider 只采集 RSS 元数据，不抓取网页全文、PDF，不调用 AI 摘要，不做复杂分类。
+
+## 阶段 24：Admin 手动触发真实 Provider 与单源配置接入
+
+- [x] 新增 Admin 手动触发单个采集源接口。
+- [x] 新增采集运行编排服务，覆盖 Provider fetch 失败日志。
+- [x] RSS Provider 正式读取 `news_ingestion_source.base_url`。
+- [x] Admin 采集源卡片新增“手动采集”按钮。
+- [x] 执行本地真实 RSS source 手动触发 smoke 并记录结果。
+
+阶段结果：已完成 Admin 单源手动触发真实 Provider 闭环，手动触发成功后可记录 fetched/new/duplicate/candidate 统计，Provider 未注册或执行失败会写入 FAILED job。
+
+## 阶段 25：授权正文片段与全文抓取服务设计
+
+- [x] 补充 `docs/授权正文片段与全文抓取服务设计.md`。
+- [x] 明确正文抓取只处理已入库元数据或候选内容，不反向污染 Provider。
+- [x] 明确仅 `SNIPPET_ALLOWED` 或 `FULLTEXT_ALLOWED` 且有授权说明的 source 可进入正文抓取。
+- [x] 设计 `ContentFetchService`、正文清洗、长度限制、来源可追溯和失败日志。
+- [x] 设计推荐新增 `raw_news_content` 表保存正文片段/授权全文和抓取状态。
+- [x] 设计 Admin 合规审核入口、用户端展示边界和 fixture-only 测试方案。
+
+阶段结果：已完成阶段 25 设计。下一步应先补阶段 25 实现计划和测试，再开始编码；也可继续阶段 26 授权 PDF 元数据与文件缓存设计。
+
 ## 第一轮推荐执行顺序
 
 1. 阶段 11：真实资讯采集 V1 设计。
@@ -233,6 +283,14 @@
 5. 阶段 15：Admin API 审核发布设计。
 6. 阶段 16：React Admin 工程骨架。
 7. 阶段 17：候选资讯审核 UI 基础联调。
+8. 阶段 18：每日简报生成与审核。
+9. 阶段 19：运营质量与监控。
+10. 阶段 20：三端收口与发布前检查。
+11. 阶段 21：CI 验证流水线。
+12. 阶段 22：真实 Provider 环境配置与密钥检查。
+13. 阶段 23：真实 RSS Provider V1。
+14. 阶段 24：Admin 手动触发真实 Provider 与单源配置接入。
+15. 阶段 25：授权正文片段与全文抓取服务设计。
 
 第一轮暂不做：
 
