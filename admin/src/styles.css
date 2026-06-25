@@ -538,19 +538,66 @@ button {
   justify-content: space-between;
   gap: 10px;
   border: 1px solid #dbe4f0;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 10px;
   color: #0a2a66;
   font-size: 13px;
 }
 
-.asset-row span {
+.asset-copy {
   flex: 1;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.asset-copy span {
+  color: #0a2a66;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.asset-copy small {
+  color: #667085;
+  line-height: 1.45;
+}
+
+.asset-copy .asset-error {
+  color: #c93036;
+}
+
+.asset-state {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
 }
 
 .asset-row b {
   color: #c77900;
   font-size: 11px;
+}
+
+.asset-row b.success {
+  color: #168a4a;
+}
+
+.asset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 230px;
+}
+
+.asset-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  color: #0f4fd8;
 }
 
 .detail-actions {

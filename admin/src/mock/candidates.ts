@@ -20,9 +20,20 @@ export const mockCandidates: AdminCandidate[] = [
       {
         id: 301,
         title: 'AI infrastructure outlook',
+        originalUrl: 'https://example.com/reports/ai-infrastructure-outlook.pdf',
         fileName: 'ai-infrastructure-outlook.pdf',
+        fileSizeBytes: null,
+        fileHash: 'legacy-ai-infrastructure-outlook',
         licensePolicy: 'PDF_ALLOWED',
-        status: 'PENDING_REVIEW'
+        status: 'PENDING_REVIEW',
+        licenseNote: null,
+        cacheStatus: 'NOT_CACHED',
+        cacheErrorMessage: null,
+        mimeType: null,
+        cachedAt: null,
+        reviewNote: null,
+        reviewedAt: null,
+        reviewedBy: null
       }
     ]
   },

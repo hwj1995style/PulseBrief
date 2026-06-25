@@ -42,6 +42,9 @@ export interface AdminApiClient {
   listCandidates: (status?: CandidateStatus | 'ALL') => Promise<AdminCandidate[]>;
   getCandidate: (id: number) => Promise<AdminCandidate>;
   fetchCandidateContent: (id: number, mode: CandidateContentFetchMode) => Promise<CandidateContent>;
+  cacheCandidateReportAsset: (candidateId: number, assetId: number) => Promise<ReportAsset>;
+  approveCandidateReportAsset: (candidateId: number, assetId: number, reviewNote?: string) => Promise<ReportAsset>;
+  rejectCandidateReportAsset: (candidateId: number, assetId: number, reviewNote?: string) => Promise<ReportAsset>;
   updateCandidate: (id: number, input: AdminCandidateUpdateInput) => Promise<AdminCandidate>;
   publishCandidate: (id: number) => Promise<AdminCandidate>;
   rejectCandidate: (id: number, reviewNote?: string) => Promise<AdminCandidate>;
@@ -116,6 +119,14 @@ interface BackendReportAssetResponse {
   fileHash: string | null;
   licensePolicy: string;
   status: string;
+  licenseNote: string | null;
+  cacheStatus: string;
+  cacheErrorMessage: string | null;
+  mimeType: string | null;
+  cachedAt: string | null;
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
 }
 
 interface BackendCandidateContentResponse {
@@ -304,6 +315,26 @@ export function fetchCandidateContent(
   return defaultClient.fetchCandidateContent(id, mode);
 }
 
+export function cacheCandidateReportAsset(candidateId: number, assetId: number): Promise<ReportAsset> {
+  return defaultClient.cacheCandidateReportAsset(candidateId, assetId);
+}
+
+export function approveCandidateReportAsset(
+  candidateId: number,
+  assetId: number,
+  reviewNote?: string
+): Promise<ReportAsset> {
+  return defaultClient.approveCandidateReportAsset(candidateId, assetId, reviewNote);
+}
+
+export function rejectCandidateReportAsset(
+  candidateId: number,
+  assetId: number,
+  reviewNote?: string
+): Promise<ReportAsset> {
+  return defaultClient.rejectCandidateReportAsset(candidateId, assetId, reviewNote);
+}
+
 export function updateCandidate(id: number, input: AdminCandidateUpdateInput): Promise<AdminCandidate> {
   return defaultClient.updateCandidate(id, input);
 }
@@ -447,6 +478,34 @@ function createMockAdminApiClient(): MutableAdminApiClient {
     return content;
   }
 
+  function updateReportAsset(
+    candidateId: number,
+    assetId: number,
+    updater: (asset: ReportAsset) => ReportAsset
+  ) {
+    localCandidates = localCandidates.map((candidate) => {
+      if (candidate.id !== candidateId) {
+        return candidate;
+      }
+      return {
+        ...candidate,
+        reportAssets: candidate.reportAssets.map((asset) => {
+          if (asset.id !== assetId) {
+            return asset;
+          }
+          return updater(asset);
+        })
+      };
+    });
+    const updatedAsset = localCandidates
+      .find((candidate) => candidate.id === candidateId)
+      ?.reportAssets.find((asset) => asset.id === assetId);
+    if (!updatedAsset) {
+      throw new Error('Report asset not found');
+    }
+    return { ...updatedAsset };
+  }
+
   return {
     getInitialCandidates: () => localCandidates.map(cloneCandidate),
     listCandidates: async (status) => {
@@ -457,6 +516,33 @@ function createMockAdminApiClient(): MutableAdminApiClient {
     },
     getCandidate: async (id) => findCandidate(id),
     fetchCandidateContent: async (id, mode) => fetchCandidateContent(id, mode),
+    cacheCandidateReportAsset: async (candidateId, assetId) =>
+      updateReportAsset(candidateId, assetId, (asset) => ({
+        ...asset,
+        fileSizeBytes: asset.fileSizeBytes ?? 2048,
+        fileHash: 'mock-cached-pdf-hash',
+        licenseNote: 'Mock 授权说明：公开 PDF 可由运营审核。',
+        cacheStatus: 'SUCCESS',
+        cacheErrorMessage: null,
+        mimeType: 'application/pdf',
+        cachedAt: new Date().toISOString()
+      })),
+    approveCandidateReportAsset: async (candidateId, assetId, reviewNote) =>
+      updateReportAsset(candidateId, assetId, (asset) => ({
+        ...asset,
+        status: 'APPROVED',
+        reviewNote: reviewNote ?? null,
+        reviewedAt: new Date().toISOString(),
+        reviewedBy: 'dev-admin'
+      })),
+    rejectCandidateReportAsset: async (candidateId, assetId, reviewNote) =>
+      updateReportAsset(candidateId, assetId, (asset) => ({
+        ...asset,
+        status: 'REJECTED',
+        reviewNote: reviewNote ?? null,
+        reviewedAt: new Date().toISOString(),
+        reviewedBy: 'dev-admin'
+      })),
     updateCandidate: async (id, input) => updateCandidate(id, input),
     publishCandidate: async (id) => updateStatus(id, 'PUBLISHED'),
     rejectCandidate: async (id) => updateStatus(id, 'REJECTED'),
@@ -698,6 +784,35 @@ function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): Admin
       );
       return mapCandidateContent(content);
     },
+    cacheCandidateReportAsset: async (candidateId, assetId) => {
+      const asset = await request<BackendReportAssetResponse>(
+        `/api/admin/candidates/${candidateId}/report-assets/${assetId}/cache`,
+        {
+          method: 'POST'
+        }
+      );
+      return mapReportAsset(asset);
+    },
+    approveCandidateReportAsset: async (candidateId, assetId, reviewNote) => {
+      const asset = await request<BackendReportAssetResponse>(
+        `/api/admin/candidates/${candidateId}/report-assets/${assetId}/approve`,
+        {
+          method: 'POST',
+          body: JSON.stringify(reviewNote ? { reviewNote } : {})
+        }
+      );
+      return mapReportAsset(asset);
+    },
+    rejectCandidateReportAsset: async (candidateId, assetId, reviewNote) => {
+      const asset = await request<BackendReportAssetResponse>(
+        `/api/admin/candidates/${candidateId}/report-assets/${assetId}/reject`,
+        {
+          method: 'POST',
+          body: JSON.stringify(reviewNote ? { reviewNote } : {})
+        }
+      );
+      return mapReportAsset(asset);
+    },
     updateCandidate: async (id, input) => {
       const candidate = await request<BackendCandidateResponse>(`/api/admin/candidates/${id}`, {
         method: 'PUT',
@@ -895,9 +1010,20 @@ function mapReportAsset(asset: BackendReportAssetResponse): ReportAsset {
   return {
     id: asset.id,
     title: asset.title,
+    originalUrl: asset.originalUrl,
     fileName: asset.fileName,
+    fileSizeBytes: asset.fileSizeBytes,
+    fileHash: asset.fileHash,
     licensePolicy: asset.licensePolicy,
-    status: asset.status
+    status: asset.status,
+    licenseNote: asset.licenseNote,
+    cacheStatus: asset.cacheStatus,
+    cacheErrorMessage: asset.cacheErrorMessage,
+    mimeType: asset.mimeType,
+    cachedAt: asset.cachedAt,
+    reviewNote: asset.reviewNote,
+    reviewedAt: asset.reviewedAt,
+    reviewedBy: asset.reviewedBy
   };
 }
 

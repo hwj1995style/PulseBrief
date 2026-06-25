@@ -22,6 +22,10 @@ public class ReportAsset {
     @JoinColumn(name = "candidate_article_id")
     private CandidateArticle candidateArticle;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "asset_file_id")
+    private ReportAssetFile assetFile;
+
     @Column(name = "source_code")
     private String sourceCode;
 
@@ -42,8 +46,32 @@ public class ReportAsset {
     @Column(name = "license_policy")
     private String licensePolicy;
 
+    @Column(name = "license_note")
+    private String licenseNote;
+
     @Column(name = "asset_status")
     private String assetStatus;
+
+    @Column(name = "cache_status")
+    private String cacheStatus;
+
+    @Column(name = "cache_error_message")
+    private String cacheErrorMessage;
+
+    @Column(name = "cache_requested_at")
+    private LocalDateTime cacheRequestedAt;
+
+    @Column(name = "cache_completed_at")
+    private LocalDateTime cacheCompletedAt;
+
+    @Column(name = "review_note")
+    private String reviewNote;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column(name = "reviewed_by")
+    private String reviewedBy;
 
     @Column(name = "downloaded_at")
     private LocalDateTime downloadedAt;
@@ -77,6 +105,7 @@ public class ReportAsset {
         this.fileHash = fileHash;
         this.licensePolicy = licensePolicy;
         this.assetStatus = "PENDING_REVIEW";
+        this.cacheStatus = "NOT_CACHED";
         this.createdAt = now;
         this.updatedAt = now;
     }
@@ -87,6 +116,14 @@ public class ReportAsset {
 
     public CandidateArticle getCandidateArticle() {
         return candidateArticle;
+    }
+
+    public ReportAssetFile getAssetFile() {
+        return assetFile;
+    }
+
+    public String getSourceCode() {
+        return sourceCode;
     }
 
     public String getFileHash() {
@@ -113,7 +150,90 @@ public class ReportAsset {
         return licensePolicy;
     }
 
+    public String getLicenseNote() {
+        return licenseNote;
+    }
+
     public String getAssetStatus() {
         return assetStatus;
+    }
+
+    public String getCacheStatus() {
+        return cacheStatus == null ? "NOT_CACHED" : cacheStatus;
+    }
+
+    public String getCacheErrorMessage() {
+        return cacheErrorMessage;
+    }
+
+    public LocalDateTime getCacheCompletedAt() {
+        return cacheCompletedAt;
+    }
+
+    public String getReviewNote() {
+        return reviewNote;
+    }
+
+    public LocalDateTime getReviewedAt() {
+        return reviewedAt;
+    }
+
+    public String getReviewedBy() {
+        return reviewedBy;
+    }
+
+    public void markCachePending() {
+        this.cacheStatus = "PENDING";
+        this.cacheErrorMessage = null;
+        this.cacheRequestedAt = LocalDateTime.now();
+        this.updatedAt = this.cacheRequestedAt;
+    }
+
+    public void markCacheSuccess(ReportAssetFile assetFile, String licenseNote) {
+        LocalDateTime now = LocalDateTime.now();
+        this.assetFile = assetFile;
+        this.licenseNote = licenseNote;
+        this.cacheStatus = "SUCCESS";
+        this.cacheErrorMessage = null;
+        this.cacheCompletedAt = now;
+        this.downloadedAt = assetFile.getDownloadedAt();
+        this.fileSizeBytes = assetFile.getFileSizeBytes();
+        this.updatedAt = now;
+    }
+
+    public void markCacheSkipped(String message, String licenseNote) {
+        LocalDateTime now = LocalDateTime.now();
+        this.licenseNote = licenseNote;
+        this.cacheStatus = "SKIPPED";
+        this.cacheErrorMessage = message;
+        this.cacheCompletedAt = now;
+        this.updatedAt = now;
+    }
+
+    public void markCacheFailed(String message, String licenseNote) {
+        LocalDateTime now = LocalDateTime.now();
+        this.licenseNote = licenseNote;
+        this.cacheStatus = "FAILED";
+        this.cacheErrorMessage = message;
+        this.cacheCompletedAt = now;
+        this.updatedAt = now;
+    }
+
+    public void approve(String reviewNote, String reviewedBy) {
+        LocalDateTime now = LocalDateTime.now();
+        this.assetStatus = "APPROVED";
+        this.reviewNote = reviewNote;
+        this.reviewedBy = reviewedBy;
+        this.reviewedAt = now;
+        this.updatedAt = now;
+    }
+
+    public void reject(String reviewNote, String reviewedBy) {
+        LocalDateTime now = LocalDateTime.now();
+        this.assetStatus = "REJECTED";
+        this.reviewNote = reviewNote;
+        this.reviewedBy = reviewedBy;
+        this.reviewedAt = now;
+        this.updatedAt = now;
     }
 }

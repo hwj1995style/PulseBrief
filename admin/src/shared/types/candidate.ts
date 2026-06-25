@@ -4,9 +4,20 @@ export type CandidateContentFetchMode = 'SNIPPET' | 'FULLTEXT';
 export interface ReportAsset {
   id: number;
   title: string;
+  originalUrl: string;
   fileName: string;
+  fileSizeBytes: number | null;
+  fileHash: string | null;
   licensePolicy: string;
   status: string;
+  licenseNote: string | null;
+  cacheStatus: string;
+  cacheErrorMessage: string | null;
+  mimeType: string | null;
+  cachedAt: string | null;
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
 }
 
 export interface CandidateContent {

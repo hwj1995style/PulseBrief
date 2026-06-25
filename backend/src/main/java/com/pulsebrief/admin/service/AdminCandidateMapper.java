@@ -6,6 +6,7 @@ import com.pulsebrief.admin.api.AdminReportAssetResponse;
 import com.pulsebrief.ingestion.domain.CandidateArticle;
 import com.pulsebrief.ingestion.domain.RawNewsItem;
 import com.pulsebrief.ingestion.domain.ReportAsset;
+import com.pulsebrief.ingestion.domain.ReportAssetFile;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -53,15 +54,24 @@ public class AdminCandidateMapper {
     }
 
     public AdminReportAssetResponse toReportAssetResponse(ReportAsset reportAsset) {
+        ReportAssetFile assetFile = reportAsset.getAssetFile();
         return new AdminReportAssetResponse(
                 reportAsset.getId(),
                 reportAsset.getTitle(),
                 reportAsset.getOriginalUrl(),
                 reportAsset.getFileName(),
-                reportAsset.getFileSizeBytes(),
-                reportAsset.getFileHash(),
+                assetFile == null ? reportAsset.getFileSizeBytes() : assetFile.getFileSizeBytes(),
+                assetFile == null ? reportAsset.getFileHash() : assetFile.getFileHash(),
                 reportAsset.getLicensePolicy(),
-                reportAsset.getAssetStatus()
+                reportAsset.getAssetStatus(),
+                reportAsset.getLicenseNote(),
+                reportAsset.getCacheStatus(),
+                reportAsset.getCacheErrorMessage(),
+                assetFile == null ? null : assetFile.getMimeType(),
+                formatTime(reportAsset.getCacheCompletedAt()),
+                reportAsset.getReviewNote(),
+                formatTime(reportAsset.getReviewedAt()),
+                reportAsset.getReviewedBy()
         );
     }
 

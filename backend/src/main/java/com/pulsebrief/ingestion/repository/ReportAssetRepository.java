@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ReportAssetRepository extends JpaRepository<ReportAsset, Long> {
     Optional<ReportAsset> findByFileHash(String fileHash);
 
+    Optional<ReportAsset> findByIdAndCandidateArticle_Id(Long id, Long candidateArticleId);
+
     long countByFileHash(String fileHash);
 
     List<ReportAsset> findByCandidateArticle_IdOrderByCreatedAtDesc(Long candidateArticleId);

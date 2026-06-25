@@ -71,4 +71,30 @@ public class AdminCandidateController {
                 : request;
         return ApiResponse.ok(candidateService.fetchCandidateContent(id, safeRequest));
     }
+
+    @PostMapping("/{id}/report-assets/{assetId}/cache")
+    public ApiResponse<AdminReportAssetResponse> cacheReportAsset(
+            @PathVariable Long id,
+            @PathVariable Long assetId
+    ) {
+        return ApiResponse.ok(candidateService.cacheReportAsset(id, assetId));
+    }
+
+    @PostMapping("/{id}/report-assets/{assetId}/approve")
+    public ApiResponse<AdminReportAssetResponse> approveReportAsset(
+            @PathVariable Long id,
+            @PathVariable Long assetId,
+            @RequestBody(required = false) AdminReportAssetActionRequest request
+    ) {
+        return ApiResponse.ok(candidateService.approveReportAsset(id, assetId, request));
+    }
+
+    @PostMapping("/{id}/report-assets/{assetId}/reject")
+    public ApiResponse<AdminReportAssetResponse> rejectReportAsset(
+            @PathVariable Long id,
+            @PathVariable Long assetId,
+            @RequestBody(required = false) AdminReportAssetActionRequest request
+    ) {
+        return ApiResponse.ok(candidateService.rejectReportAsset(id, assetId, request));
+    }
 }

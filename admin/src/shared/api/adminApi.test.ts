@@ -114,7 +114,15 @@ describe('adminApi HTTP client', () => {
               fileSizeBytes: 1024,
               fileHash: 'abc',
               licensePolicy: 'PDF_ALLOWED',
-              status: 'PENDING_REVIEW'
+              status: 'PENDING_REVIEW',
+              licenseNote: '公开 PDF 授权说明',
+              cacheStatus: 'SUCCESS',
+              cacheErrorMessage: null,
+              mimeType: 'application/pdf',
+              cachedAt: '2026-06-10T08:22:00+08:00',
+              reviewNote: '可发布',
+              reviewedAt: '2026-06-10T08:23:00+08:00',
+              reviewedBy: 'dev-admin'
             }
           ],
           content: {
@@ -148,7 +156,17 @@ describe('adminApi HTTP client', () => {
           expect.objectContaining({
             id: 21,
             fileName: 'ai-infrastructure-outlook.pdf',
-            licensePolicy: 'PDF_ALLOWED'
+            licensePolicy: 'PDF_ALLOWED',
+            fileSizeBytes: 1024,
+            fileHash: 'abc',
+            licenseNote: '公开 PDF 授权说明',
+            cacheStatus: 'SUCCESS',
+            cacheErrorMessage: null,
+            mimeType: 'application/pdf',
+            cachedAt: '2026-06-10T08:22:00+08:00',
+            reviewNote: '可发布',
+            reviewedAt: '2026-06-10T08:23:00+08:00',
+            reviewedBy: 'dev-admin'
           })
         ],
         content: expect.objectContaining({
@@ -157,6 +175,84 @@ describe('adminApi HTTP client', () => {
           preview: '授权正文片段显示 AI 基建投资仍在扩张。',
           licensePolicy: 'SNIPPET_ALLOWED'
         })
+      })
+    );
+  });
+
+  it('uses report asset cache and review endpoints', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const reportAssetResponse = {
+      id: 21,
+      title: 'AI infrastructure outlook',
+      originalUrl: 'https://example.com/report.pdf',
+      fileName: 'ai-infrastructure-outlook.pdf',
+      fileSizeBytes: 2048,
+      fileHash: 'cached-hash',
+      licensePolicy: 'PDF_ALLOWED',
+      status: 'PENDING_REVIEW',
+      licenseNote: '公开 PDF 授权说明',
+      cacheStatus: 'SUCCESS',
+      cacheErrorMessage: null,
+      mimeType: 'application/pdf',
+      cachedAt: '2026-06-10T08:22:00+08:00',
+      reviewNote: null,
+      reviewedAt: null,
+      reviewedBy: null
+    };
+    fetchMock
+      .mockResolvedValueOnce(await mockFetchResponse({ code: 'OK', data: reportAssetResponse }))
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: {
+            ...reportAssetResponse,
+            status: 'APPROVED',
+            reviewNote: '授权公开 PDF 可发布',
+            reviewedAt: '2026-06-10T08:24:00+08:00',
+            reviewedBy: 'dev-admin'
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: {
+            ...reportAssetResponse,
+            status: 'REJECTED',
+            reviewNote: '只保留原文链接',
+            reviewedAt: '2026-06-10T08:25:00+08:00',
+            reviewedBy: 'dev-admin'
+          }
+        })
+      );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const cached = await client.cacheCandidateReportAsset(12, 21);
+    const approved = await client.approveCandidateReportAsset(12, 21, '授权公开 PDF 可发布');
+    const rejected = await client.rejectCandidateReportAsset(12, 21, '只保留原文链接');
+
+    expect(cached.cacheStatus).toBe('SUCCESS');
+    expect(approved.status).toBe('APPROVED');
+    expect(rejected.status).toBe('REJECTED');
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:8080/api/admin/candidates/12/report-assets/21/cache',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8080/api/admin/candidates/12/report-assets/21/approve',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ reviewNote: '授权公开 PDF 可发布' })
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:8080/api/admin/candidates/12/report-assets/21/reject',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ reviewNote: '只保留原文链接' })
       })
     );
   });

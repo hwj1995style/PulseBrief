@@ -8,6 +8,14 @@ public record AdminReportAssetResponse(
         Long fileSizeBytes,
         String fileHash,
         String licensePolicy,
-        String status
+        String status,
+        String licenseNote,
+        String cacheStatus,
+        String cacheErrorMessage,
+        String mimeType,
+        String cachedAt,
+        String reviewNote,
+        String reviewedAt,
+        String reviewedBy
 ) {
 }

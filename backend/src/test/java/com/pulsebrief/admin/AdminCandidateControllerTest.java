@@ -5,13 +5,18 @@ import com.pulsebrief.article.repository.ArticleRepository;
 import com.pulsebrief.article.service.ArticleService;
 import com.pulsebrief.ingestion.domain.CandidateArticle;
 import com.pulsebrief.ingestion.domain.NewsIngestionSource;
+import com.pulsebrief.ingestion.domain.ReportAsset;
 import com.pulsebrief.ingestion.provider.RawNewsPayload;
 import com.pulsebrief.ingestion.repository.CandidateArticleRepository;
 import com.pulsebrief.ingestion.repository.NewsIngestionSourceRepository;
 import com.pulsebrief.ingestion.repository.RawNewsContentRepository;
 import com.pulsebrief.ingestion.service.CandidateArticleGenerationService;
+import com.pulsebrief.ingestion.service.DownloadedPdf;
 import com.pulsebrief.ingestion.service.HtmlContentClient;
+import com.pulsebrief.ingestion.service.PdfDownloadClient;
 import com.pulsebrief.ingestion.service.RawNewsIngestionService;
+import com.pulsebrief.ingestion.service.ReportAssetRegistrationService;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -34,7 +39,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "pulsebrief.pdf-cache.storage-dir=target/test-pdf-cache-admin",
+        "pulsebrief.pdf-cache.enabled=true"
+})
 @AutoConfigureMockMvc
 class AdminCandidateControllerTest {
     private static final String ADMIN_TOKEN = "Bearer dev-admin-token";
@@ -56,6 +64,9 @@ class AdminCandidateControllerTest {
 
     @Autowired
     private RawNewsContentRepository rawNewsContentRepository;
+
+    @Autowired
+    private ReportAssetRegistrationService reportAssetRegistrationService;
 
     @Autowired
     private ArticleRepository articleRepository;
@@ -256,6 +267,59 @@ class AdminCandidateControllerTest {
         )).isEmpty();
     }
 
+    @Test
+    void cachesAndApprovesAuthorizedPdfAssetBeforePublish() throws Exception {
+        CandidateArticle candidate = createPendingCandidate("admin-pdf-cache", "PDF_ALLOWED");
+        ReportAsset asset = registerPdfAsset(candidate, "admin-pdf-cache");
+
+        mockMvc.perform(post("/api/admin/candidates/" + candidate.getId()
+                        + "/report-assets/" + asset.getId() + "/cache")
+                        .header("Authorization", ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.cacheStatus").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.status").value("PENDING_REVIEW"))
+                .andExpect(jsonPath("$.data.licenseNote").value(org.hamcrest.Matchers.containsString("Fixture source")));
+
+        mockMvc.perform(post("/api/admin/candidates/" + candidate.getId()
+                        + "/report-assets/" + asset.getId() + "/approve")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reviewNote\":\"授权公开 PDF 可发布\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("APPROVED"))
+                .andExpect(jsonPath("$.data.cacheStatus").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.reviewNote").value("授权公开 PDF 可发布"));
+
+        mockMvc.perform(post("/api/admin/candidates/" + candidate.getId() + "/publish")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"publishNow\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
+    }
+
+    @Test
+    void rejectsPdfAssetAndAllowsArticlePublishWithoutPdfEntry() throws Exception {
+        CandidateArticle candidate = createPendingCandidate("admin-pdf-reject", "PDF_ALLOWED");
+        ReportAsset asset = registerPdfAsset(candidate, "admin-pdf-reject");
+
+        mockMvc.perform(post("/api/admin/candidates/" + candidate.getId()
+                        + "/report-assets/" + asset.getId() + "/reject")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reviewNote\":\"只保留原文链接\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("REJECTED"))
+                .andExpect(jsonPath("$.data.reviewNote").value("只保留原文链接"));
+
+        mockMvc.perform(post("/api/admin/candidates/" + candidate.getId() + "/publish")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"publishNow\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
+    }
+
     private CandidateArticle createPendingCandidate(String prefix) {
         return createPendingCandidate(prefix, null);
     }
@@ -294,6 +358,20 @@ class AdminCandidateControllerTest {
         return candidateArticleRepository.findByTitle(title).orElseThrow();
     }
 
+    private ReportAsset registerPdfAsset(CandidateArticle candidate, String prefix) {
+        String uniquePath = prefix + "-" + UUID.randomUUID();
+        return reportAssetRegistrationService.registerPdfMetadata(
+                candidate.getId(),
+                candidate.getRawNewsItem().getSourceCode(),
+                "Admin public PDF " + uniquePath,
+                "https://example.com/reports/" + uniquePath + ".pdf",
+                uniquePath + ".pdf",
+                null,
+                "legacy-admin-pdf-" + uniquePath,
+                "PDF_ALLOWED"
+        );
+    }
+
     @TestConfiguration
     static class FixtureContentClientConfig {
         @Bean
@@ -309,6 +387,16 @@ class AdminCandidateControllerTest {
                       </body>
                     </html>
                     """;
+        }
+
+        @Bean
+        @Primary
+        PdfDownloadClient fixturePdfDownloadClient() {
+            return url -> new DownloadedPdf(
+                    "admin-fixture-report.pdf",
+                    "application/pdf",
+                    "%PDF-1.4\nadmin fixture public report\n%%EOF".getBytes(StandardCharsets.UTF_8)
+            );
         }
     }
 }

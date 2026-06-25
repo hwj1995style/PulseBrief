@@ -32,3 +32,8 @@ pulsebrief:
   ingestion:
     enabled: ${PULSEBRIEF_INGESTION_ENABLED:false}
     sources: []
+  pdf-cache:
+    enabled: ${PULSEBRIEF_PDF_CACHE_ENABLED:false}
+    storage-dir: ${PULSEBRIEF_PDF_STORAGE_DIR:./data/reports}
+    max-size-mb: ${PULSEBRIEF_PDF_MAX_SIZE_MB:25}
+    timeout-seconds: ${PULSEBRIEF_PDF_TIMEOUT_SECONDS:15}

@@ -7,6 +7,8 @@ import com.pulsebrief.admin.api.AdminCandidatePublishRequest;
 import com.pulsebrief.admin.api.AdminCandidateRejectRequest;
 import com.pulsebrief.admin.api.AdminCandidateResponse;
 import com.pulsebrief.admin.api.AdminCandidateUpdateRequest;
+import com.pulsebrief.admin.api.AdminReportAssetActionRequest;
+import com.pulsebrief.admin.api.AdminReportAssetResponse;
 import com.pulsebrief.article.domain.NewsArticle;
 import com.pulsebrief.article.repository.ArticleRepository;
 import com.pulsebrief.common.api.PageResponse;
@@ -19,6 +21,7 @@ import com.pulsebrief.ingestion.repository.ReportAssetRepository;
 import com.pulsebrief.ingestion.service.ContentFetchMode;
 import com.pulsebrief.ingestion.service.ContentFetchResult;
 import com.pulsebrief.ingestion.service.ContentFetchService;
+import com.pulsebrief.ingestion.service.PdfAssetCacheService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -50,6 +53,7 @@ public class AdminCandidateApplicationService {
     private final AdminCandidateMapper mapper;
     private final AdminOperationLogService operationLogService;
     private final ContentFetchService contentFetchService;
+    private final PdfAssetCacheService pdfAssetCacheService;
 
     public AdminCandidateApplicationService(
             CandidateArticleRepository candidateArticleRepository,
@@ -58,7 +62,8 @@ public class AdminCandidateApplicationService {
             ArticleRepository articleRepository,
             AdminCandidateMapper mapper,
             AdminOperationLogService operationLogService,
-            ContentFetchService contentFetchService
+            ContentFetchService contentFetchService,
+            PdfAssetCacheService pdfAssetCacheService
     ) {
         this.candidateArticleRepository = candidateArticleRepository;
         this.reportAssetRepository = reportAssetRepository;
@@ -67,6 +72,7 @@ public class AdminCandidateApplicationService {
         this.mapper = mapper;
         this.operationLogService = operationLogService;
         this.contentFetchService = contentFetchService;
+        this.pdfAssetCacheService = pdfAssetCacheService;
     }
 
     @Transactional(readOnly = true)
@@ -112,6 +118,41 @@ public class AdminCandidateApplicationService {
         ContentFetchMode mode = ContentFetchMode.valueOf(request.modeOrDefault());
         ContentFetchResult result = contentFetchService.fetchRawItem(candidate.getRawNewsItem().getId(), mode);
         return toContentResponse(candidate.getId(), result);
+    }
+
+    @Transactional
+    public AdminReportAssetResponse cacheReportAsset(Long candidateId, Long assetId) {
+        requirePendingCandidate(candidateId);
+        requireReportAsset(candidateId, assetId);
+        ReportAsset asset = pdfAssetCacheService.cacheAsset(candidateId, assetId);
+        return mapper.toReportAssetResponse(asset);
+    }
+
+    @Transactional
+    public AdminReportAssetResponse approveReportAsset(
+            Long candidateId,
+            Long assetId,
+            AdminReportAssetActionRequest request
+    ) {
+        requirePendingCandidate(candidateId);
+        ReportAsset asset = requireReportAsset(candidateId, assetId);
+        if (!"SUCCESS".equals(asset.getCacheStatus())) {
+            throw new ResponseStatusException(CONFLICT, "Report asset requires successful PDF cache before approval");
+        }
+        asset.approve(request == null ? null : request.reviewNote(), "dev-admin");
+        return mapper.toReportAssetResponse(asset);
+    }
+
+    @Transactional
+    public AdminReportAssetResponse rejectReportAsset(
+            Long candidateId,
+            Long assetId,
+            AdminReportAssetActionRequest request
+    ) {
+        requirePendingCandidate(candidateId);
+        ReportAsset asset = requireReportAsset(candidateId, assetId);
+        asset.reject(request == null ? null : request.reviewNote(), "dev-admin");
+        return mapper.toReportAssetResponse(asset);
     }
 
     @Transactional
@@ -190,11 +231,17 @@ public class AdminCandidateApplicationService {
         return candidate;
     }
 
+    private ReportAsset requireReportAsset(Long candidateId, Long assetId) {
+        return reportAssetRepository.findByIdAndCandidateArticle_Id(assetId, candidateId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Report asset not found"));
+    }
+
     private void assertReportAssetsApproved(Long candidateId) {
-        boolean hasUnapprovedAsset = reportAssetRepository.findByCandidateArticle_IdOrderByCreatedAtDesc(candidateId)
+        boolean hasBlockingAsset = reportAssetRepository.findByCandidateArticle_IdOrderByCreatedAtDesc(candidateId)
                 .stream()
-                .anyMatch(asset -> !"APPROVED".equals(asset.getAssetStatus()));
-        if (hasUnapprovedAsset) {
+                .anyMatch(asset -> !"APPROVED".equals(asset.getAssetStatus())
+                        && !"REJECTED".equals(asset.getAssetStatus()));
+        if (hasBlockingAsset) {
             throw new ResponseStatusException(CONFLICT, "Report assets require compliance approval before publish");
         }
     }

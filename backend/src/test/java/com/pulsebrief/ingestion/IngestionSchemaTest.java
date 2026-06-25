@@ -19,6 +19,7 @@ class IngestionSchemaTest {
         assertThat(tableExists("raw_news_item")).isTrue();
         assertThat(tableExists("candidate_article")).isTrue();
         assertThat(tableExists("report_asset")).isTrue();
+        assertThat(tableExists("report_asset_file")).isTrue();
         assertThat(tableExists("raw_news_content")).isTrue();
         assertThat(columnExists("news_ingestion_source", "content_access_policy")).isTrue();
         assertThat(columnExists("news_ingestion_source", "max_age_hours")).isTrue();
@@ -28,6 +29,14 @@ class IngestionSchemaTest {
         assertThat(columnExists("raw_news_content", "raw_news_item_id")).isTrue();
         assertThat(columnExists("raw_news_content", "content_text_hash")).isTrue();
         assertThat(columnExists("raw_news_content", "fetch_status")).isTrue();
+        assertThat(columnExists("report_asset", "asset_file_id")).isTrue();
+        assertThat(columnExists("report_asset", "license_note")).isTrue();
+        assertThat(columnExists("report_asset", "cache_status")).isTrue();
+        assertThat(columnExists("report_asset", "cache_error_message")).isTrue();
+        assertThat(columnExists("report_asset", "cache_completed_at")).isTrue();
+        assertThat(columnExists("report_asset", "review_note")).isTrue();
+        assertThat(columnExists("report_asset_file", "storage_path")).isTrue();
+        assertThat(columnExists("report_asset_file", "mime_type")).isTrue();
     }
 
     private boolean tableExists(String tableName) {

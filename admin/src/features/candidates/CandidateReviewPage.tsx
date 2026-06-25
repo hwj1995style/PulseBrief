@@ -1,15 +1,18 @@
-import { CheckCircle2, ExternalLink, FileText, RefreshCw, Save, Search, XCircle } from 'lucide-react';
+import { CheckCircle2, Download, ExternalLink, FileText, RefreshCw, Save, Search, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  approveCandidateReportAsset,
+  cacheCandidateReportAsset,
   fetchCandidateContent,
   getCandidate,
   getInitialCandidates,
   listCandidates,
   publishCandidate,
+  rejectCandidateReportAsset,
   rejectCandidate,
   updateCandidate
 } from '../../shared/api/adminApi';
-import type { AdminCandidate, CandidateStatus } from '../../shared/types/candidate';
+import type { AdminCandidate, CandidateStatus, ReportAsset } from '../../shared/types/candidate';
 import { candidateStatusText, candidateStatusTone } from './candidateUtils';
 
 const filters: Array<{ label: string; ariaLabel: string; value: CandidateStatus | 'ALL' }> = [
@@ -37,6 +40,7 @@ export function CandidateReviewPage() {
   const [isLoading, setIsLoading] = useState(() => getInitialCandidates().length === 0);
   const [actionLoading, setActionLoading] = useState(false);
   const [contentLoading, setContentLoading] = useState(false);
+  const [assetActionLoading, setAssetActionLoading] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [draftTitle, setDraftTitle] = useState('');
@@ -44,6 +48,8 @@ export function CandidateReviewPage() {
   const [draftCategoryCode, setDraftCategoryCode] = useState('global');
   const [draftSourceName, setDraftSourceName] = useState('');
   const [draftTagText, setDraftTagText] = useState('');
+  const [draftCandidateId, setDraftCandidateId] = useState<number | null>(null);
+  const [isDraftDirty, setIsDraftDirty] = useState(false);
 
   useEffect(() => {
     void refreshCandidates();
@@ -76,6 +82,11 @@ export function CandidateReviewPage() {
       setDraftCategoryCode('global');
       setDraftSourceName('');
       setDraftTagText('');
+      setDraftCandidateId(null);
+      setIsDraftDirty(false);
+      return;
+    }
+    if (isDraftDirty && draftCandidateId === selectedCandidate.id) {
       return;
     }
     setDraftTitle(selectedCandidate.title);
@@ -83,7 +94,11 @@ export function CandidateReviewPage() {
     setDraftCategoryCode(selectedCandidate.categoryCode);
     setDraftSourceName(selectedCandidate.sourceName);
     setDraftTagText(selectedCandidate.tagNames.join('，'));
+    setDraftCandidateId(selectedCandidate.id);
+    setIsDraftDirty(false);
   }, [
+    draftCandidateId,
+    isDraftDirty,
     selectedCandidate?.id,
     selectedCandidate?.title,
     selectedCandidate?.summary,
@@ -130,6 +145,7 @@ export function CandidateReviewPage() {
 
   async function selectCandidate(candidate: AdminCandidate) {
     setSelectedId(candidate.id);
+    setIsDraftDirty(false);
     setErrorMessage('');
     setSuccessMessage('');
     try {
@@ -162,6 +178,7 @@ export function CandidateReviewPage() {
       });
       setCandidates((items) => items.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));
       setSelectedId(updated.id);
+      setIsDraftDirty(false);
       setSuccessMessage('候选内容已保存');
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '候选内容保存失败，请稍后重试。');
@@ -187,6 +204,43 @@ export function CandidateReviewPage() {
       setErrorMessage(error instanceof Error ? error.message : '正文片段抓取失败，请检查授权配置。');
     } finally {
       setContentLoading(false);
+    }
+  }
+
+  async function runReportAssetAction(asset: ReportAsset, action: 'cache' | 'approve' | 'reject') {
+    if (!selectedCandidate) {
+      return;
+    }
+    const loadingKey = `${asset.id}:${action}`;
+    setAssetActionLoading(loadingKey);
+    setErrorMessage('');
+    setSuccessMessage('');
+    try {
+      const updatedAsset =
+        action === 'cache'
+          ? await cacheCandidateReportAsset(selectedCandidate.id, asset.id)
+          : action === 'approve'
+            ? await approveCandidateReportAsset(selectedCandidate.id, asset.id, '授权公开 PDF 可发布')
+            : await rejectCandidateReportAsset(selectedCandidate.id, asset.id, '只保留原文链接');
+      setCandidates((items) =>
+        items.map((item) =>
+          item.id === selectedCandidate.id
+            ? {
+                ...item,
+                reportAssets: item.reportAssets.map((currentAsset) =>
+                  currentAsset.id === updatedAsset.id ? updatedAsset : currentAsset
+                )
+              }
+            : item
+        )
+      );
+      setSuccessMessage(
+        action === 'cache' ? 'PDF 文件已缓存' : action === 'approve' ? 'PDF 资产已审批' : 'PDF 资产已拒绝'
+      );
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'PDF 资产操作失败，请检查授权配置。');
+    } finally {
+      setAssetActionLoading('');
     }
   }
 
@@ -294,7 +348,10 @@ export function CandidateReviewPage() {
                   候选标题
                   <input
                     value={draftTitle}
-                    onChange={(event) => setDraftTitle(event.target.value)}
+                    onChange={(event) => {
+                      setDraftTitle(event.target.value);
+                      setIsDraftDirty(true);
+                    }}
                     disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
                   />
                 </label>
@@ -302,7 +359,10 @@ export function CandidateReviewPage() {
                   候选分类
                   <select
                     value={draftCategoryCode}
-                    onChange={(event) => setDraftCategoryCode(event.target.value)}
+                    onChange={(event) => {
+                      setDraftCategoryCode(event.target.value);
+                      setIsDraftDirty(true);
+                    }}
                     disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
                   >
                     {categoryOptions.map((option) => (
@@ -316,7 +376,10 @@ export function CandidateReviewPage() {
                   候选来源
                   <input
                     value={draftSourceName}
-                    onChange={(event) => setDraftSourceName(event.target.value)}
+                    onChange={(event) => {
+                      setDraftSourceName(event.target.value);
+                      setIsDraftDirty(true);
+                    }}
                     disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
                   />
                 </label>
@@ -324,7 +387,10 @@ export function CandidateReviewPage() {
                   候选标签
                   <input
                     value={draftTagText}
-                    onChange={(event) => setDraftTagText(event.target.value)}
+                    onChange={(event) => {
+                      setDraftTagText(event.target.value);
+                      setIsDraftDirty(true);
+                    }}
                     disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
                     placeholder="用逗号分隔，如 AI 基建，算力"
                   />
@@ -333,7 +399,10 @@ export function CandidateReviewPage() {
                   候选摘要
                   <textarea
                     value={draftSummary}
-                    onChange={(event) => setDraftSummary(event.target.value)}
+                    onChange={(event) => {
+                      setDraftSummary(event.target.value);
+                      setIsDraftDirty(true);
+                    }}
                     disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
                     rows={4}
                   />
@@ -419,8 +488,67 @@ export function CandidateReviewPage() {
                 selectedCandidate.reportAssets.map((asset) => (
                   <div className="asset-row" key={asset.id}>
                     <FileText size={18} />
-                    <span>{asset.fileName}</span>
-                    <b>{asset.status}</b>
+                    <div className="asset-copy">
+                      <span>{asset.fileName}</span>
+                      <small>{asset.title}</small>
+                      <small>
+                        {asset.licensePolicy} · {asset.mimeType ?? 'MIME 待缓存'}
+                        {asset.fileSizeBytes ? ` · ${formatBytes(asset.fileSizeBytes)}` : ''}
+                      </small>
+                      {asset.licenseNote ? <small>{asset.licenseNote}</small> : null}
+                      {asset.cacheErrorMessage ? <small className="asset-error">{asset.cacheErrorMessage}</small> : null}
+                    </div>
+                    <div className="asset-state">
+                      <b>{asset.status}</b>
+                      <b className={asset.cacheStatus === 'SUCCESS' ? 'success' : undefined}>
+                        {asset.cacheStatus ?? 'NOT_CACHED'}
+                      </b>
+                    </div>
+                    <div className="asset-actions">
+                      <a href={asset.originalUrl} aria-label={`打开 PDF ${asset.fileName}`}>
+                        <ExternalLink size={16} />
+                      </a>
+                      <button
+                        className="secondary-action compact"
+                        disabled={
+                          selectedCandidate.status !== 'PENDING_REVIEW'
+                          || Boolean(assetActionLoading)
+                          || asset.cacheStatus === 'SUCCESS'
+                        }
+                        onClick={() => runReportAssetAction(asset, 'cache')}
+                        type="button"
+                      >
+                        <Download size={16} />
+                        缓存 PDF
+                      </button>
+                      <button
+                        className="secondary-action compact"
+                        disabled={
+                          selectedCandidate.status !== 'PENDING_REVIEW'
+                          || Boolean(assetActionLoading)
+                          || asset.cacheStatus !== 'SUCCESS'
+                          || asset.status === 'APPROVED'
+                        }
+                        onClick={() => runReportAssetAction(asset, 'approve')}
+                        type="button"
+                      >
+                        <CheckCircle2 size={16} />
+                        审批 PDF
+                      </button>
+                      <button
+                        className="secondary-action compact danger"
+                        disabled={
+                          selectedCandidate.status !== 'PENDING_REVIEW'
+                          || Boolean(assetActionLoading)
+                          || asset.status === 'REJECTED'
+                        }
+                        onClick={() => runReportAssetAction(asset, 'reject')}
+                        type="button"
+                      >
+                        <XCircle size={16} />
+                        拒绝 PDF
+                      </button>
+                    </div>
                   </div>
                 ))
               ) : (
@@ -463,6 +591,16 @@ function parseTagText(value: string): string[] {
     .map((item) => item.trim())
     .filter(Boolean);
   return Array.from(new Set(tags));
+}
+
+function formatBytes(value: number): string {
+  if (value >= 1024 * 1024) {
+    return `${(value / 1024 / 1024).toFixed(1)} MB`;
+  }
+  if (value >= 1024) {
+    return `${Math.round(value / 1024)} KB`;
+  }
+  return `${value} B`;
 }
 
 function Metric({ label, value, tone }: { label: string; value: number; tone?: string }) {

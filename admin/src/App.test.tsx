@@ -75,6 +75,26 @@ describe('PulseBrief Admin shell', () => {
     expect(within(detail).getByText(/授权正文片段预览/)).toBeInTheDocument();
   });
 
+  it('caches and reviews PDF assets from candidate detail', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(await screen.findByText('高盛：AI 基建投资仍将持续')).toBeInTheDocument();
+    const detail = screen.getByRole('complementary', { name: '候选详情' });
+
+    expect(within(detail).getByText('NOT_CACHED')).toBeInTheDocument();
+    expect(within(detail).getByRole('button', { name: '缓存 PDF' })).toBeEnabled();
+    expect(within(detail).getByRole('button', { name: '审批 PDF' })).toBeDisabled();
+    expect(within(detail).getByRole('button', { name: '拒绝 PDF' })).toBeEnabled();
+
+    await user.click(within(detail).getByRole('button', { name: '缓存 PDF' }));
+    expect(await within(detail).findByText('SUCCESS')).toBeInTheDocument();
+    expect(within(detail).getByRole('button', { name: '审批 PDF' })).toBeEnabled();
+
+    await user.click(within(detail).getByRole('button', { name: '审批 PDF' }));
+    expect(await within(detail).findByText('APPROVED')).toBeInTheDocument();
+  });
+
   it('creates and publishes a daily digest from selected articles', async () => {
     const user = userEvent.setup();
     window.location.hash = '#/digests';
