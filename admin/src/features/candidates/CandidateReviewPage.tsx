@@ -1,6 +1,7 @@
 import { CheckCircle2, ExternalLink, FileText, RefreshCw, Save, Search, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  fetchCandidateContent,
   getCandidate,
   getInitialCandidates,
   listCandidates,
@@ -35,6 +36,7 @@ export function CandidateReviewPage() {
   const [selectedId, setSelectedId] = useState<number | null>(() => getInitialCandidates()[0]?.id ?? null);
   const [isLoading, setIsLoading] = useState(() => getInitialCandidates().length === 0);
   const [actionLoading, setActionLoading] = useState(false);
+  const [contentLoading, setContentLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [draftTitle, setDraftTitle] = useState('');
@@ -165,6 +167,26 @@ export function CandidateReviewPage() {
       setErrorMessage(error instanceof Error ? error.message : '候选内容保存失败，请稍后重试。');
     } finally {
       setActionLoading(false);
+    }
+  }
+
+  async function fetchAuthorizedSnippet() {
+    if (!selectedCandidate) {
+      return;
+    }
+    setContentLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+    try {
+      const content = await fetchCandidateContent(selectedCandidate.id, 'SNIPPET');
+      setCandidates((items) =>
+        items.map((item) => (item.id === selectedCandidate.id ? { ...item, content } : item))
+      );
+      setSuccessMessage(content.fetchStatus === 'SUCCESS' ? '授权正文片段已抓取' : '正文抓取未写入内容');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '正文片段抓取失败，请检查授权配置。');
+    } finally {
+      setContentLoading(false);
     }
   }
 
@@ -351,6 +373,44 @@ export function CandidateReviewPage() {
             <section className="detail-section">
               <h3>来源摘要</h3>
               <p>{selectedCandidate.summary}</p>
+            </section>
+
+            <section className="detail-section">
+              <div className="section-heading-inline">
+                <h3>授权正文</h3>
+                <button
+                  className="secondary-action compact"
+                  disabled={selectedCandidate.status !== 'PENDING_REVIEW' || contentLoading}
+                  onClick={fetchAuthorizedSnippet}
+                  type="button"
+                >
+                  <FileText size={18} />
+                  {contentLoading ? '抓取中...' : '抓取正文片段'}
+                </button>
+              </div>
+              {selectedCandidate.content ? (
+                <div className="content-preview">
+                  {selectedCandidate.content.fetchStatus === 'SUCCESS' ? (
+                    <p className="inline-success">授权正文片段已抓取</p>
+                  ) : null}
+                  <p className="detail-meta">
+                    {selectedCandidate.content.captureMode} · {selectedCandidate.content.fetchStatus}
+                    {selectedCandidate.content.fetchedAt ? ` · ${selectedCandidate.content.fetchedAt}` : ''}
+                  </p>
+                  {selectedCandidate.content.preview ? <p>{selectedCandidate.content.preview}</p> : null}
+                  {selectedCandidate.content.errorMessage ? (
+                    <p className="inline-error">{selectedCandidate.content.errorMessage}</p>
+                  ) : null}
+                  {selectedCandidate.content.licensePolicy ? (
+                    <p className="muted">
+                      {selectedCandidate.content.licensePolicy}
+                      {selectedCandidate.content.licenseNote ? ` · ${selectedCandidate.content.licenseNote}` : ''}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="muted">尚未抓取授权正文片段。</p>
+              )}
             </section>
 
             <section className="detail-section">

@@ -60,4 +60,15 @@ public class AdminCandidateController {
     ) {
         return ApiResponse.ok(candidateService.publishCandidate(id, request));
     }
+
+    @PostMapping("/{id}/content/fetch")
+    public ApiResponse<AdminCandidateContentResponse> fetchCandidateContent(
+            @PathVariable Long id,
+            @RequestBody(required = false) AdminCandidateContentFetchRequest request
+    ) {
+        AdminCandidateContentFetchRequest safeRequest = request == null
+                ? new AdminCandidateContentFetchRequest(null)
+                : request;
+        return ApiResponse.ok(candidateService.fetchCandidateContent(id, safeRequest));
+    }
 }

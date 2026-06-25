@@ -7,7 +7,14 @@ import {
   mockIngestionAnomalies,
   mockOperationLogs
 } from '../../mock/ingestion';
-import type { AdminCandidate, AdminCandidateUpdateInput, CandidateStatus, ReportAsset } from '../types/candidate';
+import type {
+  AdminCandidate,
+  AdminCandidateUpdateInput,
+  CandidateContent,
+  CandidateContentFetchMode,
+  CandidateStatus,
+  ReportAsset
+} from '../types/candidate';
 import type {
   AdminDigest,
   AdminDigestArticleCandidate,
@@ -34,6 +41,7 @@ export interface AdminApiClient {
   getInitialCandidates: () => AdminCandidate[];
   listCandidates: (status?: CandidateStatus | 'ALL') => Promise<AdminCandidate[]>;
   getCandidate: (id: number) => Promise<AdminCandidate>;
+  fetchCandidateContent: (id: number, mode: CandidateContentFetchMode) => Promise<CandidateContent>;
   updateCandidate: (id: number, input: AdminCandidateUpdateInput) => Promise<AdminCandidate>;
   publishCandidate: (id: number) => Promise<AdminCandidate>;
   rejectCandidate: (id: number, reviewNote?: string) => Promise<AdminCandidate>;
@@ -110,10 +118,23 @@ interface BackendReportAssetResponse {
   status: string;
 }
 
+interface BackendCandidateContentResponse {
+  candidateId: number;
+  rawNewsItemId: number;
+  captureMode: CandidateContentFetchMode;
+  fetchStatus: string;
+  preview: string | null;
+  licensePolicy: string | null;
+  licenseNote: string | null;
+  fetchedAt: string | null;
+  errorMessage: string | null;
+}
+
 interface BackendCandidateDetailResponse {
   candidate: BackendCandidateResponse;
   rawItem: BackendRawNewsItemResponse | null;
   reportAssets: BackendReportAssetResponse[];
+  content: BackendCandidateContentResponse | null;
   duplicateHints: string[];
   availableActions: string[];
 }
@@ -276,6 +297,13 @@ export function getCandidate(id: number): Promise<AdminCandidate> {
   return defaultClient.getCandidate(id);
 }
 
+export function fetchCandidateContent(
+  id: number,
+  mode: CandidateContentFetchMode = 'SNIPPET'
+): Promise<CandidateContent> {
+  return defaultClient.fetchCandidateContent(id, mode);
+}
+
 export function updateCandidate(id: number, input: AdminCandidateUpdateInput): Promise<AdminCandidate> {
   return defaultClient.updateCandidate(id, input);
 }
@@ -400,6 +428,25 @@ function createMockAdminApiClient(): MutableAdminApiClient {
     return findCandidate(id);
   }
 
+  function fetchCandidateContent(id: number, mode: CandidateContentFetchMode) {
+    const fetchedAt = new Date().toISOString();
+    const content: CandidateContent = {
+      candidateId: id,
+      rawNewsItemId: findCandidate(id).rawNewsItemId,
+      captureMode: mode,
+      fetchStatus: 'SUCCESS',
+      preview: '授权正文片段预览：AI 基建投资仍处扩张阶段，算力、电力和数据中心产业链将持续受益。',
+      licensePolicy: mode === 'FULLTEXT' ? 'FULLTEXT_ALLOWED' : 'SNIPPET_ALLOWED',
+      licenseNote: 'Mock 授权说明：仅用于 Admin 本地演示。',
+      fetchedAt,
+      errorMessage: null
+    };
+    localCandidates = localCandidates.map((candidate) =>
+      candidate.id === id ? { ...candidate, content } : candidate
+    );
+    return content;
+  }
+
   return {
     getInitialCandidates: () => localCandidates.map(cloneCandidate),
     listCandidates: async (status) => {
@@ -409,6 +456,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
       return localCandidates.filter((candidate) => candidate.status === status).map(cloneCandidate);
     },
     getCandidate: async (id) => findCandidate(id),
+    fetchCandidateContent: async (id, mode) => fetchCandidateContent(id, mode),
     updateCandidate: async (id, input) => updateCandidate(id, input),
     publishCandidate: async (id) => updateStatus(id, 'PUBLISHED'),
     rejectCandidate: async (id) => updateStatus(id, 'REJECTED'),
@@ -640,6 +688,16 @@ function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): Admin
       const detail = await request<BackendCandidateDetailResponse>(`/api/admin/candidates/${id}`);
       return mapCandidateDetail(detail);
     },
+    fetchCandidateContent: async (id, mode) => {
+      const content = await request<BackendCandidateContentResponse>(
+        `/api/admin/candidates/${id}/content/fetch`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ mode })
+        }
+      );
+      return mapCandidateContent(content);
+    },
     updateCandidate: async (id, input) => {
       const candidate = await request<BackendCandidateResponse>(`/api/admin/candidates/${id}`, {
         method: 'PUT',
@@ -798,6 +856,7 @@ function mapCandidate(candidate: BackendCandidateResponse): AdminCandidate {
     publishedAt: candidate.publishedAt ?? '',
     fetchedAt: candidate.createdAt,
     status: candidate.status,
+    content: null,
     reportAssets: []
   };
 }
@@ -813,7 +872,22 @@ function mapCandidateDetail(detail: BackendCandidateDetailResponse): AdminCandid
     originalUrl: rawItem?.originalUrl || candidate.originalUrl,
     publishedAt: rawItem?.publishedAt ?? candidate.publishedAt,
     fetchedAt: rawItem?.fetchedAt || candidate.fetchedAt,
+    content: detail.content ? mapCandidateContent(detail.content) : candidate.content,
     reportAssets: detail.reportAssets.map(mapReportAsset)
+  };
+}
+
+function mapCandidateContent(content: BackendCandidateContentResponse): CandidateContent {
+  return {
+    candidateId: content.candidateId,
+    rawNewsItemId: content.rawNewsItemId,
+    captureMode: content.captureMode,
+    fetchStatus: content.fetchStatus,
+    preview: content.preview,
+    licensePolicy: content.licensePolicy,
+    licenseNote: content.licenseNote,
+    fetchedAt: content.fetchedAt,
+    errorMessage: content.errorMessage
   };
 }
 
@@ -831,6 +905,7 @@ function cloneCandidate(candidate: AdminCandidate): AdminCandidate {
   return {
     ...candidate,
     tagNames: [...(candidate.tagNames ?? [])],
+    content: candidate.content ? { ...candidate.content } : null,
     reportAssets: candidate.reportAssets.map((asset) => ({ ...asset }))
   };
 }

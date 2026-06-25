@@ -1,6 +1,8 @@
 package com.pulsebrief.admin.service;
 
 import com.pulsebrief.admin.api.AdminCandidateDetailResponse;
+import com.pulsebrief.admin.api.AdminCandidateContentFetchRequest;
+import com.pulsebrief.admin.api.AdminCandidateContentResponse;
 import com.pulsebrief.admin.api.AdminCandidatePublishRequest;
 import com.pulsebrief.admin.api.AdminCandidateRejectRequest;
 import com.pulsebrief.admin.api.AdminCandidateResponse;
@@ -9,9 +11,14 @@ import com.pulsebrief.article.domain.NewsArticle;
 import com.pulsebrief.article.repository.ArticleRepository;
 import com.pulsebrief.common.api.PageResponse;
 import com.pulsebrief.ingestion.domain.CandidateArticle;
+import com.pulsebrief.ingestion.domain.RawNewsContent;
 import com.pulsebrief.ingestion.domain.ReportAsset;
 import com.pulsebrief.ingestion.repository.CandidateArticleRepository;
+import com.pulsebrief.ingestion.repository.RawNewsContentRepository;
 import com.pulsebrief.ingestion.repository.ReportAssetRepository;
+import com.pulsebrief.ingestion.service.ContentFetchMode;
+import com.pulsebrief.ingestion.service.ContentFetchResult;
+import com.pulsebrief.ingestion.service.ContentFetchService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -38,22 +45,28 @@ public class AdminCandidateApplicationService {
 
     private final CandidateArticleRepository candidateArticleRepository;
     private final ReportAssetRepository reportAssetRepository;
+    private final RawNewsContentRepository rawNewsContentRepository;
     private final ArticleRepository articleRepository;
     private final AdminCandidateMapper mapper;
     private final AdminOperationLogService operationLogService;
+    private final ContentFetchService contentFetchService;
 
     public AdminCandidateApplicationService(
             CandidateArticleRepository candidateArticleRepository,
             ReportAssetRepository reportAssetRepository,
+            RawNewsContentRepository rawNewsContentRepository,
             ArticleRepository articleRepository,
             AdminCandidateMapper mapper,
-            AdminOperationLogService operationLogService
+            AdminOperationLogService operationLogService,
+            ContentFetchService contentFetchService
     ) {
         this.candidateArticleRepository = candidateArticleRepository;
         this.reportAssetRepository = reportAssetRepository;
+        this.rawNewsContentRepository = rawNewsContentRepository;
         this.articleRepository = articleRepository;
         this.mapper = mapper;
         this.operationLogService = operationLogService;
+        this.contentFetchService = contentFetchService;
     }
 
     @Transactional(readOnly = true)
@@ -81,9 +94,24 @@ public class AdminCandidateApplicationService {
                 mapper.toCandidateResponse(candidate),
                 mapper.toRawItemResponse(candidate.getRawNewsItem()),
                 reportAssets.stream().map(mapper::toReportAssetResponse).toList(),
+                rawNewsContentRepository
+                        .findTopByRawNewsItem_IdOrderByFetchedAtDesc(candidate.getRawNewsItem().getId())
+                        .map(content -> toContentResponse(candidate.getId(), content))
+                        .orElse(null),
                 List.of(),
                 availableActions(candidate)
         );
+    }
+
+    @Transactional
+    public AdminCandidateContentResponse fetchCandidateContent(
+            Long id,
+            AdminCandidateContentFetchRequest request
+    ) {
+        CandidateArticle candidate = requirePendingCandidate(id);
+        ContentFetchMode mode = ContentFetchMode.valueOf(request.modeOrDefault());
+        ContentFetchResult result = contentFetchService.fetchRawItem(candidate.getRawNewsItem().getId(), mode);
+        return toContentResponse(candidate.getId(), result);
     }
 
     @Transactional
@@ -176,6 +204,41 @@ public class AdminCandidateApplicationService {
             return List.of();
         }
         return List.of("EDIT", "REJECT", "PUBLISH");
+    }
+
+    private AdminCandidateContentResponse toContentResponse(Long candidateId, RawNewsContent content) {
+        return new AdminCandidateContentResponse(
+                candidateId,
+                content.getRawNewsItem().getId(),
+                content.getCaptureMode(),
+                content.getFetchStatus(),
+                preview(content.getContentText()),
+                content.getLicensePolicy(),
+                content.getLicenseNote(),
+                content.getFetchedAt(),
+                content.getErrorMessage()
+        );
+    }
+
+    private AdminCandidateContentResponse toContentResponse(Long candidateId, ContentFetchResult result) {
+        return new AdminCandidateContentResponse(
+                candidateId,
+                result.rawNewsItemId(),
+                result.captureMode(),
+                result.fetchStatus(),
+                result.preview(),
+                result.licensePolicy(),
+                result.licenseNote(),
+                result.fetchedAt(),
+                result.errorMessage()
+        );
+    }
+
+    private String preview(String contentText) {
+        if (contentText == null || contentText.isBlank()) {
+            return null;
+        }
+        return contentText.length() <= 500 ? contentText : contentText.substring(0, 500).trim();
     }
 
     private String blankToDefault(String value, String defaultValue) {

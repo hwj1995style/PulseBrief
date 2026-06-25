@@ -61,6 +61,20 @@ describe('PulseBrief Admin shell', () => {
     expect(within(detail).getByText('算力')).toBeInTheDocument();
   });
 
+  it('fetches authorized content snippet from candidate detail', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(await screen.findByText('高盛：AI 基建投资仍将持续')).toBeInTheDocument();
+    const detail = screen.getByRole('complementary', { name: '候选详情' });
+    expect(within(detail).getByRole('heading', { name: '授权正文' })).toBeInTheDocument();
+
+    await user.click(within(detail).getByRole('button', { name: '抓取正文片段' }));
+
+    expect(await within(detail).findByText('授权正文片段已抓取')).toBeInTheDocument();
+    expect(within(detail).getByText(/授权正文片段预览/)).toBeInTheDocument();
+  });
+
   it('creates and publishes a daily digest from selected articles', async () => {
     const user = userEvent.setup();
     window.location.hash = '#/digests';

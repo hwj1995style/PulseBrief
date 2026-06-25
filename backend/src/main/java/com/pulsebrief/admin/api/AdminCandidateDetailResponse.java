@@ -6,6 +6,7 @@ public record AdminCandidateDetailResponse(
         AdminCandidateResponse candidate,
         AdminRawNewsItemResponse rawItem,
         List<AdminReportAssetResponse> reportAssets,
+        AdminCandidateContentResponse content,
         List<String> duplicateHints,
         List<String> availableActions
 ) {

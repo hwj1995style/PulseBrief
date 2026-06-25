@@ -134,4 +134,8 @@ public class NewsIngestionSource {
     public boolean isFullTextAllowed() {
         return allowFullText != null && allowFullText == 1;
     }
+
+    public String getLicenseNote() {
+        return licenseNote;
+    }
 }

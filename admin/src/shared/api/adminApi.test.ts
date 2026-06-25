@@ -117,6 +117,17 @@ describe('adminApi HTTP client', () => {
               status: 'PENDING_REVIEW'
             }
           ],
+          content: {
+            candidateId: 12,
+            rawNewsItemId: 8,
+            captureMode: 'SNIPPET',
+            fetchStatus: 'SUCCESS',
+            preview: '授权正文片段显示 AI 基建投资仍在扩张。',
+            licensePolicy: 'SNIPPET_ALLOWED',
+            licenseNote: '公开网页允许展示短片段。',
+            fetchedAt: '2026-06-10T08:20:00+08:00',
+            errorMessage: null
+          },
           duplicateHints: [],
           availableActions: ['publish', 'reject']
         },
@@ -139,7 +150,55 @@ describe('adminApi HTTP client', () => {
             fileName: 'ai-infrastructure-outlook.pdf',
             licensePolicy: 'PDF_ALLOWED'
           })
-        ]
+        ],
+        content: expect.objectContaining({
+          captureMode: 'SNIPPET',
+          fetchStatus: 'SUCCESS',
+          preview: '授权正文片段显示 AI 基建投资仍在扩张。',
+          licensePolicy: 'SNIPPET_ALLOWED'
+        })
+      })
+    );
+  });
+
+  it('requests authorized candidate content fetch and maps result', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      await mockFetchResponse({
+        code: 'OK',
+        data: {
+          candidateId: 12,
+          rawNewsItemId: 8,
+          captureMode: 'SNIPPET',
+          fetchStatus: 'SUCCESS',
+          preview: '授权正文片段来自真实网页。',
+          licensePolicy: 'SNIPPET_ALLOWED',
+          licenseNote: '公开网页允许展示短片段。',
+          fetchedAt: '2026-06-10T08:25:00+08:00',
+          errorMessage: null
+        }
+      })
+    );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const content = await client.fetchCandidateContent(12, 'SNIPPET');
+
+    expect(content).toEqual(
+      expect.objectContaining({
+        candidateId: 12,
+        captureMode: 'SNIPPET',
+        fetchStatus: 'SUCCESS',
+        preview: '授权正文片段来自真实网页。'
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/admin/candidates/12/content/fetch',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer dev-admin-token',
+          'Content-Type': 'application/json'
+        }),
+        body: JSON.stringify({ mode: 'SNIPPET' })
       })
     );
   });

@@ -15,6 +15,7 @@ export const mockCandidates: AdminCandidate[] = [
     publishedAt: '2026-06-09 08:40',
     fetchedAt: '2026-06-09 09:00',
     status: 'PENDING_REVIEW',
+    content: null,
     reportAssets: [
       {
         id: 301,
@@ -39,6 +40,7 @@ export const mockCandidates: AdminCandidate[] = [
     publishedAt: '2026-06-09 08:10',
     fetchedAt: '2026-06-09 08:36',
     status: 'PENDING_REVIEW',
+    content: null,
     reportAssets: []
   },
   {
@@ -55,6 +57,7 @@ export const mockCandidates: AdminCandidate[] = [
     publishedAt: '2026-06-09 07:55',
     fetchedAt: '2026-06-09 08:22',
     status: 'REJECTED',
+    content: null,
     reportAssets: []
   }
 ];

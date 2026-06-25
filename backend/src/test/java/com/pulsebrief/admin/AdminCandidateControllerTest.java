@@ -4,9 +4,13 @@ import com.pulsebrief.article.domain.NewsArticle;
 import com.pulsebrief.article.repository.ArticleRepository;
 import com.pulsebrief.article.service.ArticleService;
 import com.pulsebrief.ingestion.domain.CandidateArticle;
+import com.pulsebrief.ingestion.domain.NewsIngestionSource;
 import com.pulsebrief.ingestion.provider.RawNewsPayload;
 import com.pulsebrief.ingestion.repository.CandidateArticleRepository;
+import com.pulsebrief.ingestion.repository.NewsIngestionSourceRepository;
+import com.pulsebrief.ingestion.repository.RawNewsContentRepository;
 import com.pulsebrief.ingestion.service.CandidateArticleGenerationService;
+import com.pulsebrief.ingestion.service.HtmlContentClient;
 import com.pulsebrief.ingestion.service.RawNewsIngestionService;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -15,6 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -43,6 +50,12 @@ class AdminCandidateControllerTest {
 
     @Autowired
     private CandidateArticleRepository candidateArticleRepository;
+
+    @Autowired
+    private NewsIngestionSourceRepository sourceRepository;
+
+    @Autowired
+    private RawNewsContentRepository rawNewsContentRepository;
 
     @Autowired
     private ArticleRepository articleRepository;
@@ -202,10 +215,63 @@ class AdminCandidateControllerTest {
                 .andExpect(status().isConflict());
     }
 
+    @Test
+    void fetchesAuthorizedContentForCandidateAndReturnsItInDetail() throws Exception {
+        CandidateArticle candidate = createPendingCandidate("admin-content-fetch", "SNIPPET_ALLOWED");
+
+        mockMvc.perform(post("/api/admin/candidates/" + candidate.getId() + "/content/fetch")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"mode\":\"SNIPPET\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.fetchStatus").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.captureMode").value("SNIPPET"))
+                .andExpect(jsonPath("$.data.preview").value(org.hamcrest.Matchers.containsString("authorized market context")));
+
+        assertThat(rawNewsContentRepository.findTopByRawNewsItem_IdOrderByFetchedAtDesc(
+                candidate.getRawNewsItem().getId()
+        )).isPresent();
+
+        mockMvc.perform(get("/api/admin/candidates/" + candidate.getId())
+                        .header("Authorization", ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content.fetchStatus").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.content.preview").value(org.hamcrest.Matchers.containsString("authorized market context")));
+    }
+
+    @Test
+    void skipsUnauthorizedContentFetchForCandidate() throws Exception {
+        CandidateArticle candidate = createPendingCandidate("admin-content-skip", "SUMMARY_ONLY");
+
+        mockMvc.perform(post("/api/admin/candidates/" + candidate.getId() + "/content/fetch")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"mode\":\"SNIPPET\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.fetchStatus").value("SKIPPED"))
+                .andExpect(jsonPath("$.data.errorMessage").value(org.hamcrest.Matchers.containsString("not authorized")));
+
+        assertThat(rawNewsContentRepository.findTopByRawNewsItem_IdOrderByFetchedAtDesc(
+                candidate.getRawNewsItem().getId()
+        )).isEmpty();
+    }
+
     private CandidateArticle createPendingCandidate(String prefix) {
+        return createPendingCandidate(prefix, null);
+    }
+
+    private CandidateArticle createPendingCandidate(String prefix, String contentAccessPolicy) {
         String uniquePath = prefix + "-" + UUID.randomUUID();
         String sourceCode = "fixture-" + uniquePath;
         String title = "Admin candidate " + uniquePath;
+        if (contentAccessPolicy != null) {
+            sourceRepository.save(NewsIngestionSource.fixture(
+                    sourceCode,
+                    "Admin candidate source " + uniquePath,
+                    contentAccessPolicy,
+                    24
+            ));
+        }
         ingestionService.ingest(
                 sourceCode,
                 "MANUAL",
@@ -216,7 +282,9 @@ class AdminCandidateControllerTest {
                         "Example Markets",
                         "https://example.com/admin/" + uniquePath,
                         null,
-                        OffsetDateTime.parse("2026-06-09T09:00:00+08:00"),
+                        contentAccessPolicy == null
+                                ? OffsetDateTime.parse("2026-06-09T09:00:00+08:00")
+                                : OffsetDateTime.now().minusHours(2),
                         "en",
                         "US",
                         "{\"id\":\"" + uniquePath + "\"}"
@@ -224,5 +292,23 @@ class AdminCandidateControllerTest {
         );
         candidateGenerationService.generatePendingCandidates(sourceCode, 10);
         return candidateArticleRepository.findByTitle(title).orElseThrow();
+    }
+
+    @TestConfiguration
+    static class FixtureContentClientConfig {
+        @Bean
+        @Primary
+        HtmlContentClient fixtureHtmlContentClient() {
+            return url -> """
+                    <html>
+                      <body>
+                        <article>
+                          <p>Admin authorized market context for candidate review.</p>
+                          <p>Admin authorized policy context for compliance review.</p>
+                        </article>
+                      </body>
+                    </html>
+                    """;
+        }
     }
 }

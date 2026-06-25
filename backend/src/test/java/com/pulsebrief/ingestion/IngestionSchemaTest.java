@@ -19,11 +19,15 @@ class IngestionSchemaTest {
         assertThat(tableExists("raw_news_item")).isTrue();
         assertThat(tableExists("candidate_article")).isTrue();
         assertThat(tableExists("report_asset")).isTrue();
+        assertThat(tableExists("raw_news_content")).isTrue();
         assertThat(columnExists("news_ingestion_source", "content_access_policy")).isTrue();
         assertThat(columnExists("news_ingestion_source", "max_age_hours")).isTrue();
         assertThat(columnExists("news_ingestion_source", "allow_pdf_download")).isTrue();
         assertThat(columnExists("news_ingestion_source", "allow_full_text")).isTrue();
         assertThat(columnExists("news_ingestion_source", "license_note")).isTrue();
+        assertThat(columnExists("raw_news_content", "raw_news_item_id")).isTrue();
+        assertThat(columnExists("raw_news_content", "content_text_hash")).isTrue();
+        assertThat(columnExists("raw_news_content", "fetch_status")).isTrue();
     }
 
     private boolean tableExists(String tableName) {

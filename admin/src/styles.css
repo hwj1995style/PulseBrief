@@ -506,11 +506,32 @@ button {
   font-size: 14px;
 }
 
+.section-heading-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.section-heading-inline h3 {
+  margin: 0;
+}
+
 .detail-section p {
   margin: 0;
   color: #334155;
   font-size: 14px;
   line-height: 1.7;
+}
+
+.content-preview {
+  display: grid;
+  gap: 8px;
+}
+
+.content-preview .detail-meta {
+  margin: 0;
 }
 
 .asset-row {
@@ -566,6 +587,13 @@ button {
 
 .secondary-action.danger {
   color: #c93036;
+}
+
+.secondary-action.compact {
+  min-height: 34px;
+  border-radius: 8px;
+  padding: 0 12px;
+  white-space: nowrap;
 }
 
 .primary-action.compact {
