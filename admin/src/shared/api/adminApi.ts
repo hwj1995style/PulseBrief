@@ -9,7 +9,9 @@ import {
 } from '../../mock/ingestion';
 import type {
   AdminCandidate,
+  AdminCandidatePublishInput,
   AdminCandidateUpdateInput,
+  CandidateAiSummaryTask,
   CandidateContent,
   CandidateContentFetchMode,
   CandidateStatus,
@@ -45,8 +47,10 @@ export interface AdminApiClient {
   cacheCandidateReportAsset: (candidateId: number, assetId: number) => Promise<ReportAsset>;
   approveCandidateReportAsset: (candidateId: number, assetId: number, reviewNote?: string) => Promise<ReportAsset>;
   rejectCandidateReportAsset: (candidateId: number, assetId: number, reviewNote?: string) => Promise<ReportAsset>;
+  generateCandidateAiSummary: (id: number) => Promise<CandidateAiSummaryTask>;
+  applyCandidateAiSummary: (id: number, taskId: number) => Promise<CandidateAiSummaryTask>;
   updateCandidate: (id: number, input: AdminCandidateUpdateInput) => Promise<AdminCandidate>;
-  publishCandidate: (id: number) => Promise<AdminCandidate>;
+  publishCandidate: (id: number, input?: AdminCandidatePublishInput) => Promise<AdminCandidate>;
   rejectCandidate: (id: number, reviewNote?: string) => Promise<AdminCandidate>;
   getInitialDigests: () => AdminDigest[];
   listDigests: (status?: AdminDigestStatus | 'ALL') => Promise<AdminDigest[]>;
@@ -141,11 +145,30 @@ interface BackendCandidateContentResponse {
   errorMessage: string | null;
 }
 
+interface BackendAiSummaryTaskResponse {
+  id: number;
+  status: string;
+  inputSourceType: string;
+  inputRefId: number | null;
+  inputPreview: string | null;
+  providerType: string;
+  modelName: string;
+  promptVersion: string;
+  generatedSummary: string | null;
+  generatedKeyPoints: string[];
+  generatedImpactAnalysis: string | null;
+  errorMessage: string | null;
+  requestedBy: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+}
+
 interface BackendCandidateDetailResponse {
   candidate: BackendCandidateResponse;
   rawItem: BackendRawNewsItemResponse | null;
   reportAssets: BackendReportAssetResponse[];
   content: BackendCandidateContentResponse | null;
+  aiSummaryTask: BackendAiSummaryTaskResponse | null;
   duplicateHints: string[];
   availableActions: string[];
 }
@@ -335,12 +358,20 @@ export function rejectCandidateReportAsset(
   return defaultClient.rejectCandidateReportAsset(candidateId, assetId, reviewNote);
 }
 
+export function generateCandidateAiSummary(id: number): Promise<CandidateAiSummaryTask> {
+  return defaultClient.generateCandidateAiSummary(id);
+}
+
+export function applyCandidateAiSummary(id: number, taskId: number): Promise<CandidateAiSummaryTask> {
+  return defaultClient.applyCandidateAiSummary(id, taskId);
+}
+
 export function updateCandidate(id: number, input: AdminCandidateUpdateInput): Promise<AdminCandidate> {
   return defaultClient.updateCandidate(id, input);
 }
 
-export function publishCandidate(id: number): Promise<AdminCandidate> {
-  return defaultClient.publishCandidate(id);
+export function publishCandidate(id: number, input?: AdminCandidatePublishInput): Promise<AdminCandidate> {
+  return defaultClient.publishCandidate(id, input);
 }
 
 export function rejectCandidate(id: number, reviewNote?: string): Promise<AdminCandidate> {
@@ -419,6 +450,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
   let localIngestionAnomalies = mockIngestionAnomalies.map(cloneIngestionAnomaly);
   let localOperationLogs = mockOperationLogs.map(cloneOperationLog);
   let nextDigestId = 900;
+  let nextAiSummaryTaskId = 1000;
 
   function resetMockData() {
     localCandidates = mockCandidates.map(cloneCandidate);
@@ -429,6 +461,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
     localIngestionAnomalies = mockIngestionAnomalies.map(cloneIngestionAnomaly);
     localOperationLogs = mockOperationLogs.map(cloneOperationLog);
     nextDigestId = 900;
+    nextAiSummaryTaskId = 1000;
   }
 
   function findCandidate(id: number) {
@@ -476,6 +509,57 @@ function createMockAdminApiClient(): MutableAdminApiClient {
       candidate.id === id ? { ...candidate, content } : candidate
     );
     return content;
+  }
+
+  function generateCandidateAiSummary(id: number) {
+    const candidate = findCandidate(id);
+    const now = new Date().toISOString();
+    const inputSourceType = candidate.content?.fetchStatus === 'SUCCESS' ? 'CONTENT_SNIPPET' : 'RSS_SUMMARY';
+    const task: CandidateAiSummaryTask = {
+      id: nextAiSummaryTaskId++,
+      status: 'SUCCESS',
+      inputSourceType,
+      inputRefId: candidate.content?.fetchStatus === 'SUCCESS' ? candidate.content.rawNewsItemId : null,
+      inputPreview: candidate.content?.preview ?? candidate.summary,
+      providerType: 'MOCK',
+      modelName: 'mock-v1',
+      promptVersion: 'candidate-summary-v1',
+      generatedSummary: `Mock AI 摘要：${candidate.title}。基于已授权输入生成，发布前需人工审核。`,
+      generatedKeyPoints: [
+        'Mock AI 要点：核对来源、时间和授权边界。',
+        'Mock AI 要点：保留人工编辑空间，避免自动发布。',
+        'Mock AI 要点：关注事实完整性和措辞合规性。'
+      ],
+      generatedImpactAnalysis: 'Mock AI 影响分析：该草稿仅用于 Admin 审核，发布前需确认摘要、要点和可能影响。',
+      errorMessage: null,
+      requestedBy: 'dev-admin',
+      startedAt: now,
+      finishedAt: now
+    };
+    localCandidates = localCandidates.map((item) =>
+      item.id === id ? { ...item, aiSummaryTask: task } : item
+    );
+    return cloneAiSummaryTask(task);
+  }
+
+  function applyCandidateAiSummary(id: number, taskId: number) {
+    const candidate = findCandidate(id);
+    const task = candidate.aiSummaryTask;
+    if (!task || task.id !== taskId || task.status !== 'SUCCESS') {
+      throw new Error('AI summary task is not ready');
+    }
+    localCandidates = localCandidates.map((item) =>
+      item.id === id
+        ? {
+            ...item,
+            aiSummary: task.generatedSummary ?? item.aiSummary,
+            keyPoints: [...task.generatedKeyPoints],
+            impactAnalysis: task.generatedImpactAnalysis ?? item.impactAnalysis,
+            aiSummaryTask: task
+          }
+        : item
+    );
+    return cloneAiSummaryTask(task);
   }
 
   function updateReportAsset(
@@ -541,10 +625,26 @@ function createMockAdminApiClient(): MutableAdminApiClient {
         status: 'REJECTED',
         reviewNote: reviewNote ?? null,
         reviewedAt: new Date().toISOString(),
-        reviewedBy: 'dev-admin'
+          reviewedBy: 'dev-admin'
       })),
+    generateCandidateAiSummary: async (id) => generateCandidateAiSummary(id),
+    applyCandidateAiSummary: async (id, taskId) => applyCandidateAiSummary(id, taskId),
     updateCandidate: async (id, input) => updateCandidate(id, input),
-    publishCandidate: async (id) => updateStatus(id, 'PUBLISHED'),
+    publishCandidate: async (id, input) => {
+      if (input) {
+        localCandidates = localCandidates.map((candidate) =>
+          candidate.id === id
+            ? {
+                ...candidate,
+                aiSummary: input.aiSummary ?? candidate.aiSummary,
+                keyPoints: input.keyPoints ?? candidate.keyPoints,
+                impactAnalysis: input.impactAnalysis ?? candidate.impactAnalysis
+              }
+            : candidate
+        );
+      }
+      return updateStatus(id, 'PUBLISHED');
+    },
     rejectCandidate: async (id) => updateStatus(id, 'REJECTED'),
     getInitialDigests: () => localDigests.map(cloneDigest),
     listDigests: async (status) => {
@@ -813,6 +913,29 @@ function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): Admin
       );
       return mapReportAsset(asset);
     },
+    generateCandidateAiSummary: async (id) => {
+      const task = await request<BackendAiSummaryTaskResponse>(
+        `/api/admin/candidates/${id}/ai-summary/generate`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            inputSourceType: 'AUTO',
+            providerType: 'MOCK',
+            promptVersion: 'candidate-summary-v1'
+          })
+        }
+      );
+      return mapAiSummaryTask(task);
+    },
+    applyCandidateAiSummary: async (id, taskId) => {
+      const task = await request<BackendAiSummaryTaskResponse>(
+        `/api/admin/candidates/${id}/ai-summary/${taskId}/apply`,
+        {
+          method: 'POST'
+        }
+      );
+      return mapAiSummaryTask(task);
+    },
     updateCandidate: async (id, input) => {
       const candidate = await request<BackendCandidateResponse>(`/api/admin/candidates/${id}`, {
         method: 'PUT',
@@ -820,10 +943,10 @@ function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): Admin
       });
       return mapCandidate(candidate);
     },
-    publishCandidate: async (id) => {
+    publishCandidate: async (id, input = {}) => {
       const candidate = await request<BackendCandidateResponse>(`/api/admin/candidates/${id}/publish`, {
         method: 'POST',
-        body: JSON.stringify({ publishNow: true })
+        body: JSON.stringify({ publishNow: true, ...input })
       });
       return mapCandidate(candidate);
     },
@@ -963,6 +1086,8 @@ function mapCandidate(candidate: BackendCandidateResponse): AdminCandidate {
     title: candidate.title,
     summary: candidate.summary,
     aiSummary: candidate.summary,
+    keyPoints: [],
+    impactAnalysis: '',
     categoryCode: candidate.categoryCode,
     categoryName: categoryNameByCode[candidate.categoryCode] ?? candidate.categoryCode,
     sourceName: candidate.sourceName,
@@ -972,6 +1097,7 @@ function mapCandidate(candidate: BackendCandidateResponse): AdminCandidate {
     fetchedAt: candidate.createdAt,
     status: candidate.status,
     content: null,
+    aiSummaryTask: null,
     reportAssets: []
   };
 }
@@ -988,6 +1114,7 @@ function mapCandidateDetail(detail: BackendCandidateDetailResponse): AdminCandid
     publishedAt: rawItem?.publishedAt ?? candidate.publishedAt,
     fetchedAt: rawItem?.fetchedAt || candidate.fetchedAt,
     content: detail.content ? mapCandidateContent(detail.content) : candidate.content,
+    aiSummaryTask: detail.aiSummaryTask ? mapAiSummaryTask(detail.aiSummaryTask) : null,
     reportAssets: detail.reportAssets.map(mapReportAsset)
   };
 }
@@ -1027,12 +1154,41 @@ function mapReportAsset(asset: BackendReportAssetResponse): ReportAsset {
   };
 }
 
+function mapAiSummaryTask(task: BackendAiSummaryTaskResponse): CandidateAiSummaryTask {
+  return {
+    id: task.id,
+    status: task.status,
+    inputSourceType: task.inputSourceType,
+    inputRefId: task.inputRefId,
+    inputPreview: task.inputPreview,
+    providerType: task.providerType,
+    modelName: task.modelName,
+    promptVersion: task.promptVersion,
+    generatedSummary: task.generatedSummary,
+    generatedKeyPoints: task.generatedKeyPoints ?? [],
+    generatedImpactAnalysis: task.generatedImpactAnalysis,
+    errorMessage: task.errorMessage,
+    requestedBy: task.requestedBy,
+    startedAt: task.startedAt,
+    finishedAt: task.finishedAt
+  };
+}
+
 function cloneCandidate(candidate: AdminCandidate): AdminCandidate {
   return {
     ...candidate,
     tagNames: [...(candidate.tagNames ?? [])],
+    keyPoints: [...(candidate.keyPoints ?? [])],
     content: candidate.content ? { ...candidate.content } : null,
+    aiSummaryTask: candidate.aiSummaryTask ? cloneAiSummaryTask(candidate.aiSummaryTask) : null,
     reportAssets: candidate.reportAssets.map((asset) => ({ ...asset }))
+  };
+}
+
+function cloneAiSummaryTask(task: CandidateAiSummaryTask): CandidateAiSummaryTask {
+  return {
+    ...task,
+    generatedKeyPoints: [...task.generatedKeyPoints]
   };
 }
 

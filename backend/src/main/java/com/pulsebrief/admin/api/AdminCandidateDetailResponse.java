@@ -7,6 +7,7 @@ public record AdminCandidateDetailResponse(
         AdminRawNewsItemResponse rawItem,
         List<AdminReportAssetResponse> reportAssets,
         AdminCandidateContentResponse content,
+        AdminAiSummaryTaskResponse aiSummaryTask,
         List<String> duplicateHints,
         List<String> availableActions
 ) {

@@ -1,6 +1,8 @@
 package com.pulsebrief.admin.service;
 
 import com.pulsebrief.admin.api.AdminCandidateDetailResponse;
+import com.pulsebrief.admin.api.AdminAiSummaryGenerateRequest;
+import com.pulsebrief.admin.api.AdminAiSummaryTaskResponse;
 import com.pulsebrief.admin.api.AdminCandidateContentFetchRequest;
 import com.pulsebrief.admin.api.AdminCandidateContentResponse;
 import com.pulsebrief.admin.api.AdminCandidatePublishRequest;
@@ -13,6 +15,7 @@ import com.pulsebrief.article.domain.NewsArticle;
 import com.pulsebrief.article.repository.ArticleRepository;
 import com.pulsebrief.common.api.PageResponse;
 import com.pulsebrief.ingestion.domain.CandidateArticle;
+import com.pulsebrief.ingestion.domain.AiSummaryTask;
 import com.pulsebrief.ingestion.domain.RawNewsContent;
 import com.pulsebrief.ingestion.domain.ReportAsset;
 import com.pulsebrief.ingestion.repository.CandidateArticleRepository;
@@ -22,6 +25,7 @@ import com.pulsebrief.ingestion.service.ContentFetchMode;
 import com.pulsebrief.ingestion.service.ContentFetchResult;
 import com.pulsebrief.ingestion.service.ContentFetchService;
 import com.pulsebrief.ingestion.service.PdfAssetCacheService;
+import com.pulsebrief.ingestion.service.AiSummaryTaskService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -54,6 +58,7 @@ public class AdminCandidateApplicationService {
     private final AdminOperationLogService operationLogService;
     private final ContentFetchService contentFetchService;
     private final PdfAssetCacheService pdfAssetCacheService;
+    private final AiSummaryTaskService aiSummaryTaskService;
 
     public AdminCandidateApplicationService(
             CandidateArticleRepository candidateArticleRepository,
@@ -63,7 +68,8 @@ public class AdminCandidateApplicationService {
             AdminCandidateMapper mapper,
             AdminOperationLogService operationLogService,
             ContentFetchService contentFetchService,
-            PdfAssetCacheService pdfAssetCacheService
+            PdfAssetCacheService pdfAssetCacheService,
+            AiSummaryTaskService aiSummaryTaskService
     ) {
         this.candidateArticleRepository = candidateArticleRepository;
         this.reportAssetRepository = reportAssetRepository;
@@ -73,6 +79,7 @@ public class AdminCandidateApplicationService {
         this.operationLogService = operationLogService;
         this.contentFetchService = contentFetchService;
         this.pdfAssetCacheService = pdfAssetCacheService;
+        this.aiSummaryTaskService = aiSummaryTaskService;
     }
 
     @Transactional(readOnly = true)
@@ -104,6 +111,7 @@ public class AdminCandidateApplicationService {
                         .findTopByRawNewsItem_IdOrderByFetchedAtDesc(candidate.getRawNewsItem().getId())
                         .map(content -> toContentResponse(candidate.getId(), content))
                         .orElse(null),
+                mapper.toAiSummaryTaskResponse(aiSummaryTaskService.latestTask(id)),
                 List.of(),
                 availableActions(candidate)
         );
@@ -118,6 +126,25 @@ public class AdminCandidateApplicationService {
         ContentFetchMode mode = ContentFetchMode.valueOf(request.modeOrDefault());
         ContentFetchResult result = contentFetchService.fetchRawItem(candidate.getRawNewsItem().getId(), mode);
         return toContentResponse(candidate.getId(), result);
+    }
+
+    @Transactional
+    public AdminAiSummaryTaskResponse generateAiSummary(
+            Long id,
+            AdminAiSummaryGenerateRequest request
+    ) {
+        AiSummaryTask task = aiSummaryTaskService.generate(
+                id,
+                request.inputSourceType(),
+                request.providerType(),
+                request.promptVersion()
+        );
+        return mapper.toAiSummaryTaskResponse(task);
+    }
+
+    @Transactional(readOnly = true)
+    public AdminAiSummaryTaskResponse applyAiSummary(Long id, Long taskId) {
+        return mapper.toAiSummaryTaskResponse(aiSummaryTaskService.apply(id, taskId));
     }
 
     @Transactional

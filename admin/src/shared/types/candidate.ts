@@ -32,12 +32,32 @@ export interface CandidateContent {
   errorMessage: string | null;
 }
 
+export interface CandidateAiSummaryTask {
+  id: number;
+  status: string;
+  inputSourceType: string;
+  inputRefId: number | null;
+  inputPreview: string | null;
+  providerType: string;
+  modelName: string;
+  promptVersion: string;
+  generatedSummary: string | null;
+  generatedKeyPoints: string[];
+  generatedImpactAnalysis: string | null;
+  errorMessage: string | null;
+  requestedBy: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+}
+
 export interface AdminCandidate {
   id: number;
   rawNewsItemId: number;
   title: string;
   summary: string;
   aiSummary: string;
+  keyPoints: string[];
+  impactAnalysis: string;
   categoryCode: string;
   categoryName: string;
   sourceName: string;
@@ -47,6 +67,7 @@ export interface AdminCandidate {
   fetchedAt: string;
   status: CandidateStatus;
   content: CandidateContent | null;
+  aiSummaryTask: CandidateAiSummaryTask | null;
   reportAssets: ReportAsset[];
 }
 
@@ -56,4 +77,14 @@ export interface AdminCandidateUpdateInput {
   categoryCode: string;
   sourceName: string;
   tagNames: string[];
+}
+
+export interface AdminCandidatePublishInput {
+  title?: string;
+  summary?: string;
+  aiSummary?: string;
+  keyPoints?: string[];
+  impactAnalysis?: string;
+  categoryCode?: string;
+  publishNow?: boolean;
 }

@@ -1,0 +1,31 @@
+CREATE TABLE ai_summary_task (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT 'AI摘要任务ID',
+    candidate_article_id BIGINT NOT NULL COMMENT '候选资讯ID',
+    raw_news_item_id BIGINT NOT NULL COMMENT '原始资讯ID',
+    input_source_type VARCHAR(32) NOT NULL COMMENT '输入来源类型：RSS_SUMMARY/CONTENT_SNIPPET/CONTENT_FULLTEXT/PDF_TEXT/MANUAL_NOTE',
+    input_ref_id BIGINT COMMENT '输入记录ID，RSS摘要为空',
+    input_hash VARCHAR(64) NOT NULL COMMENT '输入文本SHA-256哈希',
+    input_preview VARCHAR(1000) COMMENT '输入预览，便于Admin审核',
+    provider_type VARCHAR(32) NOT NULL COMMENT 'AI Provider类型：MOCK/OPENAI/OTHER',
+    model_name VARCHAR(128) NOT NULL COMMENT '模型名称',
+    prompt_version VARCHAR(64) NOT NULL COMMENT 'Prompt模板版本',
+    task_status VARCHAR(32) NOT NULL COMMENT '任务状态：PENDING/RUNNING/SUCCESS/FAILED/SKIPPED/CANCELLED',
+    generated_summary TEXT COMMENT 'AI摘要草稿',
+    generated_key_points TEXT COMMENT 'AI要点草稿，换行文本',
+    generated_impact_analysis TEXT COMMENT 'AI可能影响草稿',
+    token_prompt_count INT COMMENT '输入Token数量',
+    token_completion_count INT COMMENT '输出Token数量',
+    error_message VARCHAR(1000) COMMENT '失败或跳过原因',
+    requested_by VARCHAR(64) COMMENT '触发人',
+    started_at DATETIME COMMENT '任务开始时间',
+    finished_at DATETIME COMMENT '任务完成时间',
+    created_at DATETIME NOT NULL COMMENT '创建时间',
+    updated_at DATETIME NOT NULL COMMENT '更新时间',
+    KEY idx_ai_summary_task_candidate_created (candidate_article_id, created_at),
+    KEY idx_ai_summary_task_raw_news_item (raw_news_item_id),
+    KEY idx_ai_summary_task_status (task_status),
+    CONSTRAINT fk_ai_summary_task_candidate
+        FOREIGN KEY (candidate_article_id) REFERENCES candidate_article(id),
+    CONSTRAINT fk_ai_summary_task_raw_news_item
+        FOREIGN KEY (raw_news_item_id) REFERENCES raw_news_item(id)
+) COMMENT='AI摘要任务表';

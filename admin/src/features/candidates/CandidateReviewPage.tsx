@@ -1,9 +1,11 @@
-import { CheckCircle2, Download, ExternalLink, FileText, RefreshCw, Save, Search, XCircle } from 'lucide-react';
+import { CheckCircle2, Download, ExternalLink, FileText, RefreshCw, Save, Search, Sparkles, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  applyCandidateAiSummary,
   approveCandidateReportAsset,
   cacheCandidateReportAsset,
   fetchCandidateContent,
+  generateCandidateAiSummary,
   getCandidate,
   getInitialCandidates,
   listCandidates,
@@ -40,6 +42,7 @@ export function CandidateReviewPage() {
   const [isLoading, setIsLoading] = useState(() => getInitialCandidates().length === 0);
   const [actionLoading, setActionLoading] = useState(false);
   const [contentLoading, setContentLoading] = useState(false);
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
   const [assetActionLoading, setAssetActionLoading] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -117,7 +120,15 @@ export function CandidateReviewPage() {
     try {
       const updated =
         status === 'PUBLISHED'
-          ? await publishCandidate(selectedCandidate.id)
+          ? await publishCandidate(selectedCandidate.id, {
+              title: draftTitle.trim(),
+              summary: draftSummary.trim(),
+              aiSummary: selectedCandidate.aiSummary,
+              keyPoints: selectedCandidate.keyPoints,
+              impactAnalysis: selectedCandidate.impactAnalysis,
+              categoryCode: draftCategoryCode,
+              publishNow: true
+            })
           : await rejectCandidate(selectedCandidate.id, '运营后台审核拒绝');
       setCandidates((items) => items.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));
       setSelectedId(updated.id);
@@ -204,6 +215,56 @@ export function CandidateReviewPage() {
       setErrorMessage(error instanceof Error ? error.message : '正文片段抓取失败，请检查授权配置。');
     } finally {
       setContentLoading(false);
+    }
+  }
+
+  async function generateAiSummaryDraft() {
+    if (!selectedCandidate) {
+      return;
+    }
+    setAiSummaryLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+    try {
+      const task = await generateCandidateAiSummary(selectedCandidate.id);
+      setCandidates((items) =>
+        items.map((item) => (item.id === selectedCandidate.id ? { ...item, aiSummaryTask: task } : item))
+      );
+      setSuccessMessage(task.status === 'SUCCESS' ? 'AI 摘要已生成' : 'AI 摘要任务已记录');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'AI 摘要生成失败，请稍后重试。');
+    } finally {
+      setAiSummaryLoading(false);
+    }
+  }
+
+  async function applyAiSummaryDraft() {
+    if (!selectedCandidate?.aiSummaryTask) {
+      return;
+    }
+    setAiSummaryLoading(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+    try {
+      const task = await applyCandidateAiSummary(selectedCandidate.id, selectedCandidate.aiSummaryTask.id);
+      setCandidates((items) =>
+        items.map((item) =>
+          item.id === selectedCandidate.id
+            ? {
+                ...item,
+                aiSummary: task.generatedSummary ?? item.aiSummary,
+                keyPoints: [...task.generatedKeyPoints],
+                impactAnalysis: task.generatedImpactAnalysis ?? item.impactAnalysis,
+                aiSummaryTask: task
+              }
+            : item
+        )
+      );
+      setSuccessMessage('AI 摘要草稿已采用');
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'AI 摘要草稿采用失败，请稍后重试。');
+    } finally {
+      setAiSummaryLoading(false);
     }
   }
 
@@ -435,8 +496,57 @@ export function CandidateReviewPage() {
             </section>
 
             <section className="detail-section">
-              <h3>AI 摘要草稿</h3>
-              <p>{selectedCandidate.aiSummary}</p>
+              <div className="section-heading-inline">
+                <h3>AI 摘要草稿</h3>
+                <button
+                  className="secondary-action compact"
+                  disabled={selectedCandidate.status !== 'PENDING_REVIEW' || aiSummaryLoading}
+                  onClick={generateAiSummaryDraft}
+                  type="button"
+                >
+                  <Sparkles size={18} />
+                  {selectedCandidate.aiSummaryTask ? '重新生成' : aiSummaryLoading ? '生成中...' : '生成 AI 摘要'}
+                </button>
+              </div>
+              {selectedCandidate.aiSummaryTask ? (
+                <div className="content-preview">
+                  <p className="detail-meta">
+                    {selectedCandidate.aiSummaryTask.status} · {selectedCandidate.aiSummaryTask.inputSourceType}
+                    {' · '}
+                    {selectedCandidate.aiSummaryTask.providerType}/{selectedCandidate.aiSummaryTask.modelName}
+                    {selectedCandidate.aiSummaryTask.finishedAt ? ` · ${selectedCandidate.aiSummaryTask.finishedAt}` : ''}
+                  </p>
+                  {selectedCandidate.aiSummaryTask.generatedSummary ? (
+                    <p>{selectedCandidate.aiSummaryTask.generatedSummary}</p>
+                  ) : null}
+                  {selectedCandidate.aiSummaryTask.generatedKeyPoints.length > 0 ? (
+                    <ul className="compact-list">
+                      {selectedCandidate.aiSummaryTask.generatedKeyPoints.map((point) => (
+                        <li key={point}>{point}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {selectedCandidate.aiSummaryTask.errorMessage ? (
+                    <p className="inline-error">{selectedCandidate.aiSummaryTask.errorMessage}</p>
+                  ) : null}
+                  <button
+                    className="secondary-action compact"
+                    disabled={
+                      selectedCandidate.status !== 'PENDING_REVIEW'
+                      || aiSummaryLoading
+                      || selectedCandidate.aiSummaryTask.status !== 'SUCCESS'
+                    }
+                    onClick={applyAiSummaryDraft}
+                    type="button"
+                  >
+                    <CheckCircle2 size={16} />
+                    采用草稿
+                  </button>
+                </div>
+              ) : (
+                <p>{selectedCandidate.aiSummary}</p>
+              )}
+              {selectedCandidate.impactAnalysis ? <p>{selectedCandidate.impactAnalysis}</p> : null}
             </section>
 
             <section className="detail-section">

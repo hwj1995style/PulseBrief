@@ -136,6 +136,23 @@ describe('adminApi HTTP client', () => {
             fetchedAt: '2026-06-10T08:20:00+08:00',
             errorMessage: null
           },
+          aiSummaryTask: {
+            id: 701,
+            status: 'SUCCESS',
+            inputSourceType: 'CONTENT_SNIPPET',
+            inputRefId: 33,
+            inputPreview: '授权正文片段显示 AI 基建投资仍在扩张。',
+            providerType: 'MOCK',
+            modelName: 'mock-v1',
+            promptVersion: 'candidate-summary-v1',
+            generatedSummary: 'Mock AI 摘要：高盛认为 AI 基建投资仍在扩张。',
+            generatedKeyPoints: ['Mock AI 要点：关注算力。', 'Mock AI 要点：关注电力。'],
+            generatedImpactAnalysis: 'Mock AI 影响分析：发布前需人工审核。',
+            errorMessage: null,
+            requestedBy: 'dev-admin',
+            startedAt: '2026-06-10T08:21:00+08:00',
+            finishedAt: '2026-06-10T08:22:00+08:00'
+          },
           duplicateHints: [],
           availableActions: ['publish', 'reject']
         },
@@ -174,6 +191,98 @@ describe('adminApi HTTP client', () => {
           fetchStatus: 'SUCCESS',
           preview: '授权正文片段显示 AI 基建投资仍在扩张。',
           licensePolicy: 'SNIPPET_ALLOWED'
+        }),
+        aiSummaryTask: expect.objectContaining({
+          id: 701,
+          status: 'SUCCESS',
+          inputSourceType: 'CONTENT_SNIPPET',
+          providerType: 'MOCK',
+          generatedSummary: 'Mock AI 摘要：高盛认为 AI 基建投资仍在扩张。',
+          generatedKeyPoints: ['Mock AI 要点：关注算力。', 'Mock AI 要点：关注电力。'],
+          generatedImpactAnalysis: 'Mock AI 影响分析：发布前需人工审核。'
+        })
+      })
+    );
+  });
+
+  it('uses AI summary generate and apply endpoints before publishing adopted draft', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    const taskResponse = {
+      id: 801,
+      status: 'SUCCESS',
+      inputSourceType: 'RSS_SUMMARY',
+      inputRefId: null,
+      inputPreview: '市场重新评估 AI 基建投资节奏。',
+      providerType: 'MOCK',
+      modelName: 'mock-v1',
+      promptVersion: 'candidate-summary-v1',
+      generatedSummary: 'Mock AI 摘要：市场重新评估 AI 基建投资节奏。',
+      generatedKeyPoints: ['Mock AI 要点：关注算力投资。'],
+      generatedImpactAnalysis: 'Mock AI 影响分析：需人工审核后发布。',
+      errorMessage: null,
+      requestedBy: 'dev-admin',
+      startedAt: '2026-06-10T08:21:00+08:00',
+      finishedAt: '2026-06-10T08:22:00+08:00'
+    };
+    fetchMock
+      .mockResolvedValueOnce(await mockFetchResponse({ code: 'OK', data: taskResponse }))
+      .mockResolvedValueOnce(await mockFetchResponse({ code: 'OK', data: taskResponse }))
+      .mockResolvedValueOnce(
+        await mockFetchResponse({
+          code: 'OK',
+          data: {
+            id: 12,
+            rawNewsItemId: 8,
+            title: '高盛：AI 基建投资仍将持续',
+            summary: '来源摘要。',
+            categoryCode: 'investment_view',
+            sourceName: 'Goldman Sachs Research',
+            originalUrl: 'https://example.com/goldman',
+            publishedAt: '2026-06-10T08:00:00+08:00',
+            status: 'PUBLISHED',
+            createdAt: '2026-06-10T08:40:00+08:00',
+            publishedArticleId: 55,
+            reviewNote: null
+          }
+        })
+      );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const generated = await client.generateCandidateAiSummary(12);
+    const applied = await client.applyCandidateAiSummary(12, generated.id);
+    await client.publishCandidate(12, {
+      aiSummary: applied.generatedSummary ?? '',
+      keyPoints: applied.generatedKeyPoints,
+      impactAnalysis: applied.generatedImpactAnalysis ?? ''
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:8080/api/admin/candidates/12/ai-summary/generate',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          inputSourceType: 'AUTO',
+          providerType: 'MOCK',
+          promptVersion: 'candidate-summary-v1'
+        })
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8080/api/admin/candidates/12/ai-summary/801/apply',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:8080/api/admin/candidates/12/publish',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          publishNow: true,
+          aiSummary: 'Mock AI 摘要：市场重新评估 AI 基建投资节奏。',
+          keyPoints: ['Mock AI 要点：关注算力投资。'],
+          impactAnalysis: 'Mock AI 影响分析：需人工审核后发布。'
         })
       })
     );

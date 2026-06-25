@@ -334,6 +334,7 @@ Admin 测试：
 ```powershell
 cd backend
 .\mvnw.cmd "-Dtest=PdfAssetCacheServiceTest,AdminCandidateReportAssetControllerTest,IngestionSchemaTest" test
+.\mvnw.cmd "-Dtest=PdfAssetCacheLiveSmokeTest" test
 .\mvnw.cmd test
 
 cd ..\admin
@@ -351,6 +352,24 @@ npm run build
 4. smoke 使用临时或本地开发存储目录。
 5. smoke 记录 source、candidate、asset、文件大小、哈希、MIME 和状态。
 6. 不提交 PDF 文件、缓存目录、数据库 dump、真实网页快照或本地密钥。
+
+阶段 26 真实公开 PDF smoke 记录：
+
+1. 时间：2026-06-25 11:24:49 +08:00。
+2. 来源：美国 IRS 官方公开 PDF `https://www.irs.gov/pub/irs-pdf/fw4.pdf`，无需登录，`Content-Type=application/pdf`，`Content-Length=208845`。
+3. 命令：
+
+```powershell
+cd backend
+$env:PULSEBRIEF_PDF_LIVE_TEST_ENABLED='true'
+$env:PULSEBRIEF_PDF_LIVE_TEST_URL='https://www.irs.gov/pub/irs-pdf/fw4.pdf'
+.\mvnw.cmd "-Dtest=PdfAssetCacheLiveSmokeTest" test
+```
+
+4. 结果：`Tests run: 1, Failures: 0, Errors: 0, Skipped: 0`。
+5. 后端记录：`source=live-pdf-smoke-c6f362bb-4858-4a09-9407-4ae4059b1986`，`candidateId=324`，`assetId=73`，`fileId=3`，`status=SUCCESS`。
+6. 文件记录：`bytes=208845`，`mime=application/pdf`，`fileHash=92444d8856ce55d9e25dca8b6d1420634fc68b11e1ab1f760916ea29ddd312b2`。
+7. 缓存目录：`backend/target/live-pdf-cache`，不提交 PDF 文件或缓存目录。
 
 CI 规则：
 

@@ -231,6 +231,7 @@ class AdminIngestionControllerTest {
 
     @Test
     void returnsRawNewsQualityAnomaliesForAdmin() throws Exception {
+        jdbcTemplate.update("delete from raw_news_item where source_code like 'quality-%'");
         String suffix = UUID.randomUUID().toString();
         LocalDateTime databaseNow = databaseNow();
         insertRawNewsItem(

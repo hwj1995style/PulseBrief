@@ -8,6 +8,7 @@ import com.pulsebrief.ingestion.domain.NewsIngestionSource;
 import com.pulsebrief.ingestion.domain.ReportAsset;
 import com.pulsebrief.ingestion.provider.RawNewsPayload;
 import com.pulsebrief.ingestion.repository.CandidateArticleRepository;
+import com.pulsebrief.ingestion.repository.AiSummaryTaskRepository;
 import com.pulsebrief.ingestion.repository.NewsIngestionSourceRepository;
 import com.pulsebrief.ingestion.repository.RawNewsContentRepository;
 import com.pulsebrief.ingestion.service.CandidateArticleGenerationService;
@@ -58,6 +59,9 @@ class AdminCandidateControllerTest {
 
     @Autowired
     private CandidateArticleRepository candidateArticleRepository;
+
+    @Autowired
+    private AiSummaryTaskRepository aiSummaryTaskRepository;
 
     @Autowired
     private NewsIngestionSourceRepository sourceRepository;
@@ -265,6 +269,61 @@ class AdminCandidateControllerTest {
         assertThat(rawNewsContentRepository.findTopByRawNewsItem_IdOrderByFetchedAtDesc(
                 candidate.getRawNewsItem().getId()
         )).isEmpty();
+    }
+
+    @Test
+    void generatesAiSummaryTaskAndReturnsLatestInCandidateDetail() throws Exception {
+        CandidateArticle candidate = createPendingCandidate("admin-ai-summary", "SUMMARY_ONLY");
+
+        mockMvc.perform(post("/api/admin/candidates/" + candidate.getId() + "/ai-summary/generate")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "inputSourceType": "AUTO",
+                                  "providerType": "MOCK",
+                                  "promptVersion": "candidate-summary-v1"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.inputSourceType").value("RSS_SUMMARY"))
+                .andExpect(jsonPath("$.data.providerType").value("MOCK"))
+                .andExpect(jsonPath("$.data.modelName").value("mock-v1"))
+                .andExpect(jsonPath("$.data.generatedSummary").value(org.hamcrest.Matchers.containsString(candidate.getTitle())))
+                .andExpect(jsonPath("$.data.generatedKeyPoints[0]").value(org.hamcrest.Matchers.containsString("Mock AI")));
+
+        mockMvc.perform(get("/api/admin/candidates/" + candidate.getId())
+                        .header("Authorization", ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.aiSummaryTask.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.aiSummaryTask.providerType").value("MOCK"))
+                .andExpect(jsonPath("$.data.aiSummaryTask.generatedSummary")
+                        .value(org.hamcrest.Matchers.containsString(candidate.getTitle())));
+    }
+
+    @Test
+    void appliesSuccessfulAiSummaryTaskForAdminDraft() throws Exception {
+        CandidateArticle candidate = createPendingCandidate("admin-ai-apply", "SUMMARY_ONLY");
+
+        mockMvc.perform(post("/api/admin/candidates/" + candidate.getId() + "/ai-summary/generate")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"inputSourceType\":\"AUTO\",\"providerType\":\"MOCK\",\"promptVersion\":\"candidate-summary-v1\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("SUCCESS"));
+
+        Long taskId = aiSummaryTaskRepository
+                .findTopByCandidateArticle_IdOrderByCreatedAtDesc(candidate.getId())
+                .orElseThrow()
+                .getId();
+
+        mockMvc.perform(post("/api/admin/candidates/" + candidate.getId() + "/ai-summary/" + taskId + "/apply")
+                        .header("Authorization", ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(taskId))
+                .andExpect(jsonPath("$.data.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.generatedSummary").value(org.hamcrest.Matchers.containsString(candidate.getTitle())));
     }
 
     @Test

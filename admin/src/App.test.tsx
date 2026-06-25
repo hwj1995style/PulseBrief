@@ -75,6 +75,22 @@ describe('PulseBrief Admin shell', () => {
     expect(within(detail).getByText(/授权正文片段预览/)).toBeInTheDocument();
   });
 
+  it('generates and applies an AI summary draft from candidate detail', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(await screen.findByText('高盛：AI 基建投资仍将持续')).toBeInTheDocument();
+    const detail = screen.getByRole('complementary', { name: '候选详情' });
+
+    await user.click(within(detail).getByRole('button', { name: '生成 AI 摘要' }));
+    expect(await screen.findByText('AI 摘要已生成')).toBeInTheDocument();
+    expect(within(detail).getByText(/Mock AI 摘要/)).toBeInTheDocument();
+
+    await user.click(within(detail).getByRole('button', { name: '采用草稿' }));
+    expect(await screen.findByText('AI 摘要草稿已采用')).toBeInTheDocument();
+    expect(within(detail).getByText(/Mock AI 影响分析/)).toBeInTheDocument();
+  });
+
   it('caches and reviews PDF assets from candidate detail', async () => {
     const user = userEvent.setup();
     render(<App />);

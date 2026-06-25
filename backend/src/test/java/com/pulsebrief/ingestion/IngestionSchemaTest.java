@@ -21,6 +21,7 @@ class IngestionSchemaTest {
         assertThat(tableExists("report_asset")).isTrue();
         assertThat(tableExists("report_asset_file")).isTrue();
         assertThat(tableExists("raw_news_content")).isTrue();
+        assertThat(tableExists("ai_summary_task")).isTrue();
         assertThat(columnExists("news_ingestion_source", "content_access_policy")).isTrue();
         assertThat(columnExists("news_ingestion_source", "max_age_hours")).isTrue();
         assertThat(columnExists("news_ingestion_source", "allow_pdf_download")).isTrue();
@@ -37,6 +38,11 @@ class IngestionSchemaTest {
         assertThat(columnExists("report_asset", "review_note")).isTrue();
         assertThat(columnExists("report_asset_file", "storage_path")).isTrue();
         assertThat(columnExists("report_asset_file", "mime_type")).isTrue();
+        assertThat(columnExists("ai_summary_task", "candidate_article_id")).isTrue();
+        assertThat(columnExists("ai_summary_task", "input_source_type")).isTrue();
+        assertThat(columnExists("ai_summary_task", "provider_type")).isTrue();
+        assertThat(columnExists("ai_summary_task", "task_status")).isTrue();
+        assertThat(columnExists("ai_summary_task", "generated_summary")).isTrue();
     }
 
     private boolean tableExists(String tableName) {

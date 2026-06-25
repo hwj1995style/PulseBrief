@@ -7,6 +7,8 @@ export const mockCandidates: AdminCandidate[] = [
     title: '高盛：AI 基建投资仍将持续',
     summary: '高盛公开观点认为，AI 基础设施投资仍处扩张阶段，算力、电力和数据中心产业链将持续受益。',
     aiSummary: 'AI 基建投资仍处于扩张阶段，云厂商资本开支、数据中心电力需求和高端芯片供给是审核重点。',
+    keyPoints: ['云厂商资本开支仍是观察重点', '数据中心电力需求持续提升', '高端芯片供给仍影响产业链节奏'],
+    impactAnalysis: '相关产业链可能继续受到市场关注，但发布前仍需核对来源和授权边界。',
     categoryCode: 'investment_view',
     categoryName: '投行观点',
     sourceName: 'Goldman Sachs Research',
@@ -16,6 +18,7 @@ export const mockCandidates: AdminCandidate[] = [
     fetchedAt: '2026-06-09 09:00',
     status: 'PENDING_REVIEW',
     content: null,
+    aiSummaryTask: null,
     reportAssets: [
       {
         id: 301,
@@ -43,6 +46,8 @@ export const mockCandidates: AdminCandidate[] = [
     title: '美联储官员释放谨慎信号，市场重新评估降息节奏',
     summary: '市场关注美联储最新表态，投资者正在调整对后续利率路径的预期。',
     aiSummary: '利率预期仍是全球资产定价的核心变量，需关注美元、美债和成长股估值波动。',
+    keyPoints: ['市场重新评估降息节奏', '美元和美债收益率仍是关键变量', '成长股估值可能继续波动'],
+    impactAnalysis: '宏观预期变化可能影响多类资产定价，仍需结合后续官方表态审核。',
     categoryCode: 'macro',
     categoryName: '宏观政策',
     sourceName: 'Federal Reserve',
@@ -52,6 +57,7 @@ export const mockCandidates: AdminCandidate[] = [
     fetchedAt: '2026-06-09 08:36',
     status: 'PENDING_REVIEW',
     content: null,
+    aiSummaryTask: null,
     reportAssets: []
   },
   {
@@ -60,6 +66,8 @@ export const mockCandidates: AdminCandidate[] = [
     title: '全球科技巨头继续加码 AI 应用，企业端落地成为竞争焦点',
     summary: 'AI 应用正在从模型能力竞争转向企业效率提升和场景落地。',
     aiSummary: '企业端 AI 应用进入效率验证阶段，软件、云服务和垂直行业解决方案值得跟踪。',
+    keyPoints: ['企业端落地成为竞争重点', '效率提升是主要验证方向', '垂直行业方案需要持续观察'],
+    impactAnalysis: '企业软件和云服务可能受益，但仍需审核实际案例与来源质量。',
     categoryCode: 'ai',
     categoryName: 'AI 前沿',
     sourceName: 'Tech Brief',
@@ -69,6 +77,7 @@ export const mockCandidates: AdminCandidate[] = [
     fetchedAt: '2026-06-09 08:22',
     status: 'REJECTED',
     content: null,
+    aiSummaryTask: null,
     reportAssets: []
   }
 ];

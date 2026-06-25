@@ -72,6 +72,25 @@ public class AdminCandidateController {
         return ApiResponse.ok(candidateService.fetchCandidateContent(id, safeRequest));
     }
 
+    @PostMapping("/{id}/ai-summary/generate")
+    public ApiResponse<AdminAiSummaryTaskResponse> generateAiSummary(
+            @PathVariable Long id,
+            @RequestBody(required = false) AdminAiSummaryGenerateRequest request
+    ) {
+        AdminAiSummaryGenerateRequest safeRequest = request == null
+                ? new AdminAiSummaryGenerateRequest(null, null, null)
+                : request;
+        return ApiResponse.ok(candidateService.generateAiSummary(id, safeRequest));
+    }
+
+    @PostMapping("/{id}/ai-summary/{taskId}/apply")
+    public ApiResponse<AdminAiSummaryTaskResponse> applyAiSummary(
+            @PathVariable Long id,
+            @PathVariable Long taskId
+    ) {
+        return ApiResponse.ok(candidateService.applyAiSummary(id, taskId));
+    }
+
     @PostMapping("/{id}/report-assets/{assetId}/cache")
     public ApiResponse<AdminReportAssetResponse> cacheReportAsset(
             @PathVariable Long id,
