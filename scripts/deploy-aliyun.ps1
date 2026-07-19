@@ -94,7 +94,7 @@ fi
 ln -sfn "$release_root" "$deploy_root/repo"
 
 install -d -m 700 /var/backups/pulsebrief
-install -m 755 "$release_root/deploy/production/backup.sh" "$release_root/deploy/production/backup.sh"
+chmod 755 "$release_root/deploy/production/backup.sh"
 install -m 644 "$release_root/deploy/production/pulsebrief-backup.service" /etc/systemd/system/pulsebrief-backup.service
 install -m 644 "$release_root/deploy/production/pulsebrief-backup.timer" /etc/systemd/system/pulsebrief-backup.timer
 systemctl daemon-reload
