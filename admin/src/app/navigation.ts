@@ -4,7 +4,8 @@ import {
   Files,
   FolderTree,
   Newspaper,
-  RadioTower
+  RadioTower,
+  Users
 } from 'lucide-react';
 
 export const navigationItems = [
@@ -13,5 +14,6 @@ export const navigationItems = [
   { key: 'candidates', label: '候选资讯', icon: FileCheck2 },
   { key: 'articles', label: '文章管理', icon: Newspaper },
   { key: 'categories', label: '分类管理', icon: FolderTree },
-  { key: 'digests', label: '简报管理', icon: Files }
+  { key: 'digests', label: '简报管理', icon: Files },
+  { key: 'users', label: '管理员账号', icon: Users, adminOnly: true }
 ];

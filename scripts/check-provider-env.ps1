@@ -176,6 +176,21 @@ if ($legacyAdminTokenEnabled) {
         -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_ADMIN_LEGACY_TOKEN")
 }
 
+Read-IntInRange -Name "PULSEBRIEF_ADMIN_PASSWORD_MAX_AGE_DAYS" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_ADMIN_PASSWORD_MAX_AGE_DAYS" -Default "90") `
+    -Default 90 -Min 1 -Max 365 | Out-Null
+Read-IntInRange -Name "PULSEBRIEF_ADMIN_SESSION_CLEANUP_RETENTION_DAYS" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_ADMIN_SESSION_CLEANUP_RETENTION_DAYS" -Default "7") `
+    -Default 7 -Min 1 -Max 90 | Out-Null
+$adminSessionCleanupEnabled = Read-Bool `
+    -Name "PULSEBRIEF_ADMIN_SESSION_CLEANUP_ENABLED" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_ADMIN_SESSION_CLEANUP_ENABLED" -Default "true")
+if ($adminSessionCleanupEnabled) {
+    Assert-NotPlaceholder -Name "PULSEBRIEF_ADMIN_SESSION_CLEANUP_CRON" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_ADMIN_SESSION_CLEANUP_CRON" -Default "0 15 3 * * *")
+}
+Write-Host "OK: Admin password rotation and session cleanup configuration are valid."
+
 $adminBootstrapUsername = Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_ADMIN_BOOTSTRAP_USERNAME"
 $adminBootstrapPassword = Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD"
 if (-not [string]::IsNullOrWhiteSpace($adminBootstrapUsername) -or

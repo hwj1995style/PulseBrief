@@ -39,8 +39,19 @@ public class AdminAuthController {
                 principal.userId(),
                 principal.username(),
                 principal.displayName(),
-                principal.role()
+                principal.role(),
+                principal.mustChangePassword()
         ));
+    }
+
+    @PostMapping("/password")
+    public ApiResponse<Boolean> changePassword(@RequestBody AdminPasswordChangeRequest request) {
+        authService.changePassword(
+                identityService.current(),
+                request == null ? null : request.currentPassword(),
+                request == null ? null : request.newPassword()
+        );
+        return ApiResponse.ok(true);
     }
 
     @PostMapping("/logout")

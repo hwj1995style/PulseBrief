@@ -63,7 +63,8 @@ public class AdminAuthService {
                 user.getId(),
                 user.getUsername(),
                 user.getDisplayName(),
-                user.getRoleCode()
+                user.getRoleCode(),
+                user.passwordChangeRequired(now, properties.passwordMaxAgeDays())
         );
     }
 
@@ -79,7 +80,8 @@ public class AdminAuthService {
                         user.getId(),
                         user.getUsername(),
                         user.getDisplayName(),
-                        user.getRoleCode()
+                        user.getRoleCode(),
+                        user.passwordChangeRequired(LocalDateTime.now(), properties.passwordMaxAgeDays())
                 ))
                 .orElse(null);
     }
@@ -90,6 +92,21 @@ public class AdminAuthService {
             return;
         }
         sessionRepository.findByTokenHash(sha256(rawToken.trim())).ifPresent(AdminSession::revoke);
+    }
+
+    @Transactional
+    public void changePassword(AdminPrincipal principal, String currentPassword, String newPassword) {
+        AdminUser user = userRepository.findById(principal.userId()).orElseThrow(this::invalidCredentials);
+        if (currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw invalidCredentials();
+        }
+        validatePassword(newPassword, user.getUsername());
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "New password must differ from the current password");
+        }
+        user.replacePassword(passwordEncoder.encode(newPassword), false);
+        sessionRepository.deleteByAdminUserId(user.getId());
     }
 
     @Transactional
@@ -123,6 +140,18 @@ public class AdminAuthService {
             return "";
         }
         return username.trim().toLowerCase(Locale.ROOT);
+    }
+
+    void validatePassword(String password, String username) {
+        if (password == null || password.length() < 12 || password.length() > 128) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "Admin password must contain 12 to 128 characters");
+        }
+        String normalizedPassword = password.toLowerCase(Locale.ROOT);
+        if (username != null && normalizedPassword.contains(username.toLowerCase(Locale.ROOT))) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "Admin password must not contain the username");
+        }
     }
 
     private String newToken() {

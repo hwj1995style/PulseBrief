@@ -34,6 +34,10 @@ pulsebrief:
       session-hours: ${PULSEBRIEF_ADMIN_SESSION_HOURS:12}
       max-failed-attempts: ${PULSEBRIEF_ADMIN_MAX_FAILED_ATTEMPTS:5}
       lock-minutes: ${PULSEBRIEF_ADMIN_LOCK_MINUTES:15}
+      password-max-age-days: ${PULSEBRIEF_ADMIN_PASSWORD_MAX_AGE_DAYS:90}
+      session-cleanup-retention-days: ${PULSEBRIEF_ADMIN_SESSION_CLEANUP_RETENTION_DAYS:7}
+      session-cleanup-enabled: ${PULSEBRIEF_ADMIN_SESSION_CLEANUP_ENABLED:true}
+      session-cleanup-cron: ${PULSEBRIEF_ADMIN_SESSION_CLEANUP_CRON:0 15 3 * * *}
       bootstrap-username: ${PULSEBRIEF_ADMIN_BOOTSTRAP_USERNAME:}
       bootstrap-password: ${PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD:}
       bootstrap-display-name: ${PULSEBRIEF_ADMIN_BOOTSTRAP_DISPLAY_NAME:PulseBrief Admin}

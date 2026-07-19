@@ -49,10 +49,14 @@ public class AdminTokenFilter extends OncePerRequestFilter {
         AdminAuthService authService = authServiceProvider.getIfAvailable();
         AdminPrincipal principal = authService == null ? null : authService.authenticate(token);
         if (principal == null && isLegacyToken(token)) {
-            principal = new AdminPrincipal(null, "legacy-admin", "Legacy Admin", "ADMIN");
+            principal = new AdminPrincipal(null, "legacy-admin", "Legacy Admin", "ADMIN", false);
         }
         if (principal == null) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Admin session is invalid or expired");
+            return;
+        }
+        if (principal.mustChangePassword() && !isPasswordRotationRequest(request)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Admin password change required");
             return;
         }
         if (!isAuthorized(principal.role(), request)) {
@@ -64,6 +68,9 @@ public class AdminTokenFilter extends OncePerRequestFilter {
     }
 
     private boolean isAuthorized(String role, HttpServletRequest request) {
+        if (request.getRequestURI().startsWith("/api/admin/users")) {
+            return role.equals("ADMIN");
+        }
         if ("GET".equalsIgnoreCase(request.getMethod())) {
             return role.equals("VIEWER") || role.equals("EDITOR") || role.equals("ADMIN");
         }
@@ -71,6 +78,13 @@ public class AdminTokenFilter extends OncePerRequestFilter {
             return role.equals("ADMIN");
         }
         return role.equals("EDITOR") || role.equals("ADMIN");
+    }
+
+    private boolean isPasswordRotationRequest(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return uri.equals("/api/admin/auth/me")
+                || uri.equals("/api/admin/auth/password")
+                || uri.equals("/api/admin/auth/logout");
     }
 
     private boolean isLegacyToken(String token) {

@@ -7,6 +7,7 @@ export interface AdminSession {
   username: string;
   displayName: string;
   role: AdminRole;
+  mustChangePassword: boolean;
 }
 
 interface ApiResponse<T> {
@@ -28,7 +29,7 @@ export function getStoredAdminSession(): AdminSession | null {
       clearAdminSession();
       return null;
     }
-    return session;
+    return { ...session, mustChangePassword: session.mustChangePassword ?? false };
   } catch {
     clearAdminSession();
     return null;
@@ -45,8 +46,27 @@ export async function loginAdmin(apiBaseUrl: string, username: string, password:
   if (!response.ok || payload.code !== 'OK') {
     throw new Error(payload.message || '管理员账号或密码错误');
   }
-  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload.data));
-  return payload.data;
+  const session = { ...payload.data, mustChangePassword: payload.data.mustChangePassword ?? false };
+  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  return session;
+}
+
+export async function changeAdminPassword(
+  apiBaseUrl: string,
+  token: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, '')}/api/admin/auth/password`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ currentPassword, newPassword })
+  });
+  const payload = await readPayload<boolean>(response);
+  if (!response.ok || payload.code !== 'OK') {
+    throw new Error(payload.message || '密码修改失败');
+  }
+  clearAdminSession();
 }
 
 export async function logoutAdmin(apiBaseUrl: string, token: string): Promise<void> {

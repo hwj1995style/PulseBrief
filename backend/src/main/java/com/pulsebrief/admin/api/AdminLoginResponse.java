@@ -8,6 +8,7 @@ public record AdminLoginResponse(
         Long userId,
         String username,
         String displayName,
-        String role
+        String role,
+        boolean mustChangePassword
 ) {
 }

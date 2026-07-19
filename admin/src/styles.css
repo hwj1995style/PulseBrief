@@ -1162,3 +1162,25 @@ button {
   font-size: 24px;
   margin: 0;
 }
+
+/* Admin account lifecycle */
+.account-workspace { align-items: start; }
+.account-panel { min-width: 0; }
+.account-list, .account-create-form { display: grid; gap: 14px; }
+.account-card { border: 1px solid #dce5ef; border-radius: 14px; display: grid; gap: 14px; padding: 18px; }
+.account-card-title, .account-actions { align-items: center; display: flex; gap: 10px; }
+.account-card-title div { display: grid; flex: 1; gap: 3px; }
+.account-card-title small, .account-create-form small { color: #667085; }
+.account-fields { display: grid; gap: 12px; grid-template-columns: 2fr 1fr 1fr; }
+.account-fields label, .account-create-form label, .admin-login-card label { color: #334155; display: grid; font-size: 13px; font-weight: 650; gap: 6px; }
+.account-fields input, .account-fields select, .account-create-form input, .account-create-form select, .account-actions input, .admin-login-card input { border: 1px solid #cbd5e1; border-radius: 9px; min-height: 40px; padding: 8px 10px; }
+.account-actions input { margin-left: auto; }
+.account-create-panel { position: sticky; top: 96px; }
+.form-error { color: #b42318; margin: 0; }
+.success-message { background: #ecfdf3; border-radius: 9px; color: #067647; padding: 10px 12px; }
+
+@media (max-width: 760px) {
+  .account-fields { grid-template-columns: 1fr; }
+  .account-actions { align-items: stretch; flex-direction: column; }
+  .account-actions input { margin-left: 0; }
+}

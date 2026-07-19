@@ -61,4 +61,5 @@ public class AdminSession {
 
     public AdminUser getAdminUser() { return adminUser; }
     public LocalDateTime getExpiresAt() { return expiresAt; }
+    public LocalDateTime getRevokedAt() { return revokedAt; }
 }

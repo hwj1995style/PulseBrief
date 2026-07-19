@@ -199,4 +199,22 @@ describe('PulseBrief Admin shell', () => {
     expect(screen.getAllByText('fixture-global').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/MANUAL/).length).toBeGreaterThanOrEqual(1);
   });
+
+  it('creates and manages administrator accounts', async () => {
+    const user = userEvent.setup();
+    window.location.hash = '#/users';
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '管理员账号' })).toBeInTheDocument();
+    expect(screen.getByText('mock-admin')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('新管理员用户名'), 'content-editor');
+    await user.type(screen.getByLabelText('新管理员显示名称'), 'Content Editor');
+    await user.selectOptions(screen.getByLabelText('新管理员角色'), 'EDITOR');
+    await user.type(screen.getByLabelText('新管理员临时密码'), 'Temporary-Strong-2026!');
+    await user.click(screen.getByRole('button', { name: '创建管理员' }));
+
+    expect(await screen.findByText('管理员已创建，首次登录必须修改临时密码')).toBeInTheDocument();
+    expect(screen.getByText('content-editor')).toBeInTheDocument();
+    expect(screen.getByText('等待首次改密')).toBeInTheDocument();
+  });
 });

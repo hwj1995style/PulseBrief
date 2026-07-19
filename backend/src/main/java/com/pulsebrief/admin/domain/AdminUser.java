@@ -29,6 +29,12 @@ public class AdminUser {
     @Column(name = "user_status")
     private String userStatus;
 
+    @Column(name = "must_change_password")
+    private Byte mustChangePassword;
+
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
     @Column(name = "failed_login_count")
     private Integer failedLoginCount;
 
@@ -54,6 +60,8 @@ public class AdminUser {
         this.displayName = displayName;
         this.roleCode = roleCode;
         this.userStatus = "ACTIVE";
+        this.mustChangePassword = 0;
+        this.passwordChangedAt = now;
         this.failedLoginCount = 0;
         this.createdAt = now;
         this.updatedAt = now;
@@ -80,6 +88,26 @@ public class AdminUser {
         return lockedUntil != null && lockedUntil.isAfter(now);
     }
 
+    public void updateProfile(String displayName, String roleCode, String userStatus) {
+        this.displayName = displayName;
+        this.roleCode = roleCode;
+        this.userStatus = userStatus;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void replacePassword(String passwordHash, boolean requireChange) {
+        this.passwordHash = passwordHash;
+        this.mustChangePassword = (byte) (requireChange ? 1 : 0);
+        this.passwordChangedAt = LocalDateTime.now();
+        this.updatedAt = this.passwordChangedAt;
+    }
+
+    public boolean passwordChangeRequired(LocalDateTime now, int maxAgeDays) {
+        return Byte.valueOf((byte) 1).equals(mustChangePassword)
+                || passwordChangedAt == null
+                || passwordChangedAt.plusDays(maxAgeDays).isBefore(now);
+    }
+
     public Long getId() { return id; }
     public String getUsername() { return username; }
     public String getPasswordHash() { return passwordHash; }
@@ -88,4 +116,8 @@ public class AdminUser {
     public String getUserStatus() { return userStatus; }
     public Integer getFailedLoginCount() { return failedLoginCount; }
     public LocalDateTime getLockedUntil() { return lockedUntil; }
+    public LocalDateTime getLastLoginAt() { return lastLoginAt; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getPasswordChangedAt() { return passwordChangedAt; }
+    public boolean isMustChangePassword() { return Byte.valueOf((byte) 1).equals(mustChangePassword); }
 }

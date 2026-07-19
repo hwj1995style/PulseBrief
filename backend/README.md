@@ -158,6 +158,10 @@ Authorization: Bearer dev-token-1
 
 当前阶段不接真实短信或邮件服务；AI 摘要已提供默认关闭的 OpenAI Provider。用户端数据仍来自 Flyway V2 种子数据。真实资讯采集已具备适配层、fixture Provider、原始资讯入库、去重和候选资讯生成能力，候选内容必须经 Admin 审核发布后才会进入用户端。
 
+## Admin production security
+
+Admin 已支持数据库账号管理、强制密码轮换、过期会话清理与安全响应头。生产运维配置见 `../docs/Admin账号生命周期与生产安全说明.md`。
+
 ## Smoke Check
 
 启动 MySQL 和后端后，可用以下接口做冒烟检查：

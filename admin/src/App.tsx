@@ -1,4 +1,4 @@
-import { Bell, LogOut, ShieldCheck } from 'lucide-react';
+import { Bell, KeyRound, LogOut, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { HashRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { navigationItems } from './app/navigation';
@@ -6,8 +6,10 @@ import { CandidateReviewPage } from './features/candidates/CandidateReviewPage';
 import { DigestManagementPage } from './features/digests/DigestManagementPage';
 import { IngestionMonitorPage } from './features/ingestion/IngestionMonitorPage';
 import { AdminLoginPage } from './features/auth/AdminLoginPage';
+import { AdminPasswordChangePage } from './features/auth/AdminPasswordChangePage';
+import { AdminAccountPage } from './features/auth/AdminAccountPage';
 import { adminApiConfig } from './shared/api/adminApi';
-import { getStoredAdminSession, logoutAdmin, type AdminSession } from './shared/api/adminAuth';
+import { clearAdminSession, getStoredAdminSession, logoutAdmin, type AdminSession } from './shared/api/adminAuth';
 import './styles.css';
 
 function App() {
@@ -19,16 +21,30 @@ function App() {
           userId: null,
           username: 'mock-admin',
           displayName: 'Mock Admin',
-          role: 'ADMIN'
+          role: 'ADMIN',
+          mustChangePassword: false
         }
       : getStoredAdminSession()
   );
+  const [changingPassword, setChangingPassword] = useState(false);
 
   if (adminApiConfig.mode === 'api' && !session) {
     return (
       <HashRouter>
         <AdminLoginPage apiBaseUrl={adminApiConfig.apiBaseUrl!} onLogin={setSession} />
       </HashRouter>
+    );
+  }
+
+  if (adminApiConfig.mode === 'api' && session && (session.mustChangePassword || changingPassword)) {
+    return (
+      <AdminPasswordChangePage
+        apiBaseUrl={adminApiConfig.apiBaseUrl!}
+        session={session}
+        required={session.mustChangePassword}
+        onComplete={() => { clearAdminSession(); setSession(null); }}
+        onCancel={session.mustChangePassword ? undefined : () => setChangingPassword(false)}
+      />
     );
   }
 
@@ -52,7 +68,7 @@ function App() {
           </div>
 
           <nav aria-label="后台导航" className="sidebar-nav">
-            {navigationItems.map((item) => {
+            {navigationItems.filter((item) => !item.adminOnly || session?.role === 'ADMIN').map((item) => {
               const Icon = item.icon;
               return (
                 <NavLink
@@ -83,6 +99,11 @@ function App() {
                 <Bell size={18} />
               </button>
               {adminApiConfig.mode === 'api' ? (
+                <button className="icon-button" aria-label="修改密码" onClick={() => setChangingPassword(true)} type="button">
+                  <KeyRound size={18} />
+                </button>
+              ) : null}
+              {adminApiConfig.mode === 'api' ? (
                 <button className="icon-button" aria-label="退出登录" onClick={handleLogout} type="button">
                   <LogOut size={18} />
                 </button>
@@ -98,6 +119,7 @@ function App() {
             <Route path="/articles" element={<PlaceholderPage title="文章管理" />} />
             <Route path="/categories" element={<PlaceholderPage title="分类管理" />} />
             <Route path="/digests" element={<DigestManagementPage />} />
+            <Route path="/users" element={session?.role === 'ADMIN' ? <AdminAccountPage /> : <Navigate replace to="/candidates" />} />
           </Routes>
         </div>
       </div>

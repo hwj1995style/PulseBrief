@@ -17,6 +17,6 @@ public class AdminIdentityService {
                 return principal;
             }
         }
-        return new AdminPrincipal(null, "system", "System", "SYSTEM");
+        return new AdminPrincipal(null, "system", "System", "SYSTEM", false);
     }
 }

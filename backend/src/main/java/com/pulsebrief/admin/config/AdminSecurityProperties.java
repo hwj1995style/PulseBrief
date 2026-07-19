@@ -9,6 +9,8 @@ public record AdminSecurityProperties(
         Integer sessionHours,
         Integer maxFailedAttempts,
         Integer lockMinutes,
+        Integer passwordMaxAgeDays,
+        Integer sessionCleanupRetentionDays,
         String bootstrapUsername,
         String bootstrapPassword,
         String bootstrapDisplayName,
@@ -19,6 +21,8 @@ public record AdminSecurityProperties(
         sessionHours = bounded(sessionHours, 12, 1, 72);
         maxFailedAttempts = bounded(maxFailedAttempts, 5, 3, 10);
         lockMinutes = bounded(lockMinutes, 15, 5, 1440);
+        passwordMaxAgeDays = bounded(passwordMaxAgeDays, 90, 1, 365);
+        sessionCleanupRetentionDays = bounded(sessionCleanupRetentionDays, 7, 1, 90);
         bootstrapRole = blankToDefault(bootstrapRole, "ADMIN").toUpperCase();
         bootstrapDisplayName = blankToDefault(bootstrapDisplayName, "PulseBrief Admin");
     }
