@@ -1,7 +1,10 @@
 FROM node:22-alpine AS build
 WORKDIR /workspace
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 20000 \
+    && npm config set fetch-retry-maxtimeout 120000 \
+    && npm ci
 COPY . .
 ARG VITE_ADMIN_API_BASE_URL=.
 ENV VITE_ADMIN_API_BASE_URL=${VITE_ADMIN_API_BASE_URL}

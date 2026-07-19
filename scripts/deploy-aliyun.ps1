@@ -101,7 +101,8 @@ systemctl daemon-reload
 systemctl enable --now pulsebrief-backup.timer >/dev/null
 
 cd "$release_root/deploy/production"
-docker compose --env-file "$deploy_root/.env" build
+docker compose --env-file "$deploy_root/.env" build backend
+docker compose --env-file "$deploy_root/.env" build admin
 docker compose --env-file "$deploy_root/.env" up -d --remove-orphans
 
 for attempt in $(seq 1 36); do
