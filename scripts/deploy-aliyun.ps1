@@ -87,6 +87,10 @@ firewall-offline-cmd --zone=public --add-service=ssh >/dev/null || true
 firewall-offline-cmd --zone=public --add-service=http >/dev/null || true
 firewall-offline-cmd --zone=public --add-service=https >/dev/null || true
 systemctl enable --now firewalld >/dev/null
+docker_zone="$(firewall-cmd --get-zone-of-interface=docker0 2>/dev/null || true)"
+if [ -z "$docker_zone" ] || [ "$docker_zone" = "no zone" ]; then
+    systemctl restart docker
+fi
 
 if [ -e "$deploy_root/repo" ] && [ ! -L "$deploy_root/repo" ]; then
     mv "$deploy_root/repo" "$deploy_root/repo-pre-releases-$release_id"
