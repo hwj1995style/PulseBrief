@@ -145,6 +145,31 @@ $enabled = Read-Bool `
     -Name "PULSEBRIEF_INGESTION_ENABLED" `
     -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_INGESTION_ENABLED" -Default "false")
 
+$deepSeekEnabled = Read-Bool `
+    -Name "PULSEBRIEF_DEEPSEEK_ENABLED" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_ENABLED" -Default "false")
+if ($deepSeekEnabled) {
+    Assert-NotPlaceholder `
+        -Name "PULSEBRIEF_DEEPSEEK_API_KEY" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_API_KEY")
+    Assert-HttpUrls `
+        -Name "PULSEBRIEF_DEEPSEEK_BASE_URL" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_BASE_URL" -Default "https://api.deepseek.com/chat/completions")
+    Assert-NotPlaceholder `
+        -Name "PULSEBRIEF_DEEPSEEK_MODEL" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_MODEL" -Default "deepseek-v4-flash")
+    Read-IntInRange -Name "PULSEBRIEF_DEEPSEEK_TIMEOUT_SECONDS" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_TIMEOUT_SECONDS" -Default "30") `
+        -Default 30 -Min 5 -Max 120 | Out-Null
+    Read-IntInRange -Name "PULSEBRIEF_DEEPSEEK_MAX_INPUT_CHARACTERS" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_MAX_INPUT_CHARACTERS" -Default "12000") `
+        -Default 12000 -Min 500 -Max 50000 | Out-Null
+    Read-IntInRange -Name "PULSEBRIEF_DEEPSEEK_MAX_OUTPUT_TOKENS" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_MAX_OUTPUT_TOKENS" -Default "1200") `
+        -Default 1200 -Min 300 -Max 4000 | Out-Null
+    Write-Host "OK: DeepSeek summary provider configuration is present."
+}
+
 $openAiEnabled = Read-Bool `
     -Name "PULSEBRIEF_OPENAI_ENABLED" `
     -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_OPENAI_ENABLED" -Default "false")

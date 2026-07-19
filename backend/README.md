@@ -103,9 +103,9 @@ GET /api/admin/ingestion/anomalies
 
 ## AI Summary Provider
 
-AI 摘要支持 `MOCK` 与 OpenAI Responses API 双模式。OpenAI 默认关闭；启用前必须配置 `PULSEBRIEF_OPENAI_ENABLED=true`、`PULSEBRIEF_OPENAI_API_KEY` 和模型等参数，并通过上述 Provider 环境检查。默认模型为面向高频摘要场景的 `gpt-5.6-luna`。
+AI 摘要支持 `MOCK`、DeepSeek Chat Completions 与 OpenAI Responses API。生产摘要推荐使用默认关闭的 `deepseek-v4-flash`；启用前必须配置 `PULSEBRIEF_DEEPSEEK_ENABLED=true`、`PULSEBRIEF_DEEPSEEK_API_KEY`，并通过上述 Provider 环境检查。OpenAI 继续作为可选回退。
 
-真实 Provider 只接收授权全文、授权正文片段或 RSS 摘要，返回严格结构化的 Admin 审核草稿。失败不会阻断采集或人工发布，生成结果也不会自动发布。完整配置和验证边界见 `docs/真实OpenAI摘要Provider接入说明.md`。
+真实 Provider 只接收授权全文、授权正文片段或 RSS 摘要，返回经本地结构校验的 Admin 审核草稿。失败不会阻断采集或人工发布，生成结果也不会自动发布。DeepSeek 配置和验证边界见 `docs/DeepSeekV4Flash摘要Provider接入说明.md`。
 
 ## V1 App API
 

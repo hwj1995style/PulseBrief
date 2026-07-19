@@ -39,6 +39,8 @@ export interface AdminApiClientConfig {
   adminToken?: string;
 }
 
+export type AiSummaryProviderType = 'MOCK' | 'DEEPSEEK' | 'OPENAI';
+
 export interface AdminApiClient {
   getInitialCandidates: () => AdminCandidate[];
   listCandidates: (status?: CandidateStatus | 'ALL') => Promise<AdminCandidate[]>;
@@ -47,7 +49,7 @@ export interface AdminApiClient {
   cacheCandidateReportAsset: (candidateId: number, assetId: number) => Promise<ReportAsset>;
   approveCandidateReportAsset: (candidateId: number, assetId: number, reviewNote?: string) => Promise<ReportAsset>;
   rejectCandidateReportAsset: (candidateId: number, assetId: number, reviewNote?: string) => Promise<ReportAsset>;
-  generateCandidateAiSummary: (id: number, providerType?: 'MOCK' | 'OPENAI') => Promise<CandidateAiSummaryTask>;
+  generateCandidateAiSummary: (id: number, providerType?: AiSummaryProviderType) => Promise<CandidateAiSummaryTask>;
   applyCandidateAiSummary: (id: number, taskId: number) => Promise<CandidateAiSummaryTask>;
   updateCandidate: (id: number, input: AdminCandidateUpdateInput) => Promise<AdminCandidate>;
   publishCandidate: (id: number, input?: AdminCandidatePublishInput) => Promise<AdminCandidate>;
@@ -369,7 +371,10 @@ export function rejectCandidateReportAsset(
   return defaultClient.rejectCandidateReportAsset(candidateId, assetId, reviewNote);
 }
 
-export function generateCandidateAiSummary(id: number, providerType: 'MOCK' | 'OPENAI' = 'MOCK'): Promise<CandidateAiSummaryTask> {
+export function generateCandidateAiSummary(
+  id: number,
+  providerType: AiSummaryProviderType = 'MOCK'
+): Promise<CandidateAiSummaryTask> {
   return defaultClient.generateCandidateAiSummary(id, providerType);
 }
 
@@ -524,7 +529,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
     return content;
   }
 
-  function generateCandidateAiSummary(id: number, providerType: 'MOCK' | 'OPENAI' = 'MOCK') {
+  function generateCandidateAiSummary(id: number, providerType: AiSummaryProviderType = 'MOCK') {
     const candidate = findCandidate(id);
     const now = new Date().toISOString();
     const inputSourceType = candidate.content?.fetchStatus === 'SUCCESS' ? 'CONTENT_SNIPPET' : 'RSS_SUMMARY';
@@ -535,7 +540,12 @@ function createMockAdminApiClient(): MutableAdminApiClient {
       inputRefId: candidate.content?.fetchStatus === 'SUCCESS' ? candidate.content.rawNewsItemId : null,
       inputPreview: candidate.content?.preview ?? candidate.summary,
       providerType,
-      modelName: providerType === 'OPENAI' ? 'gpt-5.6-luna' : 'mock-v1',
+      modelName:
+        providerType === 'DEEPSEEK'
+          ? 'deepseek-v4-flash'
+          : providerType === 'OPENAI'
+            ? 'gpt-5.6-luna'
+            : 'mock-v1',
       promptVersion: 'candidate-summary-v1',
       generatedSummary: `Mock AI 摘要：${candidate.title}。基于已授权输入生成，发布前需人工审核。`,
       generatedKeyPoints: [

@@ -14,6 +14,7 @@ import {
   rejectCandidate,
   updateCandidate
 } from '../../shared/api/adminApi';
+import type { AiSummaryProviderType } from '../../shared/api/adminApi';
 import type { AdminCandidate, CandidateStatus, ReportAsset } from '../../shared/types/candidate';
 import { candidateStatusText, candidateStatusTone } from './candidateUtils';
 
@@ -239,7 +240,7 @@ export function CandidateReviewPage() {
     }
   }
 
-  async function generateAiSummaryDraft(providerType: 'MOCK' | 'OPENAI' = 'MOCK') {
+  async function generateAiSummaryDraft(providerType: AiSummaryProviderType = 'MOCK') {
     if (!selectedCandidate) {
       return;
     }
@@ -553,11 +554,11 @@ export function CandidateReviewPage() {
                 <button
                   className="secondary-action compact"
                   disabled={selectedCandidate.status !== 'PENDING_REVIEW' || aiSummaryLoading}
-                  onClick={() => generateAiSummaryDraft('OPENAI')}
+                  onClick={() => generateAiSummaryDraft('DEEPSEEK')}
                   type="button"
                 >
                   <Sparkles size={18} />
-                  使用 OpenAI 生成
+                  使用 DeepSeek V4 Flash
                 </button>
               </div>
               {selectedCandidate.aiSummaryTask ? (

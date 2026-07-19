@@ -41,6 +41,14 @@ pulsebrief:
     max-size-mb: ${PULSEBRIEF_PDF_MAX_SIZE_MB:25}
     timeout-seconds: ${PULSEBRIEF_PDF_TIMEOUT_SECONDS:15}
   ai:
+    deepseek:
+      enabled: ${PULSEBRIEF_DEEPSEEK_ENABLED:false}
+      api-key: ${PULSEBRIEF_DEEPSEEK_API_KEY:}
+      base-url: ${PULSEBRIEF_DEEPSEEK_BASE_URL:https://api.deepseek.com/chat/completions}
+      model: ${PULSEBRIEF_DEEPSEEK_MODEL:deepseek-v4-flash}
+      timeout-seconds: ${PULSEBRIEF_DEEPSEEK_TIMEOUT_SECONDS:30}
+      max-input-characters: ${PULSEBRIEF_DEEPSEEK_MAX_INPUT_CHARACTERS:12000}
+      max-output-tokens: ${PULSEBRIEF_DEEPSEEK_MAX_OUTPUT_TOKENS:1200}
     openai:
       enabled: ${PULSEBRIEF_OPENAI_ENABLED:false}
       api-key: ${PULSEBRIEF_OPENAI_API_KEY:}
