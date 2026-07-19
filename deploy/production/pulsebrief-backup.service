@@ -1,0 +1,8 @@
+[Unit]
+Description=PulseBrief MySQL backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/pulsebrief/repo/deploy/production/backup.sh

@@ -279,6 +279,11 @@ mobile\build\app\outputs\flutter-apk\app-debug.apk
 18. [AI 用量、成本、限流与告警说明](./docs/AI用量成本限流告警说明.md)
 19. [Admin 账号生命周期与生产安全说明](./docs/Admin账号生命周期与生产安全说明.md)
 20. [Android 自用发布与升级说明](./docs/Android自用发布与升级说明.md)
+21. [阿里云单机部署说明](./docs/阿里云单机部署说明.md)
+
+## 个人生产环境
+
+个人生产环境使用 `huawj.com.cn`，由 Caddy 统一提供 HTTPS，并反向代理 React Admin 与 Spring Boot API；MySQL 不暴露公网。首次部署先运行 `scripts/initialize-production-secrets.ps1`，完成测试并合并到 `main` 后运行 `scripts/deploy-aliyun.ps1`。详细操作、安全边界和备份位置见阿里云单机部署说明。
 
 ## 合规边界
 

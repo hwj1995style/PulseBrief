@@ -1,0 +1,111 @@
+name: pulsebrief-production
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PULSEBRIEF_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: pulsebrief
+      MYSQL_USER: pulsebrief
+      MYSQL_PASSWORD: ${PULSEBRIEF_DB_PASSWORD}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb-buffer-pool-size=256M
+      - --max-connections=80
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -upulsebrief -p$$MYSQL_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    mem_limit: 600m
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  backend:
+    build:
+      context: ../../backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70 -XX:InitialRAMPercentage=25 -XX:+UseSerialGC
+      PULSEBRIEF_DB_URL: jdbc:mysql://mysql:3306/pulsebrief?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      PULSEBRIEF_DB_USERNAME: pulsebrief
+      PULSEBRIEF_DB_PASSWORD: ${PULSEBRIEF_DB_PASSWORD}
+      PULSEBRIEF_ADMIN_LEGACY_TOKEN_ENABLED: "false"
+      PULSEBRIEF_ADMIN_SESSION_HOURS: ${PULSEBRIEF_ADMIN_SESSION_HOURS:-12}
+      PULSEBRIEF_ADMIN_PASSWORD_MAX_AGE_DAYS: ${PULSEBRIEF_ADMIN_PASSWORD_MAX_AGE_DAYS:-90}
+      PULSEBRIEF_ADMIN_SESSION_CLEANUP_ENABLED: "true"
+      SPRINGDOC_API_DOCS_ENABLED: "false"
+      SPRINGDOC_SWAGGER_UI_ENABLED: "false"
+      PULSEBRIEF_ADMIN_BOOTSTRAP_USERNAME: ${PULSEBRIEF_ADMIN_BOOTSTRAP_USERNAME:-}
+      PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD: ${PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD:-}
+      PULSEBRIEF_ADMIN_BOOTSTRAP_DISPLAY_NAME: ${PULSEBRIEF_ADMIN_BOOTSTRAP_DISPLAY_NAME:-PulseBrief Admin}
+      PULSEBRIEF_ADMIN_BOOTSTRAP_ROLE: ADMIN
+      PULSEBRIEF_INGESTION_ENABLED: ${PULSEBRIEF_INGESTION_ENABLED:-false}
+      PULSEBRIEF_INGESTION_SCHEDULING_ENABLED: ${PULSEBRIEF_INGESTION_SCHEDULING_ENABLED:-false}
+      PULSEBRIEF_AI_USAGE_ENABLED: "true"
+      PULSEBRIEF_AI_DAILY_REQUEST_LIMIT: ${PULSEBRIEF_AI_DAILY_REQUEST_LIMIT:-200}
+      PULSEBRIEF_AI_DAILY_TOKEN_LIMIT: ${PULSEBRIEF_AI_DAILY_TOKEN_LIMIT:-200000}
+      PULSEBRIEF_AI_WARNING_PERCENT: ${PULSEBRIEF_AI_WARNING_PERCENT:-80}
+      PULSEBRIEF_AI_DEEPSEEK_INPUT_COST_PER_MILLION_USD: ${PULSEBRIEF_AI_DEEPSEEK_INPUT_COST_PER_MILLION_USD:-0}
+      PULSEBRIEF_AI_DEEPSEEK_OUTPUT_COST_PER_MILLION_USD: ${PULSEBRIEF_AI_DEEPSEEK_OUTPUT_COST_PER_MILLION_USD:-0}
+      PULSEBRIEF_DEEPSEEK_ENABLED: ${PULSEBRIEF_DEEPSEEK_ENABLED:-false}
+      PULSEBRIEF_DEEPSEEK_CLASSIFICATION_ENABLED: ${PULSEBRIEF_DEEPSEEK_CLASSIFICATION_ENABLED:-false}
+      PULSEBRIEF_DEEPSEEK_API_KEY: ${PULSEBRIEF_DEEPSEEK_API_KEY:-}
+      PULSEBRIEF_DEEPSEEK_BASE_URL: ${PULSEBRIEF_DEEPSEEK_BASE_URL:-https://api.deepseek.com/chat/completions}
+      PULSEBRIEF_DEEPSEEK_MODEL: ${PULSEBRIEF_DEEPSEEK_MODEL:-deepseek-v4-flash}
+      PULSEBRIEF_DEEPSEEK_TIMEOUT_SECONDS: ${PULSEBRIEF_DEEPSEEK_TIMEOUT_SECONDS:-30}
+      PULSEBRIEF_DEEPSEEK_MAX_INPUT_CHARACTERS: ${PULSEBRIEF_DEEPSEEK_MAX_INPUT_CHARACTERS:-12000}
+      PULSEBRIEF_DEEPSEEK_MAX_OUTPUT_TOKENS: ${PULSEBRIEF_DEEPSEEK_MAX_OUTPUT_TOKENS:-1200}
+      PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MIN_CONFIDENCE: ${PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MIN_CONFIDENCE:-0.65}
+      PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MAX_INPUT_CHARACTERS: ${PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MAX_INPUT_CHARACTERS:-4000}
+      PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MAX_OUTPUT_TOKENS: ${PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MAX_OUTPUT_TOKENS:-300}
+    volumes:
+      - report_data:/app/data/reports
+    mem_limit: 700m
+    logging: *logging
+
+  admin:
+    build:
+      context: ../../admin
+      args:
+        VITE_ADMIN_API_BASE_URL: .
+    restart: unless-stopped
+    mem_limit: 128m
+    logging: *logging
+
+  gateway:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+      admin:
+        condition: service_healthy
+    environment:
+      PULSEBRIEF_DOMAIN: ${PULSEBRIEF_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    mem_limit: 128m
+    logging: *logging
+
+volumes:
+  mysql_data:
+  report_data:
+  caddy_data:
+  caddy_config:
