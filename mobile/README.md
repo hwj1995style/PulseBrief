@@ -85,6 +85,16 @@ APK 输出路径：
 D:\Projects\PulseBrief\mobile\build\app\outputs\flutter-apk\app-debug.apk
 ```
 
+## Android 自用 release
+
+项目当前按个人自用方式发布，不接入应用商店或远程推送。运行以下脚本会使用仅保存在本机的独立证书生成签名 APK，并把版本化产物、SHA-256 和构建元数据保存到 `artifacts/mobile/`：
+
+```powershell
+..\scripts\build-android-self-release.ps1 -BuildName 1.0.0 -DataSource mock
+```
+
+签名密钥和 `key.properties` 已被 Git 忽略。安装、升级和备份要求见 `../docs/Android自用发布与升级说明.md`。
+
 ## 质量检查
 
 ```powershell

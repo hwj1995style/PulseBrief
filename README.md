@@ -39,9 +39,9 @@ Flutter 用户端 APP
 
 下一阶段：
 
-1. 完成移动端签名、隐私合规材料、推送和应用商店上架流程。
-2. 将 AI 页面告警扩展到 Prometheus 和外部通知渠道。
-3. 接入 MFA/SSO 与集中 Secret Manager，并增强多实例生产运行能力。
+1. 将 AI 页面告警扩展到 Prometheus 和外部通知渠道。
+2. 增强采集与 AI 多实例生产运行能力。
+3. 接入 MFA/SSO 与集中 Secret Manager。
 
 ## 正式技术路线
 
@@ -278,6 +278,7 @@ mobile\build\app\outputs\flutter-apk\app-debug.apk
 17. [DeepSeek 模型分类接入说明](./docs/DeepSeek模型分类接入说明.md)
 18. [AI 用量、成本、限流与告警说明](./docs/AI用量成本限流告警说明.md)
 19. [Admin 账号生命周期与生产安全说明](./docs/Admin账号生命周期与生产安全说明.md)
+20. [Android 自用发布与升级说明](./docs/Android自用发布与升级说明.md)
 
 ## 合规边界
 

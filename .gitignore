@@ -8,6 +8,8 @@ coverage/
 .idea/
 .vscode/
 .codex/
+.local-secrets/
+artifacts/
 
 # Java / Spring Boot
 target/
