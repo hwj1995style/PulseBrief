@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 import { resetAdminApiMock } from './shared/api/adminApi';
 
-describe('PulseBrief Admin shell', () => {
+describe('简阅随记 Admin shell', () => {
   beforeEach(() => {
     resetAdminApiMock();
     window.location.hash = '';
@@ -12,6 +12,7 @@ describe('PulseBrief Admin shell', () => {
   it('renders the candidate review workspace', async () => {
     render(<App />);
 
+    expect(screen.getByText('简阅随记')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '候选资讯审核' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: '后台导航' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '待审核' })).toHaveAttribute('aria-pressed', 'true');

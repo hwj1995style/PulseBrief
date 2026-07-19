@@ -32,7 +32,7 @@ export function AdminLoginPage({ apiBaseUrl, onLogin }: AdminLoginPageProps) {
         <div className="admin-login-brand">
           <span className="brand-mark">PB</span>
           <div>
-            <strong>PulseBrief Admin</strong>
+            <strong>简阅随记</strong>
             <small>安全运营控制台</small>
           </div>
         </div>

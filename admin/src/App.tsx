@@ -62,8 +62,8 @@ function App() {
           <div className="brand">
             <span className="brand-mark">PB</span>
             <div>
-              <strong>PulseBrief</strong>
-              <small>Admin</small>
+              <strong>简阅随记</strong>
+              <small>PulseBrief Admin</small>
             </div>
           </div>
 
