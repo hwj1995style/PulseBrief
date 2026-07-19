@@ -46,6 +46,8 @@ describe('PulseBrief Admin shell', () => {
     await user.clear(screen.getByLabelText('候选摘要'));
     await user.type(screen.getByLabelText('候选摘要'), '运营修订后的摘要内容');
     await user.selectOptions(screen.getByLabelText('候选分类'), 'ai');
+    expect(screen.queryByText(/修改建议分类时必须填写/)).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText('人工覆盖原因'), '运营确认该内容主要讨论 AI 基建');
     await user.clear(screen.getByLabelText('候选来源'));
     await user.type(screen.getByLabelText('候选来源'), 'Updated Source');
     await user.clear(screen.getByLabelText('候选标签'));

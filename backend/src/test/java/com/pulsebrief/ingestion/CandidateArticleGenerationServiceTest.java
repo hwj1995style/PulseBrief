@@ -53,6 +53,9 @@ class CandidateArticleGenerationServiceTest {
                 .orElseThrow();
         assertThat(candidate.getStatus()).isEqualTo("PENDING_REVIEW");
         assertThat(candidate.getCategoryCode()).isEqualTo("ai");
+        assertThat(candidate.getSuggestedCategoryCode()).isEqualTo("ai");
+        assertThat(candidate.getClassificationConfidence()).isEqualTo(0.94);
+        assertThat(candidate.getClassificationRule()).startsWith("KEYWORD_AI:");
         assertThat(candidate.getSourceName()).isEqualTo("Example Markets");
         assertThat(candidate.getOriginalUrl()).isEqualTo("https://example.com/candidate/" + uniquePath);
         assertThat(candidate.getRawNewsItem().getItemStatus()).isEqualTo("CANDIDATE");

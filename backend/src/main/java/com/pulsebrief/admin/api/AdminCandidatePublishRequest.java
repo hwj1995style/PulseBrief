@@ -9,6 +9,7 @@ public record AdminCandidatePublishRequest(
         List<String> keyPoints,
         String impactAnalysis,
         String categoryCode,
+        String categoryOverrideReason,
         Boolean publishNow
 ) {
 }

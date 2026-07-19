@@ -49,6 +49,7 @@ export function CandidateReviewPage() {
   const [draftTitle, setDraftTitle] = useState('');
   const [draftSummary, setDraftSummary] = useState('');
   const [draftCategoryCode, setDraftCategoryCode] = useState('global');
+  const [draftCategoryOverrideReason, setDraftCategoryOverrideReason] = useState('');
   const [draftSourceName, setDraftSourceName] = useState('');
   const [draftTagText, setDraftTagText] = useState('');
   const [draftCandidateId, setDraftCandidateId] = useState<number | null>(null);
@@ -83,6 +84,7 @@ export function CandidateReviewPage() {
       setDraftTitle('');
       setDraftSummary('');
       setDraftCategoryCode('global');
+      setDraftCategoryOverrideReason('');
       setDraftSourceName('');
       setDraftTagText('');
       setDraftCandidateId(null);
@@ -95,6 +97,7 @@ export function CandidateReviewPage() {
     setDraftTitle(selectedCandidate.title);
     setDraftSummary(selectedCandidate.summary);
     setDraftCategoryCode(selectedCandidate.categoryCode);
+    setDraftCategoryOverrideReason(selectedCandidate.categoryOverrideReason);
     setDraftSourceName(selectedCandidate.sourceName);
     setDraftTagText(selectedCandidate.tagNames.join('，'));
     setDraftCandidateId(selectedCandidate.id);
@@ -106,12 +109,21 @@ export function CandidateReviewPage() {
     selectedCandidate?.title,
     selectedCandidate?.summary,
     selectedCandidate?.categoryCode,
+    selectedCandidate?.categoryOverrideReason,
     selectedCandidate?.sourceName,
     selectedCandidate?.tagNames
   ]);
 
   async function updateStatus(status: CandidateStatus) {
     if (!selectedCandidate) {
+      return;
+    }
+    if (
+      status === 'PUBLISHED' &&
+      draftCategoryCode !== selectedCandidate.suggestedCategoryCode &&
+      !draftCategoryOverrideReason.trim()
+    ) {
+      setErrorMessage('修改建议分类时必须填写人工覆盖原因。');
       return;
     }
     setActionLoading(true);
@@ -127,6 +139,7 @@ export function CandidateReviewPage() {
               keyPoints: selectedCandidate.keyPoints,
               impactAnalysis: selectedCandidate.impactAnalysis,
               categoryCode: draftCategoryCode,
+              categoryOverrideReason: draftCategoryOverrideReason.trim(),
               publishNow: true
             })
           : await rejectCandidate(selectedCandidate.id, '运营后台审核拒绝');
@@ -176,6 +189,13 @@ export function CandidateReviewPage() {
       setErrorMessage('候选标题不能为空。');
       return;
     }
+    if (
+      draftCategoryCode !== selectedCandidate.suggestedCategoryCode &&
+      !draftCategoryOverrideReason.trim()
+    ) {
+      setErrorMessage('修改建议分类时必须填写人工覆盖原因。');
+      return;
+    }
     setActionLoading(true);
     setErrorMessage('');
     setSuccessMessage('');
@@ -184,6 +204,7 @@ export function CandidateReviewPage() {
         title,
         summary: draftSummary.trim(),
         categoryCode: draftCategoryCode,
+        categoryOverrideReason: draftCategoryOverrideReason.trim(),
         sourceName: draftSourceName.trim(),
         tagNames: parseTagText(draftTagText)
       });
@@ -433,6 +454,28 @@ export function CandidateReviewPage() {
                     ))}
                   </select>
                 </label>
+                <div className="field-label">
+                  分类建议
+                  <p className="detail-meta">
+                    {selectedCandidate.suggestedCategoryName} · 置信度{' '}
+                    {Math.round(selectedCandidate.classificationConfidence * 100)}% ·{' '}
+                    {selectedCandidate.classificationRule}
+                  </p>
+                </div>
+                {draftCategoryCode !== selectedCandidate.suggestedCategoryCode ? (
+                  <label className="field-label wide">
+                    人工覆盖原因
+                    <input
+                      value={draftCategoryOverrideReason}
+                      onChange={(event) => {
+                        setDraftCategoryOverrideReason(event.target.value);
+                        setIsDraftDirty(true);
+                      }}
+                      disabled={selectedCandidate.status !== 'PENDING_REVIEW' || actionLoading}
+                      placeholder="说明为何不采用系统建议分类"
+                    />
+                  </label>
+                ) : null}
                 <label className="field-label">
                   候选来源
                   <input

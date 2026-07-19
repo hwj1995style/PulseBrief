@@ -137,9 +137,24 @@ class AdminCandidateControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "title": "缺少覆盖原因",
+                                  "summary": "不应保存",
+                                  "categoryCode": "ai",
+                                  "sourceName": "Updated Source",
+                                  "tagNames": []
+                                }
+                                """))
+                .andExpect(status().isUnprocessableEntity());
+
+        mockMvc.perform(put("/api/admin/candidates/" + candidate.getId())
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
                                   "title": "运营修订后的候选标题",
                                   "summary": "运营修订后的候选摘要",
                                   "categoryCode": "ai",
+                                  "categoryOverrideReason": "运营确认该内容主要讨论 AI 基建",
                                   "sourceName": "Updated Source",
                                   "tagNames": ["AI 基建", "算力", "AI 基建"]
                                 }
@@ -148,6 +163,7 @@ class AdminCandidateControllerTest {
                 .andExpect(jsonPath("$.data.title").value("运营修订后的候选标题"))
                 .andExpect(jsonPath("$.data.summary").value("运营修订后的候选摘要"))
                 .andExpect(jsonPath("$.data.categoryCode").value("ai"))
+                .andExpect(jsonPath("$.data.categoryOverrideReason").value("运营确认该内容主要讨论 AI 基建"))
                 .andExpect(jsonPath("$.data.sourceName").value("Updated Source"))
                 .andExpect(jsonPath("$.data.tagNames[0]").value("AI 基建"))
                 .andExpect(jsonPath("$.data.tagNames[1]").value("算力"));

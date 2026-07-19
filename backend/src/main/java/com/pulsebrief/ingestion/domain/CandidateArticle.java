@@ -10,6 +10,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import com.pulsebrief.ingestion.service.ClassificationDecision;
 
 @Entity
 @Table(name = "candidate_article")
@@ -28,6 +30,18 @@ public class CandidateArticle {
 
     @Column(name = "category_code")
     private String categoryCode;
+
+    @Column(name = "suggested_category_code")
+    private String suggestedCategoryCode;
+
+    @Column(name = "classification_confidence")
+    private BigDecimal classificationConfidence;
+
+    @Column(name = "classification_rule")
+    private String classificationRule;
+
+    @Column(name = "category_override_reason")
+    private String categoryOverrideReason;
 
     @Column(name = "source_name")
     private String sourceName;
@@ -59,12 +73,15 @@ public class CandidateArticle {
     protected CandidateArticle() {
     }
 
-    public CandidateArticle(RawNewsItem rawNewsItem, String categoryCode) {
+    public CandidateArticle(RawNewsItem rawNewsItem, ClassificationDecision classification) {
         LocalDateTime now = LocalDateTime.now();
         this.rawNewsItem = rawNewsItem;
         this.title = rawNewsItem.getTitle();
         this.summary = rawNewsItem.getSummary();
-        this.categoryCode = categoryCode;
+        this.categoryCode = classification.suggestedCategoryCode();
+        this.suggestedCategoryCode = classification.suggestedCategoryCode();
+        this.classificationConfidence = BigDecimal.valueOf(classification.confidence());
+        this.classificationRule = classification.matchedRule();
         this.sourceName = rawNewsItem.getSourceName();
         this.originalUrl = rawNewsItem.getOriginalUrl();
         this.publishedAt = rawNewsItem.getPublishedAt();
@@ -91,6 +108,22 @@ public class CandidateArticle {
 
     public String getCategoryCode() {
         return categoryCode;
+    }
+
+    public String getSuggestedCategoryCode() {
+        return suggestedCategoryCode;
+    }
+
+    public Double getClassificationConfidence() {
+        return classificationConfidence == null ? null : classificationConfidence.doubleValue();
+    }
+
+    public String getClassificationRule() {
+        return classificationRule;
+    }
+
+    public String getCategoryOverrideReason() {
+        return categoryOverrideReason;
     }
 
     public String getSourceName() {
@@ -125,10 +158,20 @@ public class CandidateArticle {
         return createdAt;
     }
 
-    public void updateDraft(String title, String summary, String categoryCode, String sourceName, String tagNames) {
+    public void updateDraft(
+            String title,
+            String summary,
+            String categoryCode,
+            String sourceName,
+            String tagNames,
+            String categoryOverrideReason
+    ) {
         this.title = title.trim();
         this.summary = summary;
         this.categoryCode = categoryCode;
+        this.categoryOverrideReason = categoryCode.equals(this.suggestedCategoryCode)
+                ? null
+                : categoryOverrideReason.trim();
         this.sourceName = sourceName;
         this.tagNames = tagNames;
         this.updatedAt = LocalDateTime.now();
@@ -139,6 +182,12 @@ public class CandidateArticle {
         this.reviewNote = reviewNote;
         this.updatedAt = LocalDateTime.now();
         this.rawNewsItem.markAsRejected();
+    }
+
+    public void confirmCategory(String categoryCode, String overrideReason) {
+        this.categoryCode = categoryCode;
+        this.categoryOverrideReason = categoryCode.equals(this.suggestedCategoryCode) ? null : overrideReason.trim();
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void publish(Long publishedArticleId) {

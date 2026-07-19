@@ -60,6 +60,11 @@ export interface AdminCandidate {
   impactAnalysis: string;
   categoryCode: string;
   categoryName: string;
+  suggestedCategoryCode: string;
+  suggestedCategoryName: string;
+  classificationConfidence: number;
+  classificationRule: string;
+  categoryOverrideReason: string;
   sourceName: string;
   tagNames: string[];
   originalUrl: string;
@@ -75,6 +80,7 @@ export interface AdminCandidateUpdateInput {
   title: string;
   summary: string;
   categoryCode: string;
+  categoryOverrideReason?: string;
   sourceName: string;
   tagNames: string[];
 }
@@ -86,5 +92,6 @@ export interface AdminCandidatePublishInput {
   keyPoints?: string[];
   impactAnalysis?: string;
   categoryCode?: string;
+  categoryOverrideReason?: string;
   publishNow?: boolean;
 }

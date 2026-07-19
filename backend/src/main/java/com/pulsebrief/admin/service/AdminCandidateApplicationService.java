@@ -196,12 +196,21 @@ public class AdminCandidateApplicationService {
         if (summary != null && summary.length() > 2000) {
             throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Candidate summary is too long");
         }
+        String categoryCode = blankToDefault(request.categoryCode(), candidate.getCategoryCode());
+        if (!categoryCode.equals(candidate.getSuggestedCategoryCode())
+                && (request.categoryOverrideReason() == null || request.categoryOverrideReason().isBlank())) {
+            throw new ResponseStatusException(
+                    UNPROCESSABLE_ENTITY,
+                    "Category override reason is required when final category differs from suggestion"
+            );
+        }
         candidate.updateDraft(
                 title,
                 summary,
-                blankToDefault(request.categoryCode(), candidate.getCategoryCode()),
+                categoryCode,
                 blankToDefault(request.sourceName(), candidate.getSourceName()),
-                normalizeTags(request.tagNames())
+                normalizeTags(request.tagNames()),
+                request.categoryOverrideReason()
         );
         return mapper.toCandidateResponse(candidate);
     }
@@ -221,6 +230,18 @@ public class AdminCandidateApplicationService {
         String title = blankToDefault(request == null ? null : request.title(), candidate.getTitle());
         String summary = blankToDefault(request == null ? null : request.summary(), candidate.getSummary());
         String categoryCode = blankToDefault(request == null ? null : request.categoryCode(), candidate.getCategoryCode());
+        String categoryOverrideReason = blankToDefault(
+                request == null ? null : request.categoryOverrideReason(),
+                candidate.getCategoryOverrideReason()
+        );
+        if (!categoryCode.equals(candidate.getSuggestedCategoryCode())
+                && (categoryOverrideReason == null || categoryOverrideReason.isBlank())) {
+            throw new ResponseStatusException(
+                    UNPROCESSABLE_ENTITY,
+                    "Category override reason is required when final category differs from suggestion"
+            );
+        }
+        candidate.confirmCategory(categoryCode, categoryOverrideReason);
         String aiSummary = blankToDefault(request == null ? null : request.aiSummary(), summary);
         String impactAnalysis = request == null ? null : request.impactAnalysis();
         String keyPoints = request == null || request.keyPoints() == null

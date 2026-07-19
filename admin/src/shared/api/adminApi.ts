@@ -89,6 +89,10 @@ interface BackendCandidateResponse {
   title: string;
   summary: string;
   categoryCode: string;
+  suggestedCategoryCode: string | null;
+  classificationConfidence: number | null;
+  classificationRule: string | null;
+  categoryOverrideReason: string | null;
   sourceName: string;
   tagNames?: string[];
   originalUrl: string;
@@ -485,7 +489,9 @@ function createMockAdminApiClient(): MutableAdminApiClient {
         ? {
             ...candidate,
             ...input,
-            categoryName: categoryNameByCode[input.categoryCode] ?? input.categoryCode
+            categoryName: categoryNameByCode[input.categoryCode] ?? input.categoryCode,
+            categoryOverrideReason:
+              input.categoryCode === candidate.suggestedCategoryCode ? '' : input.categoryOverrideReason ?? ''
           }
         : candidate
     );
@@ -1090,6 +1096,14 @@ function mapCandidate(candidate: BackendCandidateResponse): AdminCandidate {
     impactAnalysis: '',
     categoryCode: candidate.categoryCode,
     categoryName: categoryNameByCode[candidate.categoryCode] ?? candidate.categoryCode,
+    suggestedCategoryCode: candidate.suggestedCategoryCode ?? candidate.categoryCode,
+    suggestedCategoryName:
+      categoryNameByCode[candidate.suggestedCategoryCode ?? candidate.categoryCode] ??
+      candidate.suggestedCategoryCode ??
+      candidate.categoryCode,
+    classificationConfidence: candidate.classificationConfidence ?? 0.5,
+    classificationRule: candidate.classificationRule ?? 'LEGACY_BACKFILL',
+    categoryOverrideReason: candidate.categoryOverrideReason ?? '',
     sourceName: candidate.sourceName,
     tagNames: candidate.tagNames ?? [],
     originalUrl: candidate.originalUrl,
