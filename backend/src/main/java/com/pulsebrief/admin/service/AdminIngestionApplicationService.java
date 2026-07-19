@@ -6,6 +6,7 @@ import com.pulsebrief.admin.api.AdminIngestionMetricsResponse;
 import com.pulsebrief.admin.api.AdminIngestionRunRequest;
 import com.pulsebrief.admin.api.AdminIngestionRunResponse;
 import com.pulsebrief.admin.api.AdminIngestionSourceResponse;
+import com.pulsebrief.admin.api.AdminIngestionScheduleRequest;
 import com.pulsebrief.article.repository.ArticleRepository;
 import com.pulsebrief.common.api.PageResponse;
 import com.pulsebrief.ingestion.domain.NewsIngestionJob;
@@ -134,12 +135,39 @@ public class AdminIngestionApplicationService {
         );
     }
 
+    @Transactional
+    public AdminIngestionSourceResponse updateSourceSchedule(Long id, AdminIngestionScheduleRequest request) {
+        if (request == null || request.enabled() == null) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Schedule enabled value is required");
+        }
+        int intervalMinutes = request.intervalMinutes() == null ? 60 : request.intervalMinutes();
+        if (intervalMinutes < 5 || intervalMinutes > 1440) {
+            throw new ResponseStatusException(UNPROCESSABLE_ENTITY, "Schedule interval must be between 5 and 1440 minutes");
+        }
+        NewsIngestionSource source = sourceRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Ingestion source not found"));
+        source.configureSchedule(request.enabled(), intervalMinutes);
+        return toSourceResponse(source);
+    }
+
+    @Transactional
+    public AdminIngestionJobResponse cancelJob(Long id) {
+        NewsIngestionJob job = jobRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Ingestion job not found"));
+        job.requestCancel();
+        return toJobResponse(job);
+    }
+
     private AdminIngestionJobResponse toJobResponse(NewsIngestionJob job) {
         return new AdminIngestionJobResponse(
                 job.getId(),
                 job.getSourceCode(),
                 job.getTriggerType(),
                 job.getJobStatus(),
+                job.getAttemptCount(),
+                job.getMaxAttempts(),
+                job.getNextRetryAt(),
+                job.isCancelRequested(),
                 job.getStartedAt(),
                 job.getFinishedAt(),
                 job.getFetchedCount(),
@@ -158,6 +186,9 @@ public class AdminIngestionApplicationService {
                 source.getProviderType(),
                 source.getDefaultCategoryCode(),
                 source.isEnabled(),
+                source.isScheduleEnabled(),
+                source.getScheduleIntervalMinutes(),
+                source.getNextRunAt(),
                 source.getContentAccessPolicy(),
                 source.getMaxAgeHours(),
                 source.isPdfDownloadAllowed(),

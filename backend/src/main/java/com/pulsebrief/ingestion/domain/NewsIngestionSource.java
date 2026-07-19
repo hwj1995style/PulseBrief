@@ -30,6 +30,15 @@ public class NewsIngestionSource {
 
     private Byte enabled;
 
+    @Column(name = "schedule_enabled")
+    private Byte scheduleEnabled;
+
+    @Column(name = "schedule_interval_minutes")
+    private Integer scheduleIntervalMinutes;
+
+    @Column(name = "next_run_at")
+    private LocalDateTime nextRunAt;
+
     @Column(name = "rate_limit_per_hour")
     private Integer rateLimitPerHour;
 
@@ -71,6 +80,8 @@ public class NewsIngestionSource {
         source.baseUrl = "fixture://" + code;
         source.defaultCategoryCode = "global";
         source.enabled = 1;
+        source.scheduleEnabled = 0;
+        source.scheduleIntervalMinutes = 60;
         source.rateLimitPerHour = 60;
         source.contentAccessPolicy = contentAccessPolicy;
         source.maxAgeHours = maxAgeHours;
@@ -108,6 +119,30 @@ public class NewsIngestionSource {
 
     public String getDefaultCategoryCode() {
         return defaultCategoryCode;
+    }
+
+    public boolean isScheduleEnabled() {
+        return scheduleEnabled != null && scheduleEnabled == 1;
+    }
+
+    public Integer getScheduleIntervalMinutes() {
+        return scheduleIntervalMinutes == null ? 60 : scheduleIntervalMinutes;
+    }
+
+    public LocalDateTime getNextRunAt() {
+        return nextRunAt;
+    }
+
+    public void configureSchedule(boolean enabled, int intervalMinutes) {
+        this.scheduleEnabled = enabled ? (byte) 1 : (byte) 0;
+        this.scheduleIntervalMinutes = intervalMinutes;
+        this.nextRunAt = enabled ? LocalDateTime.now() : null;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void scheduleNextRun() {
+        this.nextRunAt = LocalDateTime.now().plusMinutes(getScheduleIntervalMinutes());
+        this.updatedAt = LocalDateTime.now();
     }
 
     public Integer getRateLimitPerHour() {

@@ -1,10 +1,14 @@
-export type IngestionJobStatus = 'RUNNING' | 'SUCCESS' | 'PARTIAL_SUCCESS' | 'FAILED';
+export type IngestionJobStatus = 'RUNNING' | 'WAITING_RETRY' | 'SUCCESS' | 'PARTIAL_SUCCESS' | 'FAILED' | 'CANCELLED';
 
 export interface AdminIngestionJob {
   id: number;
   sourceCode: string;
   triggerType: string;
   status: IngestionJobStatus;
+  attemptCount?: number;
+  maxAttempts?: number;
+  nextRetryAt?: string | null;
+  cancelRequested?: boolean;
   startedAt: string;
   finishedAt: string | null;
   fetchedCount: number;
@@ -28,6 +32,9 @@ export interface AdminIngestionSource {
   providerType: string;
   defaultCategoryCode: string | null;
   enabled: boolean;
+  scheduleEnabled?: boolean;
+  scheduleIntervalMinutes?: number;
+  nextRunAt?: string | null;
   contentAccessPolicy: string;
   maxAgeHours: number | null;
   allowPdfDownload: boolean;

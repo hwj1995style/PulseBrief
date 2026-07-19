@@ -31,6 +31,9 @@ pulsebrief:
     token: ${PULSEBRIEF_ADMIN_TOKEN:dev-admin-token}
   ingestion:
     enabled: ${PULSEBRIEF_INGESTION_ENABLED:false}
+    scheduling:
+      enabled: ${PULSEBRIEF_INGESTION_SCHEDULING_ENABLED:false}
+      poll-interval-ms: ${PULSEBRIEF_INGESTION_POLL_INTERVAL_MS:30000}
     sources: []
   pdf-cache:
     enabled: ${PULSEBRIEF_PDF_CACHE_ENABLED:false}

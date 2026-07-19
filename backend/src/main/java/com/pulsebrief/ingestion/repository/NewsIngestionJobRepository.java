@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.List;
 
 public interface NewsIngestionJobRepository extends JpaRepository<NewsIngestionJob, Long> {
     Page<NewsIngestionJob> findAllByOrderByStartedAtDescIdDesc(Pageable pageable);
@@ -20,6 +21,11 @@ public interface NewsIngestionJobRepository extends JpaRepository<NewsIngestionJ
     );
 
     long countBySourceCodeAndStartedAtGreaterThanEqual(String sourceCode, LocalDateTime start);
+
+    List<NewsIngestionJob> findTop20ByJobStatusAndNextRetryAtLessThanEqualOrderByNextRetryAtAsc(
+            String jobStatus,
+            LocalDateTime now
+    );
 
     @Query("""
             select coalesce(sum(job.fetchedCount), 0)

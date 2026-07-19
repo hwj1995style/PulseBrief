@@ -45,7 +45,32 @@ public class NewsIngestionRunService {
         }
         enforceRateLimit(source);
 
-        NewsIngestionJob job = jobRepository.save(new NewsIngestionJob(source.getCode(), MANUAL));
+        return execute(source, pageSize, generateCandidates, jobRepository.save(new NewsIngestionJob(source.getCode(), MANUAL)), true);
+    }
+
+    public void runScheduled(NewsIngestionSource source) {
+        if (!source.isEnabled()) {
+            return;
+        }
+        NewsIngestionJob job = jobRepository.save(new NewsIngestionJob(source.getCode(), "SCHEDULED", 3));
+        execute(source, 20, true, job, false);
+    }
+
+    public void retry(NewsIngestionSource source, NewsIngestionJob job) {
+        job.startRetry();
+        jobRepository.save(job);
+        if (!"CANCELLED".equals(job.getJobStatus())) {
+            execute(source, 20, true, job, false);
+        }
+    }
+
+    private AdminIngestionRunResponse execute(
+            NewsIngestionSource source,
+            int pageSize,
+            boolean generateCandidates,
+            NewsIngestionJob job,
+            boolean propagateFailure
+    ) {
         try {
             NewsIngestionProvider provider = providerFor(source.getProviderType());
             IngestionRequest request = new IngestionRequest(
@@ -66,14 +91,29 @@ public class NewsIngestionRunService {
             return toResponse(job, source);
         } catch (ResponseStatusException e) {
             String message = e.getReason() == null ? e.getMessage() : e.getReason();
-            job.fail(message);
+            recordFailure(job, message);
             jobRepository.save(job);
-            throw e;
+            if (propagateFailure) {
+                throw e;
+            }
+            return toResponse(job, source);
         } catch (RuntimeException e) {
             String message = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-            job.fail(message);
+            recordFailure(job, message);
             jobRepository.save(job);
-            throw new ResponseStatusException(BAD_GATEWAY, message, e);
+            if (propagateFailure) {
+                throw new ResponseStatusException(BAD_GATEWAY, message, e);
+            }
+            return toResponse(job, source);
+        }
+    }
+
+    private void recordFailure(NewsIngestionJob job, String message) {
+        if (job.canRetry()) {
+            int delayMinutes = Math.min(1 << Math.max(job.getAttemptCount() - 1, 0), 30);
+            job.waitForRetry(message, delayMinutes);
+        } else {
+            job.fail(message);
         }
     }
 

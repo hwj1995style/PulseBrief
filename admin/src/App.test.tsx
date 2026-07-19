@@ -194,6 +194,6 @@ describe('PulseBrief Admin shell', () => {
 
     expect(await screen.findByText('手动采集完成：Fixture Global')).toBeInTheDocument();
     expect(screen.getAllByText('fixture-global').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('MANUAL').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/MANUAL/).length).toBeGreaterThanOrEqual(1);
   });
 });

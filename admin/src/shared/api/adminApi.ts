@@ -215,6 +215,10 @@ interface BackendIngestionJobResponse {
   sourceCode: string;
   triggerType: string;
   status: IngestionJobStatus;
+  attemptCount: number;
+  maxAttempts: number;
+  nextRetryAt: string | null;
+  cancelRequested: boolean;
   startedAt: string;
   finishedAt: string | null;
   fetchedCount: number;
@@ -238,6 +242,9 @@ interface BackendIngestionSourceResponse {
   providerType: string;
   defaultCategoryCode: string | null;
   enabled: boolean;
+  scheduleEnabled: boolean;
+  scheduleIntervalMinutes: number;
+  nextRunAt: string | null;
   contentAccessPolicy: string;
   maxAgeHours: number | null;
   allowPdfDownload: boolean;

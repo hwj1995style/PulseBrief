@@ -69,4 +69,17 @@ public class AdminIngestionController {
                 : request;
         return ApiResponse.ok(ingestionService.runSource(id, safeRequest));
     }
+
+    @PutMapping("/sources/{id}/schedule")
+    public ApiResponse<AdminIngestionSourceResponse> updateSourceSchedule(
+            @PathVariable Long id,
+            @RequestBody AdminIngestionScheduleRequest request
+    ) {
+        return ApiResponse.ok(ingestionService.updateSourceSchedule(id, request));
+    }
+
+    @PostMapping("/jobs/{id}/cancel")
+    public ApiResponse<AdminIngestionJobResponse> cancelJob(@PathVariable Long id) {
+        return ApiResponse.ok(ingestionService.cancelJob(id));
+    }
 }

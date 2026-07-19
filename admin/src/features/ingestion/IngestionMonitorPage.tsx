@@ -28,9 +28,11 @@ const emptyMetrics: AdminIngestionMetrics = {
 
 const statusLabels: Record<IngestionJobStatus, string> = {
   RUNNING: '运行中',
+  WAITING_RETRY: '等待重试',
   SUCCESS: '成功',
   PARTIAL_SUCCESS: '部分成功',
-  FAILED: '失败'
+  FAILED: '失败',
+  CANCELLED: '已取消'
 };
 
 const operationActionLabels: Record<string, string> = {
@@ -198,7 +200,7 @@ export function IngestionMonitorPage() {
                   <div className="table-row ingestion-row" key={job.id} role="row">
                     <span className="title-cell" role="cell">
                       {job.sourceCode}
-                      <small>{job.triggerType}</small>
+                      <small>{job.triggerType} · 第 {job.attemptCount ?? 1}/{job.maxAttempts ?? 1} 次</small>
                     </span>
                     <span className={statusClass(job.status)} role="cell">
                       {statusLabels[job.status]}
@@ -211,6 +213,7 @@ export function IngestionMonitorPage() {
                     </span>
                     <span className={job.errorMessage ? 'error-cell' : 'muted'} role="cell">
                       {job.errorMessage || '无'}
+                      {job.nextRetryAt ? ` · 下次重试 ${formatTime(job.nextRetryAt)}` : ''}
                     </span>
                   </div>
                 ))
@@ -317,6 +320,11 @@ export function IngestionMonitorPage() {
               <small>
                 {source.allowPdfDownload ? '允许 PDF' : '不下载 PDF'} ·{' '}
                 {source.allowFullText ? '允许全文' : '摘要优先'}
+              </small>
+              <small>
+                {source.scheduleEnabled
+                  ? `每 ${source.scheduleIntervalMinutes ?? 60} 分钟调度 · 下次 ${formatTime(source.nextRunAt ?? '')}`
+                  : '定时调度未启用'}
               </small>
               <button
                 aria-label={`手动采集 ${source.name}`}

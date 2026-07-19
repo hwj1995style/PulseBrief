@@ -145,6 +145,33 @@ class AdminIngestionControllerTest {
     }
 
     @Test
+    void configuresSourceScheduleAndCancelsWaitingRetryJob() throws Exception {
+        String sourceCode = "schedule-" + UUID.randomUUID();
+        NewsIngestionSource source = sourceRepository.save(NewsIngestionSource.fixture(
+                sourceCode, "Schedule Fixture", "SUMMARY_ONLY", 24
+        ));
+
+        mockMvc.perform(put("/api/admin/ingestion/sources/" + source.getId() + "/schedule")
+                        .header("Authorization", ADMIN_TOKEN)
+                        .contentType("application/json")
+                        .content("{\"enabled\":true,\"intervalMinutes\":15}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scheduleEnabled").value(true))
+                .andExpect(jsonPath("$.data.scheduleIntervalMinutes").value(15))
+                .andExpect(jsonPath("$.data.nextRunAt").isNotEmpty());
+
+        NewsIngestionJob job = new NewsIngestionJob(sourceCode, "SCHEDULED", 3);
+        job.waitForRetry("Temporary provider failure", 1);
+        jobRepository.save(job);
+
+        mockMvc.perform(post("/api/admin/ingestion/jobs/" + job.getId() + "/cancel")
+                        .header("Authorization", ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("CANCELLED"))
+                .andExpect(jsonPath("$.data.cancelRequested").value(true));
+    }
+
+    @Test
     void manuallyRunsEnabledIngestionSourceAndReturnsJobSummary() throws Exception {
         String sourceCode = "manual-" + UUID.randomUUID();
         NewsIngestionSource source = sourceRepository.save(NewsIngestionSource.fixture(
