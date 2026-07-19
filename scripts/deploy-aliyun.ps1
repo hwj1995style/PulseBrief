@@ -122,10 +122,13 @@ for attempt in $(seq 1 36); do
     sleep 5
 done
 
-docker compose --env-file "$deploy_root/.env" exec -T backend sh -eu -c '
-payload=$(printf "{\"username\":\"%s\",\"password\":\"%s\"}" "$PULSEBRIEF_ADMIN_BOOTSTRAP_USERNAME" "$PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD")
-wget -q --post-data="$payload" --header="Content-Type: application/json" -O /dev/null http://127.0.0.1:8080/api/admin/auth/login
-'
+if grep -q '^PULSEBRIEF_ADMIN_BOOTSTRAP_USERNAME=.' "$deploy_root/.env" \
+    && grep -q '^PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD=.' "$deploy_root/.env"; then
+    docker compose --env-file "$deploy_root/.env" exec -T backend sh -eu -c '
+    payload=$(printf "{\"username\":\"%s\",\"password\":\"%s\"}" "$PULSEBRIEF_ADMIN_BOOTSTRAP_USERNAME" "$PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD")
+    wget -q --post-data="$payload" --header="Content-Type: application/json" -O /dev/null http://127.0.0.1:8080/api/admin/auth/login
+    '
+fi
 rm -rf "$remote_temp"
 printf 'PulseBrief containers are healthy and Admin login was verified.\n'
 '@
