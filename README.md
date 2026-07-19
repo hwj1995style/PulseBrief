@@ -39,7 +39,7 @@ Flutter 用户端 APP
 
 下一阶段：
 
-1. 将 DeepSeek V4 Flash 扩展到模型分类，并完善成本、限流和告警。
+1. 完善 DeepSeek 摘要与模型分类的成本、限流和告警。
 2. 增强 Admin 账号管理、密码轮换、会话清理与生产 CSP。
 3. 完成移动端签名、隐私合规材料、推送和应用商店上架流程。
 
@@ -275,6 +275,7 @@ mobile\build\app\outputs\flutter-apk\app-debug.apk
 14. [真实 OpenAI 摘要 Provider 接入说明](./docs/真实OpenAI摘要Provider接入说明.md)
 15. [DeepSeek V4 Flash 摘要 Provider 接入说明](./docs/DeepSeekV4Flash摘要Provider接入说明.md)
 16. [Admin 登录、RBAC 与密钥管理说明](./docs/Admin登录RBAC与密钥管理说明.md)
+17. [DeepSeek 模型分类接入说明](./docs/DeepSeek模型分类接入说明.md)
 
 ## 合规边界
 

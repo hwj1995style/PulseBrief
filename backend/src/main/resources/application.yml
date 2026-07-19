@@ -58,6 +58,11 @@ pulsebrief:
       timeout-seconds: ${PULSEBRIEF_DEEPSEEK_TIMEOUT_SECONDS:30}
       max-input-characters: ${PULSEBRIEF_DEEPSEEK_MAX_INPUT_CHARACTERS:12000}
       max-output-tokens: ${PULSEBRIEF_DEEPSEEK_MAX_OUTPUT_TOKENS:1200}
+      classification:
+        enabled: ${PULSEBRIEF_DEEPSEEK_CLASSIFICATION_ENABLED:false}
+        min-confidence: ${PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MIN_CONFIDENCE:0.65}
+        max-input-characters: ${PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MAX_INPUT_CHARACTERS:4000}
+        max-output-tokens: ${PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MAX_OUTPUT_TOKENS:300}
     openai:
       enabled: ${PULSEBRIEF_OPENAI_ENABLED:false}
       api-key: ${PULSEBRIEF_OPENAI_API_KEY:}

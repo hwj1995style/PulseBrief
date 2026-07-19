@@ -39,3 +39,7 @@ PULSEBRIEF_DEEPSEEK_MAX_OUTPUT_TOKENS=1200
 
 CI 不访问 DeepSeek。自动测试使用本地模拟 HTTP 服务验证请求格式、认证、JSON 解析、Token 统计、空响应重试和缺少密钥时的拒绝逻辑。真实付费 smoke 必须显式配置本地密钥。
 
+## 模型分类
+
+同一个 DeepSeek 连接现在也可用于候选资讯模型分类，分类开关与摘要开关相互独立。模型仅处理未命中关键词规则的标题、来源和 RSS 摘要，并保留来源默认分类、全局分类和 Admin 人工覆盖回退。配置与分类边界见 `docs/DeepSeek模型分类接入说明.md`。
+

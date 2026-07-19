@@ -5,10 +5,13 @@ import com.pulsebrief.ingestion.domain.RawNewsItem;
 import com.pulsebrief.ingestion.repository.NewsIngestionSourceRepository;
 import java.util.List;
 import java.util.Locale;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CandidateClassificationService {
+    private static final Logger log = LoggerFactory.getLogger(CandidateClassificationService.class);
     private static final List<Rule> RULES = List.of(
             new Rule("investment_view", 0.96, "KEYWORD_INVESTMENT_VIEW", List.of(
                     "goldman", "morgan stanley", "nomura", "ubs", "jpmorgan", "投行", "高盛", "摩根士丹利", "野村"
@@ -31,9 +34,14 @@ public class CandidateClassificationService {
     );
 
     private final NewsIngestionSourceRepository sourceRepository;
+    private final List<CandidateClassificationProvider> modelProviders;
 
-    public CandidateClassificationService(NewsIngestionSourceRepository sourceRepository) {
+    public CandidateClassificationService(
+            NewsIngestionSourceRepository sourceRepository,
+            List<CandidateClassificationProvider> modelProviders
+    ) {
         this.sourceRepository = sourceRepository;
+        this.modelProviders = List.copyOf(modelProviders);
     }
 
     public ClassificationDecision classify(RawNewsItem rawItem) {
@@ -46,11 +54,39 @@ public class CandidateClassificationService {
             }
         }
 
+        boolean modelAttempted = false;
+        for (CandidateClassificationProvider provider : modelProviders) {
+            modelAttempted = true;
+            try {
+                var decision = provider.classify(rawItem);
+                if (decision.isPresent()) {
+                    return decision.get();
+                }
+            } catch (RuntimeException exception) {
+                log.warn(
+                        "Candidate model classification failed; provider={}, sourceCode={}, fallback=rules, error={}",
+                        provider.providerType(),
+                        rawItem.getSourceCode(),
+                        exception.toString()
+                );
+            }
+        }
+
+        String sourceFallbackRule = modelAttempted ? "MODEL_FALLBACK_SOURCE_DEFAULT" : "SOURCE_DEFAULT";
+        String globalFallbackRule = modelAttempted ? "MODEL_FALLBACK_GLOBAL" : "GLOBAL_FALLBACK";
         return sourceRepository.findByCode(rawItem.getSourceCode())
                 .map(NewsIngestionSource::getDefaultCategoryCode)
                 .filter(value -> !value.isBlank())
-                .map(category -> new ClassificationDecision(category, 0.55, "SOURCE_DEFAULT"))
-                .orElseGet(() -> new ClassificationDecision("global", 0.30, "GLOBAL_FALLBACK"));
+                .map(category -> new ClassificationDecision(
+                        category,
+                        0.55,
+                        sourceFallbackRule
+                ))
+                .orElseGet(() -> new ClassificationDecision(
+                        "global",
+                        0.30,
+                        globalFallbackRule
+                ));
     }
 
     private String safe(String value) {

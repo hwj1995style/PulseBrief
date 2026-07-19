@@ -92,6 +92,32 @@ function Read-IntInRange {
     return $parsed
 }
 
+function Read-DoubleInRange {
+    param(
+        [string]$Name,
+        [string]$Value,
+        [double]$Default,
+        [double]$Min,
+        [double]$Max
+    )
+
+    $raw = if ([string]::IsNullOrWhiteSpace($Value)) { [string]$Default } else { $Value.Trim() }
+    $parsed = 0.0
+    if (-not [double]::TryParse(
+        $raw,
+        [System.Globalization.NumberStyles]::Float,
+        [System.Globalization.CultureInfo]::InvariantCulture,
+        [ref]$parsed
+    )) {
+        throw "$Name must be a decimal number, got '$Value'"
+    }
+    if ($parsed -lt $Min -or $parsed -gt $Max) {
+        throw "$Name must be between $Min and $Max, got $parsed"
+    }
+
+    return $parsed
+}
+
 function Assert-NotPlaceholder {
     param(
         [string]$Name,
@@ -174,7 +200,10 @@ $enabled = Read-Bool `
 $deepSeekEnabled = Read-Bool `
     -Name "PULSEBRIEF_DEEPSEEK_ENABLED" `
     -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_ENABLED" -Default "false")
-if ($deepSeekEnabled) {
+$deepSeekClassificationEnabled = Read-Bool `
+    -Name "PULSEBRIEF_DEEPSEEK_CLASSIFICATION_ENABLED" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_CLASSIFICATION_ENABLED" -Default "false")
+if ($deepSeekEnabled -or $deepSeekClassificationEnabled) {
     Assert-NotPlaceholder `
         -Name "PULSEBRIEF_DEEPSEEK_API_KEY" `
         -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_API_KEY")
@@ -187,6 +216,8 @@ if ($deepSeekEnabled) {
     Read-IntInRange -Name "PULSEBRIEF_DEEPSEEK_TIMEOUT_SECONDS" `
         -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_TIMEOUT_SECONDS" -Default "30") `
         -Default 30 -Min 5 -Max 120 | Out-Null
+}
+if ($deepSeekEnabled) {
     Read-IntInRange -Name "PULSEBRIEF_DEEPSEEK_MAX_INPUT_CHARACTERS" `
         -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_MAX_INPUT_CHARACTERS" -Default "12000") `
         -Default 12000 -Min 500 -Max 50000 | Out-Null
@@ -194,6 +225,18 @@ if ($deepSeekEnabled) {
         -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_MAX_OUTPUT_TOKENS" -Default "1200") `
         -Default 1200 -Min 300 -Max 4000 | Out-Null
     Write-Host "OK: DeepSeek summary provider configuration is present."
+}
+if ($deepSeekClassificationEnabled) {
+    Read-DoubleInRange -Name "PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MIN_CONFIDENCE" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MIN_CONFIDENCE" -Default "0.65") `
+        -Default 0.65 -Min 0.0 -Max 1.0 | Out-Null
+    Read-IntInRange -Name "PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MAX_INPUT_CHARACTERS" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MAX_INPUT_CHARACTERS" -Default "4000") `
+        -Default 4000 -Min 200 -Max 12000 | Out-Null
+    Read-IntInRange -Name "PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MAX_OUTPUT_TOKENS" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_CLASSIFICATION_MAX_OUTPUT_TOKENS" -Default "300") `
+        -Default 300 -Min 100 -Max 1000 | Out-Null
+    Write-Host "OK: DeepSeek classification provider configuration is present."
 }
 
 $openAiEnabled = Read-Bool `
