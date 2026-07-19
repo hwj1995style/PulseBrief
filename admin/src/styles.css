@@ -1109,3 +1109,48 @@ button {
     max-width: 100vw;
   }
 }
+/* Admin authentication */
+.admin-login-shell {
+  align-items: center;
+  background: linear-gradient(145deg, #eef4ff 0%, #f8fafc 52%, #eefbf6 100%);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 32px;
+}
+
+.admin-login-card {
+  background: #fff;
+  border: 1px solid #dce5ef;
+  border-radius: 20px;
+  box-shadow: 0 24px 70px rgb(31 50 74 / 12%);
+  display: grid;
+  gap: 20px;
+  max-width: 440px;
+  padding: 36px;
+  width: 100%;
+}
+
+.admin-login-brand,
+.admin-login-heading {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+
+.admin-login-brand div,
+.admin-login-heading div {
+  display: grid;
+  gap: 3px;
+}
+
+.admin-login-brand small,
+.admin-login-heading p {
+  color: #607086;
+  margin: 0;
+}
+
+.admin-login-heading h1 {
+  font-size: 24px;
+  margin: 0;
+}

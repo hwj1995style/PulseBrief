@@ -82,7 +82,9 @@ export interface AdminOperationLog {
   targetId: number;
   targetTitle: string;
   status: string;
+  operatorUserId?: number | null;
   operatorName: string;
+  operatorRole?: string | null;
   detail: string;
   createdAt: string;
 }

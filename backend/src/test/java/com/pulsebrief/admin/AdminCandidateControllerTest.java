@@ -85,7 +85,7 @@ class AdminCandidateControllerTest {
 
         mockMvc.perform(get("/api/admin/candidates")
                         .header("Authorization", "Bearer dev-token-1"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

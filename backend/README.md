@@ -49,18 +49,21 @@ http://localhost:8080/swagger-ui.html
 http://localhost:8080/v3/api-docs
 ```
 
-Swagger UI 调试需要登录接口时，使用开发态 Bearer Token：
+Swagger UI 调试用户端登录接口时，可使用用户开发 Token：
 
 ```text
 Authorization: Bearer dev-token-1
 ```
 
-Admin API 使用独立开发态 Token，默认值可通过环境变量覆盖：
+Admin API 使用数据库账号登录，主配置不再提供默认万能 Token：
 
 ```text
-PULSEBRIEF_ADMIN_TOKEN=dev-admin-token
-Authorization: Bearer dev-admin-token
+POST /api/admin/auth/login
+GET  /api/admin/auth/me
+POST /api/admin/auth/logout
 ```
+
+首次账号通过环境 Secret 中的 `PULSEBRIEF_ADMIN_BOOTSTRAP_USERNAME` 与 `PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD` 引导创建；密码至少 12 位且使用 BCrypt 存储。创建完成后从运行环境移除引导密码。角色支持 `VIEWER`、`EDITOR`、`ADMIN`，详见 `docs/Admin登录RBAC与密钥管理说明.md`。
 
 ## News Ingestion
 

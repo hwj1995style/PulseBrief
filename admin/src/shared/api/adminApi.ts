@@ -33,6 +33,7 @@ import type {
   AdminOperationLog,
   IngestionJobStatus
 } from '../types/ingestion';
+import { getStoredAdminSession } from './adminAuth';
 
 export interface AdminApiClientConfig {
   apiBaseUrl?: string;
@@ -287,7 +288,9 @@ interface BackendOperationLogResponse {
   targetId: number;
   targetTitle: string;
   status: string;
+  operatorUserId: number | null;
   operatorName: string;
+  operatorRole: string | null;
   detail: string;
   createdAt: string;
 }
@@ -308,7 +311,7 @@ const categoryNameByCode: Record<string, string> = {
 };
 
 const defaultApiBaseUrl = import.meta.env.VITE_ADMIN_API_BASE_URL;
-const defaultAdminToken = import.meta.env.VITE_ADMIN_TOKEN ?? 'dev-admin-token';
+const defaultAdminToken = import.meta.env.VITE_ADMIN_TOKEN;
 
 export const adminApiConfig = {
   apiBaseUrl: defaultApiBaseUrl,
@@ -328,7 +331,7 @@ export function createAdminApiClient(config: AdminApiClientConfig = {}): AdminAp
   }
   return createHttpAdminApiClient({
     apiBaseUrl,
-    adminToken: config.adminToken ?? 'dev-admin-token'
+    adminToken: config.adminToken
   });
 }
 
@@ -847,21 +850,22 @@ function createMockAdminApiClient(): MutableAdminApiClient {
   };
 }
 
-function createHttpAdminApiClient(config: Required<AdminApiClientConfig>): AdminApiClient {
-  const headers = {
-    Authorization: `Bearer ${config.adminToken}`,
-    'Content-Type': 'application/json'
-  };
+function createHttpAdminApiClient(config: { apiBaseUrl: string; adminToken?: string }): AdminApiClient {
 
   async function request<T>(path: string, init?: RequestInit): Promise<T> {
+    const token = config.adminToken ?? getStoredAdminSession()?.token;
     const response = await fetch(`${config.apiBaseUrl}${path}`, {
       ...init,
       headers: {
-        ...headers,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'Content-Type': 'application/json',
         ...init?.headers
       }
     });
-    const payload = (await response.json()) as BackendApiResponse<T>;
+    const contentType = response.headers?.get?.('content-type') ?? 'application/json';
+    const payload = contentType.includes('application/json')
+      ? ((await response.json()) as BackendApiResponse<T>)
+      : ({ code: 'ERROR', message: `Admin API request failed: ${response.status}` } as BackendApiResponse<T>);
     if (!response.ok || payload.code !== 'OK') {
       throw new Error(payload.message || `Admin API request failed: ${response.status}`);
     }

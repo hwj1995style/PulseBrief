@@ -1,5 +1,6 @@
 package com.pulsebrief.ingestion.service;
 
+import com.pulsebrief.admin.security.AdminIdentityService;
 import com.pulsebrief.ingestion.domain.AiSummaryTask;
 import com.pulsebrief.ingestion.domain.CandidateArticle;
 import com.pulsebrief.ingestion.domain.RawNewsContent;
@@ -33,12 +34,14 @@ public class AiSummaryTaskService {
     private final RawNewsContentRepository rawNewsContentRepository;
     private final AiSummaryTaskRepository aiSummaryTaskRepository;
     private final Map<String, AiSummaryProvider> providers;
+    private final AdminIdentityService identityService;
 
     public AiSummaryTaskService(
             CandidateArticleRepository candidateArticleRepository,
             RawNewsContentRepository rawNewsContentRepository,
             AiSummaryTaskRepository aiSummaryTaskRepository,
-            List<AiSummaryProvider> providers
+            List<AiSummaryProvider> providers,
+            AdminIdentityService identityService
     ) {
         this.candidateArticleRepository = candidateArticleRepository;
         this.rawNewsContentRepository = rawNewsContentRepository;
@@ -48,6 +51,7 @@ public class AiSummaryTaskService {
                         provider -> provider.providerType().toUpperCase(Locale.ROOT),
                         Function.identity()
                 ));
+        this.identityService = identityService;
     }
 
     @Transactional
@@ -71,7 +75,7 @@ public class AiSummaryTaskService {
                 provider.providerType(),
                 provider.modelName(),
                 promptVersion,
-                "dev-admin"
+                identityService.current().username()
         ));
         if (input.text() == null || input.text().isBlank()) {
             task.markSkipped("AI summary input is empty");

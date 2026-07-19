@@ -3,6 +3,8 @@ package com.pulsebrief.admin.service;
 import com.pulsebrief.admin.api.AdminOperationLogResponse;
 import com.pulsebrief.admin.domain.AdminOperationLog;
 import com.pulsebrief.admin.repository.AdminOperationLogRepository;
+import com.pulsebrief.admin.security.AdminIdentityService;
+import com.pulsebrief.admin.security.AdminPrincipal;
 import com.pulsebrief.common.api.PageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,12 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminOperationLogService {
     private static final String MODULE_PUBLISH = "PUBLISH";
     private static final String STATUS_SUCCESS = "SUCCESS";
-    private static final String OPERATOR_DEV_ADMIN = "dev-admin";
-
     private final AdminOperationLogRepository operationLogRepository;
+    private final AdminIdentityService identityService;
 
-    public AdminOperationLogService(AdminOperationLogRepository operationLogRepository) {
+    public AdminOperationLogService(
+            AdminOperationLogRepository operationLogRepository,
+            AdminIdentityService identityService
+    ) {
         this.operationLogRepository = operationLogRepository;
+        this.identityService = identityService;
     }
 
     @Transactional(readOnly = true)
@@ -43,6 +48,7 @@ public class AdminOperationLogService {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void recordArticlePublish(Long articleId, String title) {
+        AdminPrincipal principal = identityService.current();
         operationLogRepository.save(new AdminOperationLog(
                 MODULE_PUBLISH,
                 "PUBLISH_ARTICLE",
@@ -50,13 +56,16 @@ public class AdminOperationLogService {
                 articleId,
                 title,
                 STATUS_SUCCESS,
-                OPERATOR_DEV_ADMIN,
+                principal.userId(),
+                principal.username(),
+                principal.role(),
                 "候选资讯发布为用户端文章"
         ));
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void recordDigestPublish(Long digestId, String title) {
+        AdminPrincipal principal = identityService.current();
         operationLogRepository.save(new AdminOperationLog(
                 MODULE_PUBLISH,
                 "PUBLISH_DIGEST",
@@ -64,13 +73,16 @@ public class AdminOperationLogService {
                 digestId,
                 title,
                 STATUS_SUCCESS,
-                OPERATOR_DEV_ADMIN,
+                principal.userId(),
+                principal.username(),
+                principal.role(),
                 "每日简报发布到用户端"
         ));
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void recordDigestOffline(Long digestId, String title) {
+        AdminPrincipal principal = identityService.current();
         operationLogRepository.save(new AdminOperationLog(
                 MODULE_PUBLISH,
                 "OFFLINE_DIGEST",
@@ -78,7 +90,9 @@ public class AdminOperationLogService {
                 digestId,
                 title,
                 STATUS_SUCCESS,
-                OPERATOR_DEV_ADMIN,
+                principal.userId(),
+                principal.username(),
+                principal.role(),
                 "每日简报下线"
         ));
     }
@@ -92,7 +106,9 @@ public class AdminOperationLogService {
                 log.getTargetId(),
                 log.getTargetTitle(),
                 log.getOperationStatus(),
+                log.getOperatorUserId(),
                 log.getOperatorName(),
+                log.getOperatorRole(),
                 log.getDetail(),
                 log.getCreatedAt()
         );

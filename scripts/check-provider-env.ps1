@@ -141,6 +141,32 @@ function Assert-HttpUrls {
 
 $fileValues = Read-EnvFile -Path $EnvFile
 
+$legacyAdminTokenEnabled = Read-Bool `
+    -Name "PULSEBRIEF_ADMIN_LEGACY_TOKEN_ENABLED" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_ADMIN_LEGACY_TOKEN_ENABLED" -Default "false")
+if ($legacyAdminTokenEnabled) {
+    Assert-NotPlaceholder `
+        -Name "PULSEBRIEF_ADMIN_LEGACY_TOKEN" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_ADMIN_LEGACY_TOKEN")
+}
+
+$adminBootstrapUsername = Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_ADMIN_BOOTSTRAP_USERNAME"
+$adminBootstrapPassword = Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD"
+if (-not [string]::IsNullOrWhiteSpace($adminBootstrapUsername) -or
+    -not [string]::IsNullOrWhiteSpace($adminBootstrapPassword)) {
+    Assert-NotPlaceholder -Name "PULSEBRIEF_ADMIN_BOOTSTRAP_USERNAME" -Value $adminBootstrapUsername
+    Assert-NotPlaceholder -Name "PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD" -Value $adminBootstrapPassword
+    if ($adminBootstrapPassword.Length -lt 12) {
+        throw "PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD must be at least 12 characters"
+    }
+    $adminBootstrapRole = (Get-ConfigValue -FileValues $fileValues `
+        -Name "PULSEBRIEF_ADMIN_BOOTSTRAP_ROLE" -Default "ADMIN").Trim().ToUpperInvariant()
+    if ($adminBootstrapRole -notin @("VIEWER", "EDITOR", "ADMIN")) {
+        throw "PULSEBRIEF_ADMIN_BOOTSTRAP_ROLE must be VIEWER, EDITOR, or ADMIN"
+    }
+    Write-Host "OK: Admin bootstrap credentials are configured."
+}
+
 $enabled = Read-Bool `
     -Name "PULSEBRIEF_INGESTION_ENABLED" `
     -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_INGESTION_ENABLED" -Default "false")

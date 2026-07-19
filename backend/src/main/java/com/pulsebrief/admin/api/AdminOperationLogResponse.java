@@ -10,7 +10,9 @@ public record AdminOperationLogResponse(
         Long targetId,
         String targetTitle,
         String status,
+        Long operatorUserId,
         String operatorName,
+        String operatorRole,
         String detail,
         LocalDateTime createdAt
 ) {

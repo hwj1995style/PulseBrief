@@ -248,7 +248,8 @@ export function IngestionMonitorPage() {
                     </span>
                     <p>{log.detail}</p>
                     <small>
-                      {log.operatorName} · {formatTime(log.createdAt)}
+                      {log.operatorName}
+                      {log.operatorRole ? ` (${log.operatorRole})` : ''} · {formatTime(log.createdAt)}
                     </small>
                   </article>
                 ))

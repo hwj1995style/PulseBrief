@@ -1,13 +1,44 @@
-import { Bell, ShieldCheck } from 'lucide-react';
+import { Bell, LogOut, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 import { HashRouter, Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { navigationItems } from './app/navigation';
 import { CandidateReviewPage } from './features/candidates/CandidateReviewPage';
 import { DigestManagementPage } from './features/digests/DigestManagementPage';
 import { IngestionMonitorPage } from './features/ingestion/IngestionMonitorPage';
+import { AdminLoginPage } from './features/auth/AdminLoginPage';
 import { adminApiConfig } from './shared/api/adminApi';
+import { getStoredAdminSession, logoutAdmin, type AdminSession } from './shared/api/adminAuth';
 import './styles.css';
 
 function App() {
+  const [session, setSession] = useState<AdminSession | null>(() =>
+    adminApiConfig.mode === 'mock'
+      ? {
+          token: 'mock',
+          expiresAt: '2999-12-31T23:59:59',
+          userId: null,
+          username: 'mock-admin',
+          displayName: 'Mock Admin',
+          role: 'ADMIN'
+        }
+      : getStoredAdminSession()
+  );
+
+  if (adminApiConfig.mode === 'api' && !session) {
+    return (
+      <HashRouter>
+        <AdminLoginPage apiBaseUrl={adminApiConfig.apiBaseUrl!} onLogin={setSession} />
+      </HashRouter>
+    );
+  }
+
+  async function handleLogout() {
+    if (adminApiConfig.mode === 'api' && session) {
+      await logoutAdmin(adminApiConfig.apiBaseUrl!, session.token);
+      setSession(null);
+    }
+  }
+
   return (
     <HashRouter>
       <div className="admin-shell">
@@ -46,11 +77,16 @@ function App() {
             <div className="topbar-actions">
               <span className="env-pill">
                 <ShieldCheck size={16} />
-                {adminApiConfig.mode === 'mock' ? 'Mock 数据' : 'API 模式'}
+                {session?.displayName} · {session?.role}
               </span>
               <button className="icon-button" aria-label="通知">
                 <Bell size={18} />
               </button>
+              {adminApiConfig.mode === 'api' ? (
+                <button className="icon-button" aria-label="退出登录" onClick={handleLogout} type="button">
+                  <LogOut size={18} />
+                </button>
+              ) : null}
             </div>
           </header>
 

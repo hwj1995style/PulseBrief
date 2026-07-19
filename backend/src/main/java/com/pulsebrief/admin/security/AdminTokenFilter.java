@@ -1,20 +1,29 @@
 package com.pulsebrief.admin.security;
 
+import com.pulsebrief.admin.config.AdminSecurityProperties;
+import com.pulsebrief.admin.service.AdminAuthService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import org.springframework.beans.factory.annotation.Value;
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class AdminTokenFilter extends OncePerRequestFilter {
-    private final String adminToken;
+    private final ObjectProvider<AdminSecurityProperties> propertiesProvider;
+    private final ObjectProvider<AdminAuthService> authServiceProvider;
 
-    public AdminTokenFilter(@Value("${pulsebrief.admin.token:dev-admin-token}") String adminToken) {
-        this.adminToken = adminToken;
+    public AdminTokenFilter(
+            ObjectProvider<AdminSecurityProperties> propertiesProvider,
+            ObjectProvider<AdminAuthService> authServiceProvider
+    ) {
+        this.propertiesProvider = propertiesProvider;
+        this.authServiceProvider = authServiceProvider;
     }
 
     @Override
@@ -22,7 +31,8 @@ public class AdminTokenFilter extends OncePerRequestFilter {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
         }
-        return !request.getRequestURI().startsWith("/api/admin/");
+        String uri = request.getRequestURI();
+        return !uri.startsWith("/api/admin/") || uri.equals("/api/admin/auth/login");
     }
 
     @Override
@@ -31,15 +41,56 @@ public class AdminTokenFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        String authorization = request.getHeader("Authorization");
-        if (authorization == null || authorization.isBlank()) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Admin token required");
+        String token = bearerToken(request);
+        if (token == null) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Admin session required");
             return;
         }
-        if (!authorization.equals("Bearer " + adminToken)) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Admin token invalid");
+        AdminAuthService authService = authServiceProvider.getIfAvailable();
+        AdminPrincipal principal = authService == null ? null : authService.authenticate(token);
+        if (principal == null && isLegacyToken(token)) {
+            principal = new AdminPrincipal(null, "legacy-admin", "Legacy Admin", "ADMIN");
+        }
+        if (principal == null) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Admin session is invalid or expired");
             return;
         }
+        if (!isAuthorized(principal.role(), request)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Admin role does not permit this operation");
+            return;
+        }
+        request.setAttribute(AdminIdentityService.PRINCIPAL_ATTRIBUTE, principal);
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isAuthorized(String role, HttpServletRequest request) {
+        if ("GET".equalsIgnoreCase(request.getMethod())) {
+            return role.equals("VIEWER") || role.equals("EDITOR") || role.equals("ADMIN");
+        }
+        if (request.getRequestURI().startsWith("/api/admin/ingestion/")) {
+            return role.equals("ADMIN");
+        }
+        return role.equals("EDITOR") || role.equals("ADMIN");
+    }
+
+    private boolean isLegacyToken(String token) {
+        AdminSecurityProperties properties = propertiesProvider.getIfAvailable();
+        if (properties == null) {
+            return false;
+        }
+        if (!properties.legacyTokenEnabled() || properties.legacyToken() == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(
+                token.getBytes(StandardCharsets.UTF_8),
+                properties.legacyToken().getBytes(StandardCharsets.UTF_8)
+        );
+    }
+
+    private String bearerToken(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        return authorization != null && authorization.startsWith("Bearer ")
+                ? authorization.substring(7).trim()
+                : null;
     }
 }

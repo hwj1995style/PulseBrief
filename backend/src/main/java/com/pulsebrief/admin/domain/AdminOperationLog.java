@@ -33,8 +33,14 @@ public class AdminOperationLog {
     @Column(name = "operation_status")
     private String operationStatus;
 
+    @Column(name = "operator_user_id")
+    private Long operatorUserId;
+
     @Column(name = "operator_name")
     private String operatorName;
+
+    @Column(name = "operator_role")
+    private String operatorRole;
 
     private String detail;
 
@@ -51,7 +57,9 @@ public class AdminOperationLog {
             Long targetId,
             String targetTitle,
             String operationStatus,
+            Long operatorUserId,
             String operatorName,
+            String operatorRole,
             String detail
     ) {
         this.operationModule = operationModule;
@@ -60,7 +68,9 @@ public class AdminOperationLog {
         this.targetId = targetId;
         this.targetTitle = targetTitle;
         this.operationStatus = operationStatus;
+        this.operatorUserId = operatorUserId;
         this.operatorName = operatorName;
+        this.operatorRole = operatorRole;
         this.detail = detail;
         this.createdAt = LocalDateTime.now();
     }
@@ -93,8 +103,16 @@ public class AdminOperationLog {
         return operationStatus;
     }
 
+    public Long getOperatorUserId() {
+        return operatorUserId;
+    }
+
     public String getOperatorName() {
         return operatorName;
+    }
+
+    public String getOperatorRole() {
+        return operatorRole;
     }
 
     public String getDetail() {

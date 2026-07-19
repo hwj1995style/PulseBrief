@@ -28,7 +28,16 @@ springdoc:
 
 pulsebrief:
   admin:
-    token: ${PULSEBRIEF_ADMIN_TOKEN:dev-admin-token}
+    security:
+      legacy-token-enabled: ${PULSEBRIEF_ADMIN_LEGACY_TOKEN_ENABLED:false}
+      legacy-token: ${PULSEBRIEF_ADMIN_LEGACY_TOKEN:}
+      session-hours: ${PULSEBRIEF_ADMIN_SESSION_HOURS:12}
+      max-failed-attempts: ${PULSEBRIEF_ADMIN_MAX_FAILED_ATTEMPTS:5}
+      lock-minutes: ${PULSEBRIEF_ADMIN_LOCK_MINUTES:15}
+      bootstrap-username: ${PULSEBRIEF_ADMIN_BOOTSTRAP_USERNAME:}
+      bootstrap-password: ${PULSEBRIEF_ADMIN_BOOTSTRAP_PASSWORD:}
+      bootstrap-display-name: ${PULSEBRIEF_ADMIN_BOOTSTRAP_DISPLAY_NAME:PulseBrief Admin}
+      bootstrap-role: ${PULSEBRIEF_ADMIN_BOOTSTRAP_ROLE:ADMIN}
   ingestion:
     enabled: ${PULSEBRIEF_INGESTION_ENABLED:false}
     scheduling:

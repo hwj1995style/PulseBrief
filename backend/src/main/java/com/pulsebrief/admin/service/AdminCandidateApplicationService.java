@@ -11,6 +11,7 @@ import com.pulsebrief.admin.api.AdminCandidateResponse;
 import com.pulsebrief.admin.api.AdminCandidateUpdateRequest;
 import com.pulsebrief.admin.api.AdminReportAssetActionRequest;
 import com.pulsebrief.admin.api.AdminReportAssetResponse;
+import com.pulsebrief.admin.security.AdminIdentityService;
 import com.pulsebrief.article.domain.NewsArticle;
 import com.pulsebrief.article.repository.ArticleRepository;
 import com.pulsebrief.common.api.PageResponse;
@@ -59,6 +60,7 @@ public class AdminCandidateApplicationService {
     private final ContentFetchService contentFetchService;
     private final PdfAssetCacheService pdfAssetCacheService;
     private final AiSummaryTaskService aiSummaryTaskService;
+    private final AdminIdentityService identityService;
 
     public AdminCandidateApplicationService(
             CandidateArticleRepository candidateArticleRepository,
@@ -69,7 +71,8 @@ public class AdminCandidateApplicationService {
             AdminOperationLogService operationLogService,
             ContentFetchService contentFetchService,
             PdfAssetCacheService pdfAssetCacheService,
-            AiSummaryTaskService aiSummaryTaskService
+            AiSummaryTaskService aiSummaryTaskService,
+            AdminIdentityService identityService
     ) {
         this.candidateArticleRepository = candidateArticleRepository;
         this.reportAssetRepository = reportAssetRepository;
@@ -80,6 +83,7 @@ public class AdminCandidateApplicationService {
         this.contentFetchService = contentFetchService;
         this.pdfAssetCacheService = pdfAssetCacheService;
         this.aiSummaryTaskService = aiSummaryTaskService;
+        this.identityService = identityService;
     }
 
     @Transactional(readOnly = true)
@@ -166,7 +170,7 @@ public class AdminCandidateApplicationService {
         if (!"SUCCESS".equals(asset.getCacheStatus())) {
             throw new ResponseStatusException(CONFLICT, "Report asset requires successful PDF cache before approval");
         }
-        asset.approve(request == null ? null : request.reviewNote(), "dev-admin");
+        asset.approve(request == null ? null : request.reviewNote(), identityService.current().username());
         return mapper.toReportAssetResponse(asset);
     }
 
@@ -178,7 +182,7 @@ public class AdminCandidateApplicationService {
     ) {
         requirePendingCandidate(candidateId);
         ReportAsset asset = requireReportAsset(candidateId, assetId);
-        asset.reject(request == null ? null : request.reviewNote(), "dev-admin");
+        asset.reject(request == null ? null : request.reviewNote(), identityService.current().username());
         return mapper.toReportAssetResponse(asset);
     }
 
