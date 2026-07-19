@@ -13,12 +13,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class DeepSeekSummaryProviderTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final AiUsageService usageService = mock(AiUsageService.class);
 
     @Test
     void sendsJsonChatRequestAndParsesUsage() throws Exception {
+        when(usageService.begin("SUMMARY", "DEEPSEEK", "deepseek-v4-flash")).thenReturn(42L);
         AtomicReference<String> authorization = new AtomicReference<>();
         AtomicReference<String> requestBody = new AtomicReference<>();
         HttpServer server = server((exchange, requestNumber) -> {
@@ -47,6 +52,7 @@ class DeepSeekSummaryProviderTest {
             assertThat(result.keyPoints()).containsExactly("要点一", "要点二", "要点三");
             assertThat(result.tokenPromptCount()).isEqualTo(123);
             assertThat(result.tokenCompletionCount()).isEqualTo(45);
+            verify(usageService).markSuccess(42L, "DEEPSEEK", 123, 45);
         } finally {
             server.stop(0);
         }
@@ -83,7 +89,7 @@ class DeepSeekSummaryProviderTest {
                 "deepseek-v4-flash", 10, 500, 600
         );
 
-        assertThatThrownBy(() -> new DeepSeekSummaryProvider(properties, objectMapper))
+        assertThatThrownBy(() -> new DeepSeekSummaryProvider(properties, objectMapper, usageService))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("PULSEBRIEF_DEEPSEEK_API_KEY");
     }
@@ -98,7 +104,7 @@ class DeepSeekSummaryProviderTest {
                 500,
                 600
         );
-        return new DeepSeekSummaryProvider(properties, objectMapper);
+        return new DeepSeekSummaryProvider(properties, objectMapper, usageService);
     }
 
     private AiSummaryRequest request(String input) {

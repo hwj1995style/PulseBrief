@@ -1,4 +1,5 @@
 import type {
+  AdminAiUsage,
   AdminIngestionJob,
   AdminIngestionMetrics,
   AdminIngestionSource,
@@ -11,6 +12,20 @@ export const mockIngestionMetrics: AdminIngestionMetrics = {
   candidateCount: 18,
   publishedCount: 6,
   failedCount: 1
+};
+
+export const mockAiUsage: AdminAiUsage = {
+  requestCount: 24,
+  successCount: 22,
+  failedCount: 2,
+  blockedCount: 0,
+  promptTokens: 18400,
+  completionTokens: 5200,
+  estimatedCostUsd: 0,
+  dailyRequestLimit: 200,
+  dailyTokenLimit: 200000,
+  warningPercent: 80,
+  alertLevel: 'NORMAL'
 };
 
 export const mockIngestionJobs: AdminIngestionJob[] = [

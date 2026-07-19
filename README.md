@@ -39,9 +39,9 @@ Flutter 用户端 APP
 
 下一阶段：
 
-1. 完善 DeepSeek 摘要与模型分类的成本、限流和告警。
-2. 增强 Admin 账号管理、密码轮换、会话清理与生产 CSP。
-3. 完成移动端签名、隐私合规材料、推送和应用商店上架流程。
+1. 增强 Admin 账号管理、密码轮换、会话清理与生产 CSP。
+2. 完成移动端签名、隐私合规材料、推送和应用商店上架流程。
+3. 将 AI 页面告警扩展到 Prometheus 和外部通知渠道。
 
 ## 正式技术路线
 
@@ -276,6 +276,7 @@ mobile\build\app\outputs\flutter-apk\app-debug.apk
 15. [DeepSeek V4 Flash 摘要 Provider 接入说明](./docs/DeepSeekV4Flash摘要Provider接入说明.md)
 16. [Admin 登录、RBAC 与密钥管理说明](./docs/Admin登录RBAC与密钥管理说明.md)
 17. [DeepSeek 模型分类接入说明](./docs/DeepSeek模型分类接入说明.md)
+18. [AI 用量、成本、限流与告警说明](./docs/AI用量成本限流告警说明.md)
 
 ## 合规边界
 

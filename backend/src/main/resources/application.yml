@@ -50,6 +50,13 @@ pulsebrief:
     max-size-mb: ${PULSEBRIEF_PDF_MAX_SIZE_MB:25}
     timeout-seconds: ${PULSEBRIEF_PDF_TIMEOUT_SECONDS:15}
   ai:
+    usage:
+      enabled: ${PULSEBRIEF_AI_USAGE_ENABLED:true}
+      daily-request-limit: ${PULSEBRIEF_AI_DAILY_REQUEST_LIMIT:200}
+      daily-token-limit: ${PULSEBRIEF_AI_DAILY_TOKEN_LIMIT:200000}
+      warning-percent: ${PULSEBRIEF_AI_WARNING_PERCENT:80}
+      deep-seek-input-cost-per-million-usd: ${PULSEBRIEF_AI_DEEPSEEK_INPUT_COST_PER_MILLION_USD:0}
+      deep-seek-output-cost-per-million-usd: ${PULSEBRIEF_AI_DEEPSEEK_OUTPUT_COST_PER_MILLION_USD:0}
     deepseek:
       enabled: ${PULSEBRIEF_DEEPSEEK_ENABLED:false}
       api-key: ${PULSEBRIEF_DEEPSEEK_API_KEY:}

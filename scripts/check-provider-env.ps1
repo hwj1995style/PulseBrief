@@ -203,6 +203,27 @@ $deepSeekEnabled = Read-Bool `
 $deepSeekClassificationEnabled = Read-Bool `
     -Name "PULSEBRIEF_DEEPSEEK_CLASSIFICATION_ENABLED" `
     -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_DEEPSEEK_CLASSIFICATION_ENABLED" -Default "false")
+$aiUsageEnabled = Read-Bool `
+    -Name "PULSEBRIEF_AI_USAGE_ENABLED" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_AI_USAGE_ENABLED" -Default "true")
+if ($aiUsageEnabled) {
+    Read-IntInRange -Name "PULSEBRIEF_AI_DAILY_REQUEST_LIMIT" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_AI_DAILY_REQUEST_LIMIT" -Default "200") `
+        -Default 200 -Min 1 -Max 100000 | Out-Null
+    Read-IntInRange -Name "PULSEBRIEF_AI_DAILY_TOKEN_LIMIT" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_AI_DAILY_TOKEN_LIMIT" -Default "200000") `
+        -Default 200000 -Min 1000 -Max 100000000 | Out-Null
+    Read-IntInRange -Name "PULSEBRIEF_AI_WARNING_PERCENT" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_AI_WARNING_PERCENT" -Default "80") `
+        -Default 80 -Min 1 -Max 100 | Out-Null
+    Read-DoubleInRange -Name "PULSEBRIEF_AI_DEEPSEEK_INPUT_COST_PER_MILLION_USD" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_AI_DEEPSEEK_INPUT_COST_PER_MILLION_USD" -Default "0") `
+        -Default 0 -Min 0 -Max 100000 | Out-Null
+    Read-DoubleInRange -Name "PULSEBRIEF_AI_DEEPSEEK_OUTPUT_COST_PER_MILLION_USD" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_AI_DEEPSEEK_OUTPUT_COST_PER_MILLION_USD" -Default "0") `
+        -Default 0 -Min 0 -Max 100000 | Out-Null
+    Write-Host "OK: AI usage limits and cost configuration are valid."
+}
 if ($deepSeekEnabled -or $deepSeekClassificationEnabled) {
     Assert-NotPlaceholder `
         -Name "PULSEBRIEF_DEEPSEEK_API_KEY" `

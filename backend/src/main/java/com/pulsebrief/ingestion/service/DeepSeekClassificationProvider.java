@@ -44,23 +44,26 @@ public class DeepSeekClassificationProvider implements CandidateClassificationPr
     private final DeepSeekClassificationProperties classificationProperties;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
+    private final AiUsageService usageService;
 
     @Autowired
     public DeepSeekClassificationProvider(
             DeepSeekSummaryProperties connectionProperties,
             DeepSeekClassificationProperties classificationProperties,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            AiUsageService usageService
     ) {
         this(connectionProperties, classificationProperties, objectMapper, HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(connectionProperties.timeoutSeconds()))
-                .build());
+                .build(), usageService);
     }
 
     DeepSeekClassificationProvider(
             DeepSeekSummaryProperties connectionProperties,
             DeepSeekClassificationProperties classificationProperties,
             ObjectMapper objectMapper,
-            HttpClient httpClient
+            HttpClient httpClient,
+            AiUsageService usageService
     ) {
         if (connectionProperties.apiKey() == null || connectionProperties.apiKey().isBlank()) {
             throw new IllegalStateException(
@@ -70,6 +73,7 @@ public class DeepSeekClassificationProvider implements CandidateClassificationPr
         this.classificationProperties = classificationProperties;
         this.objectMapper = objectMapper;
         this.httpClient = httpClient;
+        this.usageService = usageService;
     }
 
     @Override
@@ -79,6 +83,7 @@ public class DeepSeekClassificationProvider implements CandidateClassificationPr
 
     @Override
     public Optional<ClassificationDecision> classify(RawNewsItem rawItem) {
+        Long usageEventId = usageService.begin("CLASSIFICATION", providerType(), connectionProperties.model());
         try {
             String body = objectMapper.writeValueAsString(requestBody(rawItem));
             HttpResponse<String> response = httpClient.send(httpRequest(body), HttpResponse.BodyHandlers.ofString());
@@ -93,12 +98,28 @@ public class DeepSeekClassificationProvider implements CandidateClassificationPr
             if (content.isBlank()) {
                 throw new IllegalStateException("DeepSeek classification response was empty");
             }
-            return parseDecision(content);
+            Optional<ClassificationDecision> decision = parseDecision(content);
+            JsonNode usage = root.path("usage");
+            usageService.markSuccess(
+                    usageEventId,
+                    providerType(),
+                    usage.path("prompt_tokens").asInt(0),
+                    usage.path("completion_tokens").asInt(0)
+            );
+            return decision;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("DeepSeek classification request was interrupted", exception);
-        } catch (IOException | IllegalArgumentException exception) {
-            throw new IllegalStateException("DeepSeek classification request failed: " + exception.getMessage(), exception);
+            IllegalStateException failure = new IllegalStateException(
+                    "DeepSeek classification request was interrupted", exception);
+            usageService.markFailed(usageEventId, failure);
+            throw failure;
+        } catch (Exception exception) {
+            RuntimeException failure = exception instanceof RuntimeException runtimeException
+                    ? runtimeException
+                    : new IllegalStateException(
+                            "DeepSeek classification request failed: " + exception.getMessage(), exception);
+            usageService.markFailed(usageEventId, failure);
+            throw failure;
         }
     }
 

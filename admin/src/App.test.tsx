@@ -168,6 +168,9 @@ describe('PulseBrief Admin shell', () => {
 
     expect(await screen.findByRole('heading', { name: '采集任务' })).toBeInTheDocument();
     expect(screen.getByText('今日采集')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'AI 用量与预算' })).toBeInTheDocument();
+    expect(screen.getByText('24/200')).toBeInTheDocument();
+    expect(screen.getByText('23600/200000')).toBeInTheDocument();
     expect(screen.getAllByText('失败任务').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Provider timeout')).toBeInTheDocument();
     expect(screen.getByText('Fixture Global')).toBeInTheDocument();

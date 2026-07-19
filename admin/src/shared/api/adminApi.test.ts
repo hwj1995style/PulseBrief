@@ -879,6 +879,43 @@ describe('adminApi HTTP client', () => {
     );
   });
 
+  it('maps AI usage and guardrail status', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      await mockFetchResponse({
+        code: 'OK',
+        data: {
+          requestCount: 24,
+          successCount: 22,
+          failedCount: 2,
+          blockedCount: 1,
+          promptTokens: 18400,
+          completionTokens: 5200,
+          estimatedCostUsd: 0.0123,
+          dailyRequestLimit: 200,
+          dailyTokenLimit: 200000,
+          warningPercent: 80,
+          alertLevel: 'WARNING'
+        }
+      })
+    );
+
+    const client = createAdminApiClient({ apiBaseUrl, adminToken });
+    const usage = await client.getTodayAiUsage();
+
+    expect(usage).toEqual(expect.objectContaining({
+      requestCount: 24,
+      blockedCount: 1,
+      estimatedCostUsd: 0.0123,
+      alertLevel: 'WARNING'
+    }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8080/api/admin/ai-usage/today',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer dev-admin-token' })
+      })
+    );
+  });
+
   it('updates ingestion source enabled state through API client', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       await mockFetchResponse({

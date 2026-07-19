@@ -25,6 +25,20 @@ export interface AdminIngestionMetrics {
   failedCount: number;
 }
 
+export interface AdminAiUsage {
+  requestCount: number;
+  successCount: number;
+  failedCount: number;
+  blockedCount: number;
+  promptTokens: number;
+  completionTokens: number;
+  estimatedCostUsd: number;
+  dailyRequestLimit: number;
+  dailyTokenLimit: number;
+  warningPercent: number;
+  alertLevel: 'NORMAL' | 'WARNING' | 'LIMIT_REACHED';
+}
+
 export interface AdminIngestionSource {
   id: number;
   code: string;

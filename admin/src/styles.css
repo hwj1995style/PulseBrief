@@ -225,6 +225,14 @@ button {
   margin-bottom: 16px;
 }
 
+.ai-usage-panel {
+  margin-bottom: 16px;
+}
+
+.ai-usage-grid {
+  margin-bottom: 0;
+}
+
 .metric-card {
   border: 1px solid #dbe4f0;
   border-radius: 12px;

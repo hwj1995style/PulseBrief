@@ -1,8 +1,9 @@
-import { AlertTriangle, CheckCircle2, ClipboardList, DatabaseZap, RefreshCw, RadioTower, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, BrainCircuit, CheckCircle2, CircleDollarSign, ClipboardList, DatabaseZap, Gauge, RefreshCw, RadioTower, ShieldAlert } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   getTodayIngestionMetrics,
+  getTodayAiUsage,
   listIngestionAnomalies,
   listIngestionJobs,
   listOperationLogs,
@@ -11,6 +12,7 @@ import {
   updateIngestionSourceEnabled
 } from '../../shared/api/adminApi';
 import type {
+  AdminAiUsage,
   AdminIngestionJob,
   AdminIngestionMetrics,
   AdminIngestionSource,
@@ -24,6 +26,20 @@ const emptyMetrics: AdminIngestionMetrics = {
   candidateCount: 0,
   publishedCount: 0,
   failedCount: 0
+};
+
+const emptyAiUsage: AdminAiUsage = {
+  requestCount: 0,
+  successCount: 0,
+  failedCount: 0,
+  blockedCount: 0,
+  promptTokens: 0,
+  completionTokens: 0,
+  estimatedCostUsd: 0,
+  dailyRequestLimit: 200,
+  dailyTokenLimit: 200000,
+  warningPercent: 80,
+  alertLevel: 'NORMAL'
 };
 
 const statusLabels: Record<IngestionJobStatus, string> = {
@@ -52,6 +68,7 @@ export function IngestionMonitorPage() {
   const [statusFilter, setStatusFilter] = useState<IngestionJobStatus | 'ALL'>('ALL');
   const [jobs, setJobs] = useState<AdminIngestionJob[]>([]);
   const [metrics, setMetrics] = useState<AdminIngestionMetrics>(emptyMetrics);
+  const [aiUsage, setAiUsage] = useState<AdminAiUsage>(emptyAiUsage);
   const [sources, setSources] = useState<AdminIngestionSource[]>([]);
   const [anomalies, setAnomalies] = useState<AdminIngestionAnomaly[]>([]);
   const [operationLogs, setOperationLogs] = useState<AdminOperationLog[]>([]);
@@ -69,16 +86,18 @@ export function IngestionMonitorPage() {
     Promise.all([
       listIngestionJobs(statusFilter),
       getTodayIngestionMetrics(),
+      getTodayAiUsage(),
       listIngestionSources(),
       listIngestionAnomalies(),
       listOperationLogs('PUBLISH')
     ])
-      .then(([nextJobs, nextMetrics, nextSources, nextAnomalies, nextOperationLogs]) => {
+      .then(([nextJobs, nextMetrics, nextAiUsage, nextSources, nextAnomalies, nextOperationLogs]) => {
         if (cancelled) {
           return;
         }
         setJobs(nextJobs);
         setMetrics(nextMetrics);
+        setAiUsage(nextAiUsage);
         setSources(nextSources);
         setAnomalies(nextAnomalies);
         setOperationLogs(nextOperationLogs);
@@ -161,6 +180,45 @@ export function IngestionMonitorPage() {
           <MetricCard icon={<CheckCircle2 size={18} />} label="已发布" tone="success" value={metrics.publishedCount} />
           <MetricCard icon={<AlertTriangle size={18} />} label="失败任务" tone="danger" value={metrics.failedCount} />
         </div>
+
+        <section className="panel ai-usage-panel" aria-label="AI 用量与预算">
+          <div className="section-title-row">
+            <div>
+              <p className="page-kicker">AI Guardrails</p>
+              <h2>AI 用量与预算</h2>
+            </div>
+            <span className={aiUsage.alertLevel === 'NORMAL' ? 'status-chip success' : 'status-chip danger'}>
+              {aiUsage.alertLevel === 'NORMAL'
+                ? '正常'
+                : aiUsage.alertLevel === 'WARNING'
+                  ? '接近限额'
+                  : '已触发限额'}
+            </span>
+          </div>
+          <div className="metric-grid ai-usage-grid">
+            <MetricCard
+              icon={<BrainCircuit size={18} />}
+              label="今日 AI 请求"
+              value={`${aiUsage.requestCount}/${aiUsage.dailyRequestLimit}`}
+            />
+            <MetricCard
+              icon={<Gauge size={18} />}
+              label="今日 Token"
+              value={`${aiUsage.promptTokens + aiUsage.completionTokens}/${aiUsage.dailyTokenLimit}`}
+            />
+            <MetricCard
+              icon={<CircleDollarSign size={18} />}
+              label="估算成本 (USD)"
+              value={`$${aiUsage.estimatedCostUsd.toFixed(4)}`}
+            />
+            <MetricCard
+              icon={<ShieldAlert size={18} />}
+              label="失败 / 阻断"
+              tone={aiUsage.failedCount + aiUsage.blockedCount > 0 ? 'danger' : undefined}
+              value={`${aiUsage.failedCount}/${aiUsage.blockedCount}`}
+            />
+          </div>
+        </section>
 
         <section className="panel ingestion-panel">
           <div className="toolbar">
@@ -362,7 +420,7 @@ function MetricCard({
 }: {
   icon: ReactNode;
   label: string;
-  value: number;
+  value: number | string;
   tone?: 'success' | 'danger';
 }) {
   return (

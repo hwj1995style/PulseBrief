@@ -49,6 +49,18 @@ class AdminIngestionControllerTest {
     }
 
     @Test
+    void returnsTodayAiUsageAndGuardrailStatus() throws Exception {
+        mockMvc.perform(get("/api/admin/ai-usage/today")
+                        .header("Authorization", ADMIN_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.requestCount").isNumber())
+                .andExpect(jsonPath("$.data.estimatedCostUsd").isNumber())
+                .andExpect(jsonPath("$.data.dailyRequestLimit").isNumber())
+                .andExpect(jsonPath("$.data.dailyTokenLimit").isNumber())
+                .andExpect(jsonPath("$.data.alertLevel").isString());
+    }
+
+    @Test
     void returnsIngestionJobsWithFailureLogsAndTodayMetrics() throws Exception {
         String sourceCode = "ops-" + UUID.randomUUID();
         sourceRepository.save(NewsIngestionSource.fixture(

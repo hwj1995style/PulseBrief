@@ -3,6 +3,7 @@ import { mockDigestArticleCandidates, mockDigests } from '../../mock/digests';
 import {
   mockIngestionJobs,
   mockIngestionMetrics,
+  mockAiUsage,
   mockIngestionSources,
   mockIngestionAnomalies,
   mockOperationLogs
@@ -24,6 +25,7 @@ import type {
   AdminDigestStatus
 } from '../types/digest';
 import type {
+  AdminAiUsage,
   AdminIngestionJob,
   AdminIngestionMetrics,
   AdminIngestionSource,
@@ -64,6 +66,7 @@ export interface AdminApiClient {
   offlineDigest: (id: number) => Promise<AdminDigest>;
   listIngestionJobs: (status?: IngestionJobStatus | 'ALL') => Promise<AdminIngestionJob[]>;
   getTodayIngestionMetrics: () => Promise<AdminIngestionMetrics>;
+  getTodayAiUsage: () => Promise<AdminAiUsage>;
   listIngestionSources: () => Promise<AdminIngestionSource[]>;
   updateIngestionSourceEnabled: (id: number, enabled: boolean) => Promise<AdminIngestionSource>;
   runIngestionSource: (id: number, input?: AdminIngestionRunInput) => Promise<AdminIngestionRunResult>;
@@ -236,6 +239,20 @@ interface BackendIngestionMetricsResponse {
   candidateCount: number;
   publishedCount: number;
   failedCount: number;
+}
+
+interface BackendAiUsageResponse {
+  requestCount: number;
+  successCount: number;
+  failedCount: number;
+  blockedCount: number;
+  promptTokens: number;
+  completionTokens: number;
+  estimatedCostUsd: number;
+  dailyRequestLimit: number;
+  dailyTokenLimit: number;
+  warningPercent: number;
+  alertLevel: 'NORMAL' | 'WARNING' | 'LIMIT_REACHED';
 }
 
 interface BackendIngestionSourceResponse {
@@ -431,6 +448,10 @@ export function listIngestionJobs(status?: IngestionJobStatus | 'ALL'): Promise<
 
 export function getTodayIngestionMetrics(): Promise<AdminIngestionMetrics> {
   return defaultClient.getTodayIngestionMetrics();
+}
+
+export function getTodayAiUsage(): Promise<AdminAiUsage> {
+  return defaultClient.getTodayAiUsage();
 }
 
 export function listIngestionSources(): Promise<AdminIngestionSource[]> {
@@ -781,6 +802,7 @@ function createMockAdminApiClient(): MutableAdminApiClient {
       return localIngestionJobs.filter((job) => job.status === status).map(cloneIngestionJob);
     },
     getTodayIngestionMetrics: async () => ({ ...localIngestionMetrics }),
+    getTodayAiUsage: async () => ({ ...mockAiUsage }),
     listIngestionSources: async () => localIngestionSources.map(cloneIngestionSource),
     updateIngestionSourceEnabled: async (id, enabled) => {
       localIngestionSources = localIngestionSources.map((source) =>
@@ -1046,6 +1068,10 @@ function createHttpAdminApiClient(config: { apiBaseUrl: string; adminToken?: str
     },
     getTodayIngestionMetrics: async () => {
       const data = await request<BackendIngestionMetricsResponse>('/api/admin/ingestion/metrics/today');
+      return { ...data };
+    },
+    getTodayAiUsage: async () => {
+      const data = await request<BackendAiUsageResponse>('/api/admin/ai-usage/today');
       return { ...data };
     },
     listIngestionSources: async () => {

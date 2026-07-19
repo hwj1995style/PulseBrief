@@ -15,12 +15,17 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class DeepSeekClassificationProviderTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final AiUsageService usageService = mock(AiUsageService.class);
 
     @Test
     void sendsMetadataOnlyAndParsesAcceptedDecision() throws Exception {
+        when(usageService.begin("CLASSIFICATION", "DEEPSEEK", "deepseek-v4-flash")).thenReturn(43L);
         AtomicReference<String> requestBody = new AtomicReference<>();
         HttpServer server = server(exchange -> {
             requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
@@ -39,6 +44,7 @@ class DeepSeekClassificationProviderTest {
             assertThat(decision.suggestedCategoryCode()).isEqualTo("company");
             assertThat(decision.confidence()).isEqualTo(0.82);
             assertThat(decision.matchedRule()).isEqualTo("MODEL_DEEPSEEK:COMPANY_RESULTS");
+            verify(usageService).markSuccess(43L, "DEEPSEEK", 50, 10);
         } finally {
             server.stop(0);
         }
@@ -83,7 +89,8 @@ class DeepSeekClassificationProviderTest {
                 connection,
                 classification,
                 objectMapper,
-                java.net.http.HttpClient.newHttpClient()
+                java.net.http.HttpClient.newHttpClient(),
+                usageService
         );
     }
 
@@ -117,7 +124,8 @@ class DeepSeekClassificationProviderTest {
                 "choices", java.util.List.of(java.util.Map.of(
                         "finish_reason", "stop",
                         "message", java.util.Map.of("content", content)
-                ))
+                )),
+                "usage", java.util.Map.of("prompt_tokens", 50, "completion_tokens", 10)
         ));
     }
 

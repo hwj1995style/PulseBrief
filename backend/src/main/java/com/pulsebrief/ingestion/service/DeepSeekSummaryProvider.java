@@ -33,18 +33,24 @@ public class DeepSeekSummaryProvider implements AiSummaryProvider {
     private final DeepSeekSummaryProperties properties;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
+    private final AiUsageService usageService;
 
     @Autowired
-    public DeepSeekSummaryProvider(DeepSeekSummaryProperties properties, ObjectMapper objectMapper) {
+    public DeepSeekSummaryProvider(
+            DeepSeekSummaryProperties properties,
+            ObjectMapper objectMapper,
+            AiUsageService usageService
+    ) {
         this(properties, objectMapper, HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(properties.timeoutSeconds()))
-                .build());
+                .build(), usageService);
     }
 
     DeepSeekSummaryProvider(
             DeepSeekSummaryProperties properties,
             ObjectMapper objectMapper,
-            HttpClient httpClient
+            HttpClient httpClient,
+            AiUsageService usageService
     ) {
         if (properties.apiKey() == null || properties.apiKey().isBlank()) {
             throw new IllegalStateException(
@@ -53,6 +59,7 @@ public class DeepSeekSummaryProvider implements AiSummaryProvider {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.httpClient = httpClient;
+        this.usageService = usageService;
     }
 
     @Override
@@ -67,17 +74,38 @@ public class DeepSeekSummaryProvider implements AiSummaryProvider {
 
     @Override
     public AiSummaryProviderResult generate(AiSummaryRequest request) {
+        Long usageEventId = usageService.begin("SUMMARY", providerType(), modelName());
         try {
             String body = objectMapper.writeValueAsString(requestBody(request));
+            int totalPromptTokens = 0;
+            int totalCompletionTokens = 0;
             for (int attempt = 1; attempt <= 2; attempt++) {
                 HttpResponse<String> response = httpClient.send(httpRequest(body), HttpResponse.BodyHandlers.ofString());
                 if (response.statusCode() < 200 || response.statusCode() >= 300) {
                     throw new IllegalStateException("DeepSeek Chat API returned HTTP " + response.statusCode());
                 }
                 JsonNode root = objectMapper.readTree(response.body());
+                JsonNode usage = root.path("usage");
+                totalPromptTokens += usage.path("prompt_tokens").asInt(0);
+                totalCompletionTokens += usage.path("completion_tokens").asInt(0);
                 String content = root.path("choices").path(0).path("message").path("content").asText();
                 if (!content.isBlank()) {
-                    return parseResponse(root, content);
+                    AiSummaryProviderResult parsed = parseResponse(root, content);
+                    AiSummaryProviderResult result = new AiSummaryProviderResult(
+                            parsed.summary(),
+                            parsed.keyPoints(),
+                            parsed.impactAnalysis(),
+                            parsed.modelName(),
+                            totalPromptTokens,
+                            totalCompletionTokens
+                    );
+                    usageService.markSuccess(
+                            usageEventId,
+                            providerType(),
+                            result.tokenPromptCount(),
+                            result.tokenCompletionCount()
+                    );
+                    return result;
                 }
                 if (attempt == 2) {
                     throw new IllegalStateException("DeepSeek response did not contain output content");
@@ -86,9 +114,15 @@ public class DeepSeekSummaryProvider implements AiSummaryProvider {
             throw new IllegalStateException("DeepSeek response did not contain output content");
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("DeepSeek summary request was interrupted", exception);
-        } catch (IOException | IllegalArgumentException exception) {
-            throw new IllegalStateException("DeepSeek summary request failed: " + exception.getMessage(), exception);
+            IllegalStateException failure = new IllegalStateException("DeepSeek summary request was interrupted", exception);
+            usageService.markFailed(usageEventId, failure);
+            throw failure;
+        } catch (Exception exception) {
+            RuntimeException failure = exception instanceof RuntimeException runtimeException
+                    ? runtimeException
+                    : new IllegalStateException("DeepSeek summary request failed: " + exception.getMessage(), exception);
+            usageService.markFailed(usageEventId, failure);
+            throw failure;
         }
     }
 
