@@ -145,6 +145,31 @@ $enabled = Read-Bool `
     -Name "PULSEBRIEF_INGESTION_ENABLED" `
     -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_INGESTION_ENABLED" -Default "false")
 
+$openAiEnabled = Read-Bool `
+    -Name "PULSEBRIEF_OPENAI_ENABLED" `
+    -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_OPENAI_ENABLED" -Default "false")
+if ($openAiEnabled) {
+    Assert-NotPlaceholder `
+        -Name "PULSEBRIEF_OPENAI_API_KEY" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_OPENAI_API_KEY")
+    Assert-HttpUrls `
+        -Name "PULSEBRIEF_OPENAI_BASE_URL" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_OPENAI_BASE_URL" -Default "https://api.openai.com/v1/responses")
+    Assert-NotPlaceholder `
+        -Name "PULSEBRIEF_OPENAI_MODEL" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_OPENAI_MODEL" -Default "gpt-5.6-luna")
+    Read-IntInRange -Name "PULSEBRIEF_OPENAI_TIMEOUT_SECONDS" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_OPENAI_TIMEOUT_SECONDS" -Default "30") `
+        -Default 30 -Min 5 -Max 120 | Out-Null
+    Read-IntInRange -Name "PULSEBRIEF_OPENAI_MAX_INPUT_CHARACTERS" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_OPENAI_MAX_INPUT_CHARACTERS" -Default "12000") `
+        -Default 12000 -Min 500 -Max 50000 | Out-Null
+    Read-IntInRange -Name "PULSEBRIEF_OPENAI_MAX_OUTPUT_TOKENS" `
+        -Value (Get-ConfigValue -FileValues $fileValues -Name "PULSEBRIEF_OPENAI_MAX_OUTPUT_TOKENS" -Default "1200") `
+        -Default 1200 -Min 300 -Max 4000 | Out-Null
+    Write-Host "OK: OpenAI summary provider configuration is present."
+}
+
 Write-Host "PulseBrief provider environment check"
 if (-not [string]::IsNullOrWhiteSpace($EnvFile)) {
     Write-Host "Env file: $EnvFile"

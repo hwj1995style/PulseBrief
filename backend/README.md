@@ -101,6 +101,12 @@ GET /api/admin/ingestion/anomalies
 
 检查通过后再启用 `PULSEBRIEF_INGESTION_ENABLED=true` 做手动采集验证。设计边界见 `docs/真实Provider环境配置与密钥检查设计.md`。
 
+## AI Summary Provider
+
+AI 摘要支持 `MOCK` 与 OpenAI Responses API 双模式。OpenAI 默认关闭；启用前必须配置 `PULSEBRIEF_OPENAI_ENABLED=true`、`PULSEBRIEF_OPENAI_API_KEY` 和模型等参数，并通过上述 Provider 环境检查。默认模型为面向高频摘要场景的 `gpt-5.6-luna`。
+
+真实 Provider 只接收授权全文、授权正文片段或 RSS 摘要，返回严格结构化的 Admin 审核草稿。失败不会阻断采集或人工发布，生成结果也不会自动发布。完整配置和验证边界见 `docs/真实OpenAI摘要Provider接入说明.md`。
+
 ## V1 App API
 
 当前已实现用户端 V1 API 骨架：
@@ -143,7 +149,7 @@ DELETE /api/playback/history
 Authorization: Bearer dev-token-1
 ```
 
-当前阶段不接真实短信、邮件或 AI 服务；用户端数据仍来自 Flyway V2 种子数据。真实资讯采集已具备适配层、fixture Provider、原始资讯入库、去重和候选资讯生成能力，候选内容必须经后续 Admin 审核发布后才会进入用户端。
+当前阶段不接真实短信或邮件服务；AI 摘要已提供默认关闭的 OpenAI Provider。用户端数据仍来自 Flyway V2 种子数据。真实资讯采集已具备适配层、fixture Provider、原始资讯入库、去重和候选资讯生成能力，候选内容必须经 Admin 审核发布后才会进入用户端。
 
 ## Smoke Check
 

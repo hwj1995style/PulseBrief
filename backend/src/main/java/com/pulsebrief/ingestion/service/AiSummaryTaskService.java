@@ -69,7 +69,7 @@ public class AiSummaryTaskService {
                 input.textHash(),
                 input.preview(),
                 provider.providerType(),
-                "mock-v1",
+                provider.modelName(),
                 promptVersion,
                 "dev-admin"
         ));

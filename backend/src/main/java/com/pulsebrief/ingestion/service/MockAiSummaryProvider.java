@@ -11,6 +11,11 @@ public class MockAiSummaryProvider implements AiSummaryProvider {
     }
 
     @Override
+    public String modelName() {
+        return "mock-v1";
+    }
+
+    @Override
     public AiSummaryProviderResult generate(AiSummaryRequest request) {
         String title = blankToDefault(request.title(), "未命名候选");
         String inputExcerpt = truncate(singleLine(request.inputText()), 140);

@@ -39,8 +39,8 @@ Flutter 用户端 APP
 
 下一阶段：
 
-1. 在现有 Mock 抽象上接入真实 AI Provider，并保持人工审核。
-2. 补齐生产级 Admin 登录、RBAC、操作身份和密钥管理。
+1. 补齐生产级 Admin 登录、RBAC、操作身份和密钥管理。
+2. 将真实 AI Provider 扩展到模型分类，并完善成本、限流和告警。
 3. 完成移动端签名、隐私合规材料、推送和应用商店上架流程。
 
 ## 正式技术路线
@@ -272,6 +272,7 @@ mobile\build\app\outputs\flutter-apk\app-debug.apk
 11. [阶段 20 三端收口与发布前检查记录](./docs/阶段20三端收口与发布前检查记录.md)
 12. [CI 验证流水线设计](./docs/CI验证流水线设计.md)
 13. [真实 Provider 环境配置与密钥检查设计](./docs/真实Provider环境配置与密钥检查设计.md)
+14. [真实 OpenAI 摘要 Provider 接入说明](./docs/真实OpenAI摘要Provider接入说明.md)
 
 ## 合规边界
 

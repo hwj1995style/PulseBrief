@@ -239,7 +239,7 @@ export function CandidateReviewPage() {
     }
   }
 
-  async function generateAiSummaryDraft() {
+  async function generateAiSummaryDraft(providerType: 'MOCK' | 'OPENAI' = 'MOCK') {
     if (!selectedCandidate) {
       return;
     }
@@ -247,7 +247,7 @@ export function CandidateReviewPage() {
     setErrorMessage('');
     setSuccessMessage('');
     try {
-      const task = await generateCandidateAiSummary(selectedCandidate.id);
+      const task = await generateCandidateAiSummary(selectedCandidate.id, providerType);
       setCandidates((items) =>
         items.map((item) => (item.id === selectedCandidate.id ? { ...item, aiSummaryTask: task } : item))
       );
@@ -544,11 +544,20 @@ export function CandidateReviewPage() {
                 <button
                   className="secondary-action compact"
                   disabled={selectedCandidate.status !== 'PENDING_REVIEW' || aiSummaryLoading}
-                  onClick={generateAiSummaryDraft}
+                  onClick={() => generateAiSummaryDraft('MOCK')}
                   type="button"
                 >
                   <Sparkles size={18} />
                   {selectedCandidate.aiSummaryTask ? '重新生成' : aiSummaryLoading ? '生成中...' : '生成 AI 摘要'}
+                </button>
+                <button
+                  className="secondary-action compact"
+                  disabled={selectedCandidate.status !== 'PENDING_REVIEW' || aiSummaryLoading}
+                  onClick={() => generateAiSummaryDraft('OPENAI')}
+                  type="button"
+                >
+                  <Sparkles size={18} />
+                  使用 OpenAI 生成
                 </button>
               </div>
               {selectedCandidate.aiSummaryTask ? (
