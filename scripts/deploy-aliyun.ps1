@@ -68,6 +68,7 @@ release_root="$deploy_root/releases/$release_id"
 install -d -m 700 "$deploy_root" "$deploy_root/releases"
 install -d -m 755 "$release_root"
 tar -xf "$remote_temp/pulsebrief.tar" -C "$release_root"
+find "$release_root" -type f -name '*.sh' -exec sed -i 's/\r$//' {} +
 install -m 600 "$remote_temp/production.env" "$deploy_root/.env"
 
 if ! swapon --show=NAME --noheadings | grep -q .; then
